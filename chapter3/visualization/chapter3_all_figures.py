@@ -125,43 +125,43 @@ def savefig(fig, filename):
 
 
 def fig_budget_compliance():
-    fig, axes = plt.subplots(1, 4, figsize=(14, 3.2), sharey=True)
-    fig.suptitle("不同任务与预算设置下的段预算满足情况", fontsize=10.5, fontweight="bold", y=1.02)
-
+    fig, ax = plt.subplots(figsize=(9.5, 4.2))
     section = DATA["budget_compliance"]
     b_values = section["b_values"]
     alpha = section["alpha"]
-    box_colors = [COLORS["light_blue"], COLORS["cyan_blue"], COLORS["dark_blue"], COLORS["gold"]]
+    means = section["means_percent"]
+    errors = section["errors_percent"]
+    x = np.arange(len(TASK_NAMES))
+    w = 0.18
+    colors = [COLORS["light_blue"], COLORS["cyan_blue"], COLORS["dark_blue"], COLORS["gold"]]
+    labels = ["$10^6$", "$10^7$", "$10^8$", "$10^9$"]
 
-    for idx, task in enumerate(TASK_NAMES):
-        ax = axes[idx]
-        data_list = [section["samples_percent"][task][str(int(b_value))] for b_value in b_values]
-        positions = list(range(1, len(b_values) + 1))
-        bp = ax.boxplot(
-            data_list,
-            positions=positions,
-            widths=0.55,
-            patch_artist=True,
-            showfliers=True,
-            flierprops=dict(marker="o", markersize=2.5, alpha=0.5, color=COLORS["navy"]),
-            medianprops=dict(color=COLORS["navy"], linewidth=1.5),
-            whiskerprops=dict(linewidth=1, color="#555555"),
-            capprops=dict(linewidth=1, color="#555555"),
+    for idx, (_b_value, color, label) in enumerate(zip(b_values, colors, labels)):
+        values = [means[task][idx] for task in TASK_NAMES]
+        yerr = [errors[task][idx] for task in TASK_NAMES]
+        ax.bar(
+            x + (idx - 1.5) * w,
+            values,
+            w,
+            yerr=yerr,
+            label=label,
+            color=color,
+            alpha=0.9,
+            edgecolor=COLORS["navy"],
+            linewidth=0.6,
+            capsize=3,
+            error_kw=dict(elinewidth=0.8, ecolor="#555555"),
         )
-        for patch, color in zip(bp["boxes"], box_colors):
-            patch.set_facecolor(color)
-            patch.set_alpha(0.75)
-            patch.set_edgecolor(COLORS["navy"])
-            patch.set_linewidth(0.8)
-        ax.axhline(y=100, color=COLORS["dark_orange"], linestyle="--", linewidth=1.5, alpha=0.9, label="预算上限 $B$" if idx == 0 else None)
-        ax.axhline(y=alpha * 100, color="#888888", linestyle=":", linewidth=1.2, alpha=0.7, label=f"$\\alpha B$（$\\alpha$={alpha}）" if idx == 0 else None)
-        ax.set_title(task, fontsize=10.5, fontweight="bold", pad=8)
-        ax.set_xticks(positions)
-        ax.set_xticklabels(["$10^6$", "$10^7$", "$10^8$", "$10^9$"], fontsize=9)
-        ax.set_xlabel("段预算 $B$（Gas）", fontsize=9.5)
-        if idx == 0:
-            ax.set_ylabel("段权重占预算比例 $W(\\mathrm{Seg}_i)/B$（%）", fontsize=9.5)
-    axes[0].legend(loc="lower left", fontsize=8.5, framealpha=0.9)
+
+    ax.axhline(y=100, color=COLORS["dark_orange"], linestyle="--", linewidth=1.2, alpha=0.8, label="预算上限")
+    ax.axhline(y=alpha * 100, color="#888888", linestyle=":", linewidth=1.1, alpha=0.8, label=f"$\\alpha B$={alpha * 100:.0f}%")
+    ax.set_title("不同任务与预算设置下的段预算满足情况", fontsize=10.5, fontweight="bold", pad=8)
+    ax.set_xticks(x)
+    ax.set_xticklabels(TASK_NAMES, fontsize=9)
+    ax.set_xlabel("任务类型", fontsize=9.5)
+    ax.set_ylabel("段权重占预算比例 $W(\\mathrm{Seg}_i)/B$（%）", fontsize=9.5)
+    ax.set_ylim(0, 108)
+    ax.legend(loc="lower center", bbox_to_anchor=(0.5, -0.28), ncol=6, fontsize=8.2, framealpha=0.95)
     fig.tight_layout()
     savefig(fig, "fig1_budget_compliance.png")
     print("  -> 图7/fig1_budget_compliance.png 已生成")
