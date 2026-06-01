@@ -1,0 +1,11 @@
+.DS_Store
+__pycache__/
+*.pyc
+
+# Foundry build outputs
+out/
+cache/
+
+# Local editor files
+.idea/
+.vscode/

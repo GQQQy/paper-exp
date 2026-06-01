@@ -1,0 +1,219 @@
+{
+  "metadata": {
+    "chapter": "第三章 基于有状态任务切片的链下计算验证",
+    "created_at": "2026-06-01T14:51:25+08:00",
+    "elapsed_sec": 6.931923697,
+    "quick_mode": true,
+    "source": "Go physical task runner: execution, snapshot serialization, commitment"
+  },
+  "params": {
+    "segment_budget_B": 100000000,
+    "adjudication_threshold_b": 1000000,
+    "alpha": 0.8,
+    "staking_rounds_g": 10,
+    "staking_d0": 0.5
+  },
+  "samples": [
+    {
+      "task": "Fibonacci",
+      "requested_size": 5000,
+      "steps": 5000,
+      "snapshot_bytes": 784,
+      "commitment": "cd1f6b79ec69606fca1fd7213a10bbb1bd25c4f435afbb9f7d054c7167ac421a",
+      "elapsed_seconds": 0.000546584,
+      "reached_time_limit": false
+    },
+    {
+      "task": "Poly-Chain",
+      "requested_size": 4000,
+      "steps": 4000,
+      "snapshot_bytes": 784,
+      "commitment": "e3c589e80bf20a1acba60f98c6e082c389bc6815d44993977d626bd0a2fdc9e6",
+      "elapsed_seconds": 0.000424093,
+      "reached_time_limit": false
+    },
+    {
+      "task": "Sort-Large",
+      "requested_size": 384,
+      "steps": 73536,
+      "snapshot_bytes": 784,
+      "commitment": "4bdd60407d7c826f7ef88e050dd6bd798f528516dbb5efb510807b3a3174fb75",
+      "elapsed_seconds": 0.000130113,
+      "reached_time_limit": false
+    },
+    {
+      "task": "DP-Large",
+      "requested_size": 12000,
+      "steps": 11999,
+      "snapshot_bytes": 784,
+      "commitment": "c666df2c345e0a1c34e38dcc8115706736908b1826a0e92bc4df3427d8584fbc",
+      "elapsed_seconds": 0.001308901,
+      "reached_time_limit": false
+    }
+  ],
+  "geth_evm_samples": [
+    {
+      "task": "Fibonacci",
+      "bytecode_bytes": 160,
+      "gas_used": 5492,
+      "execution_time": "19.62µs",
+      "allocations": 34,
+      "allocated_bytes": 3631,
+      "raw_bench_output": "EVM gas used:    5492\nexecution time:  19.62µs\nallocations:     34\nallocated bytes: 3631\n0x\n"
+    },
+    {
+      "task": "Poly-Chain",
+      "bytecode_bytes": 192,
+      "gas_used": 4836,
+      "execution_time": "16.889µs",
+      "allocations": 34,
+      "allocated_bytes": 3536,
+      "raw_bench_output": "EVM gas used:    4836\nexecution time:  16.889µs\nallocations:     34\nallocated bytes: 3536\n0x\n"
+    },
+    {
+      "task": "Sort-Large",
+      "bytecode_bytes": 208,
+      "gas_used": 7591,
+      "execution_time": "18.922µs",
+      "allocations": 38,
+      "allocated_bytes": 3668,
+      "raw_bench_output": "EVM gas used:    7591\nexecution time:  18.922µs\nallocations:     38\nallocated bytes: 3668\n0x\n"
+    },
+    {
+      "task": "DP-Large",
+      "bytecode_bytes": 624,
+      "gas_used": 7911,
+      "execution_time": "29.858µs",
+      "allocations": 35,
+      "allocated_bytes": 3555,
+      "raw_bench_output": "EVM gas used:    7911\nexecution time:  29.858µs\nallocations:     35\nallocated bytes: 3555\n0x\n"
+    }
+  ],
+  "foundry_gas_runs": [
+    {
+      "contract": "BenchmarkTasks",
+      "function": "dpLarge",
+      "gas": 264957
+    },
+    {
+      "contract": "BenchmarkTasks",
+      "function": "fibonacci",
+      "gas": 16959
+    },
+    {
+      "contract": "BenchmarkTasks",
+      "function": "polyChain",
+      "gas": 41088
+    },
+    {
+      "contract": "BenchmarkTasks",
+      "function": "sortLarge",
+      "gas": 94288
+    },
+    {
+      "contract": "CleVerVerifier",
+      "function": "verSeg",
+      "gas": 55444
+    },
+    {
+      "contract": "DisputeProtocolBenchmarks",
+      "function": "arbitrumClassicPath",
+      "gas": 4445493
+    },
+    {
+      "contract": "DisputeProtocolBenchmarks",
+      "function": "arbitrumOptimisticPath",
+      "gas": 213764
+    },
+    {
+      "contract": "DisputeProtocolBenchmarks",
+      "function": "boldOptimisticPath",
+      "gas": 231183
+    },
+    {
+      "contract": "DisputeProtocolBenchmarks",
+      "function": "boldPath",
+      "gas": 3566780
+    },
+    {
+      "contract": "DisputeProtocolBenchmarks",
+      "function": "cartesiDavePath",
+      "gas": 5967002
+    },
+    {
+      "contract": "DisputeProtocolBenchmarks",
+      "function": "cartesiOptimisticPath",
+      "gas": 258519
+    },
+    {
+      "contract": "DisputeProtocolBenchmarks",
+      "function": "cleverOptimisticPath",
+      "gas": 313850
+    },
+    {
+      "contract": "DisputeProtocolBenchmarks",
+      "function": "cleverPath",
+      "gas": 551676
+    },
+    {
+      "contract": "DisputeProtocolBenchmarks",
+      "function": "truebitOptimisticPath",
+      "gas": 236863
+    },
+    {
+      "contract": "DisputeProtocolBenchmarks",
+      "function": "truebitPath",
+      "gas": 3840098
+    }
+  ],
+  "comparison_protocols": [
+    {
+      "scheme": "Arbitrum\nClassic",
+      "mechanism": "1v1 bisection",
+      "onchain_rounds": 37,
+      "optimistic_gas_k": 213.764,
+      "dispute_gas_k": 4445.493,
+      "notes": "direct Foundry gas for representative O(log N) bisection path"
+    },
+    {
+      "scheme": "TrueBit",
+      "mechanism": "solver-verifier bisection",
+      "onchain_rounds": 37,
+      "optimistic_gas_k": 236.863,
+      "dispute_gas_k": 3840.098,
+      "notes": "direct Foundry gas for solver/verifier bisection path"
+    },
+    {
+      "scheme": "Cartesi\nDave",
+      "mechanism": "tournament + bisection",
+      "onchain_rounds": 37,
+      "optimistic_gas_k": 258.519,
+      "dispute_gas_k": 5967.002,
+      "notes": "direct Foundry gas for tournament plus bisection path"
+    },
+    {
+      "scheme": "Arbitrum\nBoLD",
+      "mechanism": "three-level bisection",
+      "onchain_rounds": 37,
+      "optimistic_gas_k": 231.183,
+      "dispute_gas_k": 3566.78,
+      "notes": "direct Foundry gas for three-level dispute path"
+    },
+    {
+      "scheme": "CleVer\n(ours)",
+      "mechanism": "two-layer slicing + VerSeg",
+      "onchain_rounds": 3,
+      "optimistic_gas_k": 313.85,
+      "dispute_gas_k": 551.676,
+      "notes": "direct Foundry gas for two-layer slicing and bounded VerSeg path"
+    }
+  ],
+  "foundry": {
+    "command": "forge test --gas-report",
+    "purpose": "collect Solidity benchmark task gas and VerSeg gas in a local EVM; geth evm --bench is also called by this Go runner"
+  },
+  "long_run_policy": {
+    "max_seconds_per_task": 5,
+    "reason": "paper workloads include minute/hour-scale tasks; this runner records bounded samples and logs if a sample reaches max-seconds"
+  }
+}
