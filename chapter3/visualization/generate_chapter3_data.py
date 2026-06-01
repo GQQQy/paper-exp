@@ -2,7 +2,7 @@
 Generate Chapter 3 visualization data from real experiment artifacts.
 
 Workflow:
-1. Run/read the Go physical experiment runner in ../第三章实验. It executes the
+1. Run/read the Go physical experiment runner in ../experiment. It executes the
    benchmark tasks, serializes snapshots, and computes commitments.
 2. Read the raw log and use the paper's benchmark calibration to scale bounded
    local samples to the thesis workloads.
@@ -24,7 +24,7 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parents[1]
 VIS_DIR = Path(__file__).resolve().parent
-EXP_DIR = ROOT / "第三章实验"
+EXP_DIR = ROOT / "experiment"
 RAW_LOG = EXP_DIR / "logs" / "raw_experiment_log.json"
 OUT_JSON = VIS_DIR / "chapter3_experiment_data.json"
 

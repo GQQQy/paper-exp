@@ -12,8 +12,8 @@
 ```bash
 forge test --gas-report
 go run ./cmd/clever-exp --quick --out logs/raw_experiment_log.json
-python3 ../第三章可视化/generate_chapter3_data.py
-python3 ../第三章可视化/chapter3_all_figures.py
+python3 ../visualization/generate_chapter3_data.py
+python3 ../visualization/chapter3_all_figures.py
 ```
 
 长任务使用日志模式，不强制跑完 10 分钟/小时级实验：

@@ -2,7 +2,7 @@
   "metadata": {
     "chapter": "第三章 基于有状态任务切片的链下计算验证",
     "source": "Go/Geth EVM raw experiment log + paper-scale calibration",
-    "raw_log": "/Users/gqy/Desktop/data/DR/毕业/毕业答辩/实验室验收材料/第三章/第三章实验/logs/raw_experiment_log.json",
+    "raw_log": "/Users/gqy/Desktop/data/DR/毕业/毕业答辩/实验室验收材料/第三章/chapter3/experiment/logs/raw_experiment_log.json",
     "raw_sample_count": 4,
     "geth_evm_sample_count": 4,
     "comparison_protocol_count": 5,
