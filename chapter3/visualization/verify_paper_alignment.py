@@ -28,6 +28,10 @@ def ok(condition: bool) -> str:
     return "PASS" if condition else "FAIL"
 
 
+def warn(condition: bool) -> str:
+    return "OK" if condition else "WARN"
+
+
 def percent(value: float) -> str:
     return f"{value:.2f}%"
 
@@ -140,7 +144,10 @@ def build_report(data: dict, raw: dict) -> str:
         f"- CleVer total time: {clever_time:.3f} target={targets['clever_timeline_total']:.3f} ({ok(abs(clever_time - targets['clever_timeline_total']) < 1e-12)})"
     )
     lines.append(
-        f"- Timeline reduction vs Figure 12 post-verification average: {percent(timeline_reduction)} visual-implied target≈{targets['timeline_reduction_percent']:.0f}% ({ok(abs(timeline_reduction - targets['timeline_reduction_percent']) <= 2.0)})"
+        f"- Timeline reduction vs Figure 12 post-verification average: {percent(timeline_reduction)} visual-implied target≈{targets['timeline_visual_reduction_percent']:.0f}% ({ok(abs(timeline_reduction - targets['timeline_visual_reduction_percent']) <= 2.0)})"
+    )
+    lines.append(
+        f"- Thesis text also states approximately {targets['timeline_text_reduction_percent']:.0f}% latency reduction; this differs from the plotted total-time arithmetic by {abs(timeline_reduction - targets['timeline_text_reduction_percent']):.2f} percentage points ({warn(abs(timeline_reduction - targets['timeline_text_reduction_percent']) <= 2.0)})"
     )
     lines.append("")
     return "\n".join(lines) + "\n"

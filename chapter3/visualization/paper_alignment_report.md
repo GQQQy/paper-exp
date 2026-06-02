@@ -24,22 +24,22 @@
 - Budget run traces: 16 (PASS)
 - Overhead run traces: 4 (PASS)
 - Parameter run traces: 8 (PASS)
-- Example budget trace: Fibonacci B=1000000, estimated_segments=1250, sampled=[83, 85.3, 87, 88, 88.8, 90.3, 91.8, 93]
+- Example budget trace: Fibonacci B=1000000, estimated_segments=1250, sampled=[80.2, 80, 80.4, 80.8, 80.2, 80.3, 80.1, 81.8]
 
 ## Figure 7 Budget Compliance
 
 - Alpha line: 80%
-- DP-Large: means=[89, 88, 88, 87], max(mean+error)=94.0% (PASS)
-- Fibonacci: means=[88, 86, 85, 84], max(mean+error)=100.0% (PASS)
-- Poly-Chain: means=[86, 85, 84, 88], max(mean+error)=93.0% (PASS)
-- Sort-Large: means=[89, 88, 89, 87], max(mean+error)=95.0% (PASS)
+- DP-Large: means=[84, 83.1, 83, 85.8], max(mean+error)=93.1% (PASS)
+- Fibonacci: means=[80.5, 80.9, 80.8, 82.1], max(mean+error)=85.5% (PASS)
+- Poly-Chain: means=[83.9, 84.9, 83.6, 84], max(mean+error)=99.9% (PASS)
+- Sort-Large: means=[87.6, 89.8, 89.7, 87], max(mean+error)=99.6% (PASS)
 
 ## Figure 8 Slicing Overhead
 
-- Fibonacci: overhead=2.5% (PASS)
-- Poly-Chain: overhead=3.8% (PASS)
-- Sort-Large: overhead=7.2% (PASS)
-- DP-Large: overhead=9.6% (PASS)
+- Fibonacci: overhead=2.6% (PASS)
+- Poly-Chain: overhead=2.7% (PASS)
+- Sort-Large: overhead=3.5% (PASS)
+- DP-Large: overhead=9.0% (PASS)
 
 ## Figure 9 Parameter Sensitivity
 
@@ -72,3 +72,5 @@
 - Arbitrum Classic: total=2.690 T_exec
 - CleVer total time: 1.044 target=1.044 (PASS)
 - Timeline reduction vs Figure 12 post-verification average: 61.28% visual-implied target≈61% (PASS)
+- Thesis text also states approximately 52% latency reduction; this differs from the plotted total-time arithmetic by 9.28 percentage points (WARN)
+

@@ -71,7 +71,8 @@ PAPER_TARGETS = {
     "default_verseg_gas_k": 1200.0,
     "clever_dispute_reduction_percent": 87.0,
     "clever_timeline_total": 1.044,
-    "timeline_reduction_percent": 61.0,
+    "timeline_visual_reduction_percent": 61.0,
+    "timeline_text_reduction_percent": 52.0,
 }
 
 

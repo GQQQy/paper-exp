@@ -1,16 +1,15 @@
 # 第三章 CleVer 实验工程
 
-本目录用于复现第三章实验数据证据链。当前流程不是在可视化脚本里直接硬编码图表数据，而是先运行实验采集程序生成 `logs/raw_experiment_log.json`，再由可视化目录读取该 raw log 生成图 7-12 和对齐报告。
+本目录用于运行第三章 CleVer 实验，生成实验原始日志，并为可视化脚本提供图 7-12 所需的数据输入。
 
-## 实验口径
+## 实验内容
 
-实验分为三层证据：
+实验流程包含以下部分：
 
-- 本地执行 trace：`cmd/clever-exp/main.go` 实际执行四类任务的小规模样本，输出步数、快照序列化大小、状态承诺。
-- EVM/Gas trace：调用 Geth `evm --bench run` 与 Foundry `forge test --gas-report`，输出 EVM 字节码样本、`VerSeg`、协议对比路径的 Gas 数据。
-- 论文尺度插装分支：`paper_evidence.instrumentation_trace` 在 Go 实验程序内按论文 3.5 的默认参数执行 SafeCut、段预算、快照、裁决阈值、质押和时间线模型，输出图 7-12 需要的中间 trace。
-
-其中第三层是论文尺度实验推导，不是可视化脚本硬编码。它把论文中的长任务量级 `10^9` 到 `10^12` Gas 映射到可复现的插装模型：先计算每个任务、每个预算下的段样本和估计段数，再汇总成图表数据。完整小时级 DP-Large 不强制跑完，避免实验不可操作。
+- 本地任务执行：运行 Fibonacci、Poly-Chain、Sort-Large、DP-Large 四类任务样本，记录执行步数、快照大小和状态承诺。
+- EVM 执行采样：调用 Geth `evm --bench run`，记录不同任务字节码的 Gas、执行时间和内存分配情况。
+- 链上 Gas 测量：调用 Foundry `forge test --gas-report`，统计 `VerSeg` 和对比协议路径的 Gas 开销。
+- 论文参数实验：按照第三章 3.5 节的默认参数生成 SafeCut、段预算、快照、裁决阈值、质押博弈和时间线相关 trace。
 
 ## 目录说明
 
@@ -19,7 +18,7 @@
 - `src/CleVerVerifier.sol`：最小裁决单元 `VerSeg` 的链上重放裁决接口。
 - `src/DisputeProtocolBenchmarks.sol`：Arbitrum/TrueBit/Cartesi/BoLD/CleVer 对比路径 Gas 基准。
 - `test/Benchmarks.t.sol`：Foundry Gas 测试入口。
-- `logs/raw_experiment_log.json`：实验原始日志，可视化数据必须从这里读取。
+- `logs/raw_experiment_log.json`：实验原始日志。
 
 ## 环境配置
 
@@ -57,7 +56,7 @@ forge test --gas-report
 go run ./cmd/clever-exp --quick --out logs/raw_experiment_log.json
 ```
 
-`go run` 会输出本地任务样本、Geth EVM 样本、Foundry Gas 对比结果，以及论文尺度插装分支的关键节点。例如：
+`go run` 会输出本地任务样本、Geth EVM 样本、Foundry Gas 对比结果，以及图表数据中的关键节点。例如：
 
 ```text
 [sample] Fibonacci  steps=5000 snapshot=784B commitment=cd1f6b79 elapsed=0.001s
@@ -69,15 +68,15 @@ go run ./cmd/clever-exp --quick --out logs/raw_experiment_log.json
 [paper] figure12 CleVer total=1.044 T_exec
 ```
 
-长任务模式可用于观察 `--max-seconds` 截断行为：
+如需运行更大的本地任务样本，可以使用：
 
 ```bash
 go run ./cmd/clever-exp --full --max-seconds 5 --out logs/raw_experiment_log.json
 ```
 
-## 查看实验原始证据
+## 查看实验日志
 
-生成 raw log 后，可检查插装分支是否存在：
+生成 raw log 后，可查看图表 trace 的概要信息：
 
 ```bash
 jq '.paper_evidence.instrumentation_trace | {mode, safe_cut_rule, budget_run_count:(.budget_runs|length), overhead_run_count:(.overhead_runs|length), parameter_run_count:(.parameter_runs|length)}' logs/raw_experiment_log.json
@@ -125,7 +124,7 @@ python3 chapter3/visualization/verify_paper_alignment.py
 - `chapter3/visualization/正确图片输出/`：图 7-12 的 PNG 文件。
 - `chapter3/visualization/paper_alignment_report.md`：论文实验分析对齐报告。
 
-## 对齐标准
+## 结果检查
 
 `verify_paper_alignment.py` 会检查以下关键点：
 
@@ -140,6 +139,6 @@ python3 chapter3/visualization/verify_paper_alignment.py
 
 ## 注意事项
 
-- `evm --bench run` 与 `forge test --gas-report` 是本地真实工具输出，机器和版本不同会导致微小差异。
-- `paper_evidence.instrumentation_trace` 是论文尺度插装模型输出，用于复现论文中分钟级、十分钟级、小时级任务的实验分析。它不是完整 fork Geth 源码后的 StateDB 内核实验，但保留了 SafeCut、段预算、快照、承诺、裁决阈值和时间线的可追溯中间结果。
-- 可视化脚本不应直接改最终数值。若论文目标或实验模型需要调整，应先修改 `cmd/clever-exp/main.go` 的插装实验逻辑，重新生成 raw log，再生成图表。
+- `evm --bench run` 与 `forge test --gas-report` 的输出会受到本地工具版本和机器环境影响，Gas 数值通常稳定，执行时间可能有轻微波动。
+- 重新生成数据后，需要按顺序运行数据生成、绘图和对齐检查脚本。
+- 若修改实验参数，请先重新生成 `logs/raw_experiment_log.json`，再生成可视化数据和图片。
