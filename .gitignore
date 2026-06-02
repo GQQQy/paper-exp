@@ -1,10 +1,15 @@
 .DS_Store
 __pycache__/
 *.pyc
+node_modules/
 
 # Foundry build outputs
 out/
 cache/
+
+# Local generated experiment artifacts
+chapter4/experiment/build/
+chapter4/experiment/tools/bin/circom
 
 # Local editor files
 .idea/
