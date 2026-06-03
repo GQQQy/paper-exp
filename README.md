@@ -40,10 +40,6 @@ paper-exp/
 | chapter4 | `chapter4/README.md` | `chapter4/experiment/logs/raw_experiment_log.json` | `chapter4/visualization/chapter4_experiment_data.json` | `chapter4/visualization/正确图片输出/` | `chapter4/visualization/paper_alignment_report.md` |
 | chapter5 | `chapter5/README.md` | `chapter5/experiment/logs/raw_experiment_log.json` | `chapter5/visualization/chapter5_experiment_data.json` | `chapter5/visualization/正确图片输出/` | `chapter5/visualization/paper_alignment_report.md` |
 
-## 数据来源原则
-
-各章图片应从 raw log 或 structured data 读取，不在绘图阶段临时拼接论文结果数组。论文中属于参数扫描、解析公式或 Monte Carlo 的实验，也应先由对应实验入口运行并写入 raw log/structured data，再进入可视化。
-
 ## 依赖概览
 
 - 第三章：Go、Foundry、Geth `evm`、Python、`matplotlib`、`numpy`。
