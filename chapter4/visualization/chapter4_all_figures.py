@@ -37,7 +37,6 @@ VIS_DIR = ROOT / "visualization"
 OUT_DIR = VIS_DIR / "正确图片输出"
 DATA_PATH = VIS_DIR / "chapter4_experiment_data.json"
 RAW_LOG = EXP_DIR / "logs" / "raw_experiment_log.json"
-REPORT_PATH = VIS_DIR / "paper_alignment_report.md"
 
 TARGET_WIDTH = 1200
 EPS = 1e-30
@@ -965,60 +964,6 @@ def render_fig22(data: dict) -> None:
     save_png(fig, "fig22")
 
 
-def write_report(data: dict) -> None:
-    f14 = data["figures"]["fig14"]["trace_rho_035"]
-    f15 = data["figures"]["fig15"]
-    idx40 = f15["N"].index(40)
-    gap40 = f15["capture_vs_N"]["uniform_wor"][idx40] / f15["capture_vs_N"]["ctwr"][idx40]
-    f18 = data["figures"]["fig18"]
-    f16 = data["figures"]["fig16_17"]
-    f22 = data["figures"]["fig22"]
-    ratio_reg = f22["single_call"]["anon_gas_k"]["AnonyReg"] / f22["single_call"]["nonanon_gas_k"]["PublicReg"]
-    cycle_ratio = f22["cycle_gas_k"]["total_anon"][-1] / f22["cycle_gas_k"]["total_nonanon"][-1]
-    constraints = {item["name"]: item["constraint_count"] for item in f22["circuit_stats"]}
-    witness_status = ", ".join(f"{item['name']}={item['witness_status']}" for item in f22["circuit_stats"])
-    ctx = data["context_summary"]
-    rows = [
-        ("表 5", "默认参数与质押分布", "PDF 4.5.1", "脚本参数 + 对数正态样本", "PASS", f"seed={ctx['stake_seed']}, honest_total={ctx['honest_total_eth']:.2f} ETH, beacon_ids={ctx['honest_beacon_ids']}"),
-        ("表 6", "五种选举方案差异", "PDF 4.5.2", "绘图曲线标签与计算分支", "PASS", "Linear-WR/Linear-WoR/Uniform-WoR/CTWR single/CTWR opt 均覆盖"),
-        ("图 14", "CTWR 捕获概率分析", "定理 4.4 解析公式", "逐点解析计算", "PASS", f"rho=0.35: rho_b={f14['rho_beacon']:.4f}, rho_eff={f14['rho_eff']:.4f}"),
-        ("图 15", "委员会规模影响", "定理 4.4 解析公式", "逐 N 解析计算", "PASS" if gap40 > 100 else "FAIL", f"N=40 Uniform/CTWR={gap40:.2e}"),
-        ("图 16", "拆分身份捕获概率", "解析扫描", "rho=0.20/0.35/0.50 逐 k 扫描", "PASS", f"B={f16['0.20']['s_adv']:.0f}/{f16['0.35']['s_adv']:.0f}/{f16['0.50']['s_adv']:.0f} ETH"),
-        ("图 17", "CTWR 有效权重", "解析扫描", "复用图 16 rho=0.35 逐 k 结果", "PASS", f"k*={f16['0.35']['k_star']}"),
-        ("图 18", "女巫身份与期望收益", "PDF 4.5.3 蒙特卡洛", "1000 次/每 k 选举仿真", "PASS", f"{f18['method']}, k*={f18['k_star_profit']}, seed_base={f18['seed_base']}"),
-        ("图 19", "最优女巫策略", "整数最优拆分扫描", "由同一质押样本和 rho=0.35 推导", "PASS", "c_reg 与 S_cap 网格逐点求整数最优 k"),
-        ("图 20", "诚实验证者期望收益", "经济参数敏感性", "固定 500x64 ETH，R_total/c_op 参数扫描", "PASS", "R_total 与 c_op 曲线均由公式逐点计算"),
-        ("图 21", "非比例权重规则对比", "解析对照", "Sqrt-WoR 与 CTWR 逐 rho/逐 k 计算", "PASS", "权重函数差异显式计算"),
-        ("图 22", "匿名质押开销", "本地工程实验", "forge gas + snarkjs R1CS/witness", "PASS", f"gas ratio={ratio_reg:.2f}x, cycle ratio={cycle_ratio:.2f}x, {witness_status}"),
-        ("图 22 附加", "链下 Groth16 证明时间", "snarkjs groth16 smoke", "脚本已修，完整证明本轮按长耗时跳过", "SKIP", "不使用伪证明时间；图中展示真实 gas 与 R1CS 规模"),
-    ]
-    lines = [
-        "# Chapter 4 Paper Alignment Report",
-        "",
-        "## Evidence Chain",
-        "",
-        f"- Raw local execution log: `{RAW_LOG.relative_to(ROOT)}`",
-        f"- Visualization data: `{DATA_PATH.relative_to(ROOT)}`",
-        "- Paper-scale target: PDF Section 4.5 and Figures 14-22 of Chapter 4",
-        "- Rule: analytic curves use the formulas specified in the PDF; Monte Carlo figures execute the stated 1000-run simulation; engineering overhead uses Foundry/snarkjs outputs only.",
-        "",
-        "## Coverage Matrix",
-        "",
-        "| Item | Paper Target | Method Stated In PDF | Data Source Used Here | Status | Detail |",
-        "| --- | --- | --- | --- | --- | --- |",
-    ]
-    lines += [f"| {a} | {b} | {c} | {d} | {e} | {f} |" for a, b, c, d, e, f in rows]
-    lines += [
-        "",
-        "## Engineering Evidence",
-        "",
-        f"- Foundry gas: AnonyReg/PublicReg={ratio_reg:.2f}x, n=200 AnoSt/nonanon={cycle_ratio:.2f}x.",
-        f"- R1CS constraints: {constraints}.",
-        f"- Witness checks: {witness_status}.",
-    ]
-    REPORT_PATH.write_text("\n".join(lines) + "\n", encoding="utf-8")
-
-
 def render_all(data: dict) -> None:
     configure_matplotlib()
     OUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -1039,10 +984,8 @@ def render_all(data: dict) -> None:
 def main() -> None:
     data = build_experiment_data()
     render_all(data)
-    write_report(data)
     files = sorted(p.name for p in OUT_DIR.glob("*.png"))
     print(f"experiment data: {DATA_PATH}")
-    print(f"paper alignment report: {REPORT_PATH}")
     print("figures:", ", ".join(files))
 
 

@@ -1,8 +1,8 @@
 # paper-exp
 
-`paper-exp` 保存论文第三、四、五章实验工程、实验日志、结构化可视化数据、论文图片和论文对齐报告。根目录 README 只作为仓库地图；具体复现实验命令、依赖安装和注意事项请进入各章 README。
+`paper-exp` 保存论文第三、四、五章的实验工程、原始实验日志、结构化可视化数据和论文图片。根目录 README 作为仓库地图；具体复现实验命令请进入各章 README。
 
-本仓库不生成额外 audit report；各章的 `paper_alignment_report.md` 仅用于说明论文图表与实验数据链路是否对齐。
+本仓库不生成额外的检测或审计报告。论文文字与实验结果的核对在会话和人工检查中完成，工程脚本只负责运行实验、生成数据和绘图。
 
 ## 章节索引
 
@@ -34,11 +34,11 @@ paper-exp/
 
 ## 产物位置
 
-| 章节 | 复现说明 | Raw log | Structured data | 图片输出 | 对齐报告 |
-| --- | --- | --- | --- | --- | --- |
-| chapter3 | `chapter3/README.md` | `chapter3/experiment/logs/raw_experiment_log.json` | `chapter3/visualization/chapter3_experiment_data.json` | `chapter3/visualization/正确图片输出/` | `chapter3/visualization/paper_alignment_report.md` |
-| chapter4 | `chapter4/README.md` | `chapter4/experiment/logs/raw_experiment_log.json` | `chapter4/visualization/chapter4_experiment_data.json` | `chapter4/visualization/正确图片输出/` | `chapter4/visualization/paper_alignment_report.md` |
-| chapter5 | `chapter5/README.md` | `chapter5/experiment/logs/raw_experiment_log.json` | `chapter5/visualization/chapter5_experiment_data.json` | `chapter5/visualization/正确图片输出/` | `chapter5/visualization/paper_alignment_report.md` |
+| 章节 | 复现说明 | Raw log | Structured data | 图片输出 |
+| --- | --- | --- | --- | --- |
+| chapter3 | `chapter3/README.md` | `chapter3/experiment/logs/raw_experiment_log.json` | `chapter3/visualization/chapter3_experiment_data.json` | `chapter3/visualization/正确图片输出/` |
+| chapter4 | `chapter4/README.md` | `chapter4/experiment/logs/raw_experiment_log.json` | `chapter4/visualization/chapter4_experiment_data.json` | `chapter4/visualization/正确图片输出/` |
+| chapter5 | `chapter5/README.md` | `chapter5/experiment/logs/raw_experiment_log.json` | `chapter5/visualization/chapter5_experiment_data.json` | `chapter5/visualization/正确图片输出/` |
 
 ## 依赖概览
 
@@ -46,10 +46,12 @@ paper-exp/
 - 第四章：Node.js/npm、Circom、snarkjs/circomlib、Foundry、Python、`matplotlib`、`numpy`、`Pillow`。
 - 第五章：Go、Foundry、Python、`matplotlib`、`numpy`。
 
-如果网络不通，安装依赖前可按仓库约定使用代理：
+如果 Go 或 Matplotlib 默认缓存目录不可写，可在运行前设置本地临时缓存目录：
 
 ```bash
-export https_proxy=http://127.0.0.1:33210 http_proxy=http://127.0.0.1:33210 all_proxy=socks5://127.0.0.1:33211
+export GOCACHE="${TMPDIR:-/tmp}/paper-exp-go-cache"
+export MPLCONFIGDIR="${TMPDIR:-/tmp}/paper-exp-mplconfig"
+mkdir -p "$GOCACHE" "$MPLCONFIGDIR"
 ```
 
 ## 不提交的可重建产物
@@ -63,6 +65,6 @@ export https_proxy=http://127.0.0.1:33210 http_proxy=http://127.0.0.1:33210 all_
 - `__pycache__/`
 - `*.pyc`
 - `chapter4/experiment/tools/bin/circom`
-- 本地临时缓存目录，例如 `/private/tmp/go-build-*`、`/private/tmp/mplconfig_*`
+- 本地临时缓存目录，例如 `${TMPDIR:-/tmp}/paper-exp-*`
 
-`.gitignore` 已覆盖常见构建产物。raw log、structured data、PNG 图片和 `paper_alignment_report.md` 是论文复现实验产物，可按需要提交。
+`.gitignore` 已覆盖常见构建产物。raw log、structured data 和 PNG 图片是论文实验复现产物，可按需要提交。

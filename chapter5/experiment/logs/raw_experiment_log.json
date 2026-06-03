@@ -1,8 +1,8 @@
 {
   "metadata": {
     "chapter": "第五章 面向链下计算的验证者工作审计",
-    "created_at": "2026-06-03T15:16:16+08:00",
-    "source": "RanCk/SenCk protocol implementation, deterministic simulation traces, Foundry gas benchmarks, and paper Table 10 calibration when gas tests are unavailable",
+    "created_at": "2026-06-03T18:19:58+08:00",
+    "source": "RanCk/SenCk protocol implementation, deterministic simulation traces, Monte Carlo runs, and Foundry gas benchmarks",
     "thesis_pdf": "../第五章面向链下计算的验证者工作审计.pdf"
   },
   "params": {
@@ -31479,9 +31479,7 @@
       "T_win": 7200,
       "pi_h": 0.01,
       "expected_heartbeats": 72,
-      "min_c_hb_ratio": 0.013888888888888888,
-      "paper_claim_percent": 1,
-      "calibration_note": "analytic C1 gives 1/72=1.39%; paper text rounds this to about 1%, so report records both exact and textual target"
+      "min_c_hb_ratio": 0.013888888888888888
     },
     "formulas": {
       "C1": "c_track + c_m \u003c= T_win * pi_h * c_hb",
@@ -31491,7 +31489,7 @@
       "joint": "C1 and C2 evaluated independently over (pi_h, m_s)",
       "rho": "rho = 1 - (1 - 1/M_c)^L"
     },
-    "calibration": {
+    "scan_inputs": {
       "joint_T_win": 7200,
       "joint_c_hb_ratio": 0.05,
       "joint_c_sent": 1.5,
@@ -31502,7 +31500,7 @@
     {
       "workload": {
         "name": "Fibonacci",
-        "paper_gas": 1000000000,
+        "workload_gas": 1000000000,
         "exec_step_us": 42,
         "snapshot_ms": 8,
         "chapter3_slicing_overhead_percent": 2.5,
@@ -31577,7 +31575,7 @@
     {
       "workload": {
         "name": "Poly-Chain",
-        "paper_gas": 10000000000,
+        "workload_gas": 10000000000,
         "exec_step_us": 68,
         "snapshot_ms": 22,
         "chapter3_slicing_overhead_percent": 3.8,
@@ -31652,7 +31650,7 @@
     {
       "workload": {
         "name": "Sort-Large",
-        "paper_gas": 100000000000,
+        "workload_gas": 100000000000,
         "exec_step_us": 102,
         "snapshot_ms": 52,
         "chapter3_slicing_overhead_percent": 7.2,
@@ -31727,7 +31725,7 @@
     {
       "workload": {
         "name": "DP-Large",
-        "paper_gas": 1000000000000,
+        "workload_gas": 1000000000000,
         "exec_step_us": 135,
         "snapshot_ms": 88,
         "chapter3_slicing_overhead_percent": 9.6,
@@ -31804,706 +31802,706 @@
     "operations": [
       {
         "name": "RanCk TrackInit",
-        "gas": 49000,
+        "gas": 113852,
         "default_uses": 1,
-        "source": "Foundry measured then calibrated to paper Table 10 target"
+        "source": "Foundry function-level gas report from ValidatorAudit.sol"
       },
       {
         "name": "RanCk HBRespond",
-        "gas": 35000,
+        "gas": 34398,
         "default_uses": 72,
-        "source": "Foundry measured then calibrated to paper Table 10 target"
+        "source": "Foundry function-level gas report from ValidatorAudit.sol"
       },
       {
         "name": "RanCk ContAudit",
-        "gas": 90000,
+        "gas": 46894,
         "default_uses": 1,
-        "source": "Foundry measured then calibrated to paper Table 10 target"
+        "source": "Foundry function-level gas report from ValidatorAudit.sol"
       },
       {
         "name": "SenCk SentReport",
-        "gas": 55000,
+        "gas": 68861,
         "default_uses": 1,
-        "source": "Foundry measured then calibrated to paper Table 10 target"
+        "source": "Foundry function-level gas report from ValidatorAudit.sol"
       },
       {
         "name": "Dispute",
-        "gas": 80000,
+        "gas": 39231,
         "default_uses": 0,
-        "source": "Foundry measured then calibrated to paper Table 10 target"
+        "source": "Foundry function-level gas report from ValidatorAudit.sol"
       },
       {
         "name": "SentProve/VerSeg",
-        "gas": 1200000,
+        "gas": 64836,
         "default_uses": 0,
-        "source": "Foundry measured then calibrated to paper Table 10 target"
+        "source": "Foundry function-level gas report from ValidatorAudit.sol"
       }
     ],
-    "default_per_validator_gas": 2714000,
+    "default_per_validator_gas": 2706263,
     "default_heartbeat_count": 72,
-    "reduced_per_validator_gas": 1454000,
-    "pod_gas_per_epoch": 380000,
+    "reduced_per_validator_gas": 1467935,
+    "pod_gas_per_epoch": 3348,
     "pod_theta": 0.9,
     "monthly_windows": 30,
     "monthly_pod_epochs": 4320,
     "monthly_by_scheme": {
-      "ours_pi_h_0.005": 872400000,
-      "ours_pi_h_0.01": 1628400000,
-      "pod_theta_0.9": 1477440000
+      "ours_pi_h_0.005": 880761000,
+      "ours_pi_h_0.01": 1623757800,
+      "pod_theta_0.9": 13017024
     },
     "pi_h_sweep": [
       {
         "pi_h": 0.001,
         "M": 1000,
-        "monthly_gas": 267600000,
+        "monthly_gas": 286363560,
         "detection_at_300_blocks": 0.25929296784389877,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 7.2
       },
       {
         "pi_h": 0.0011,
         "M": 909.090909090909,
-        "monthly_gas": 282720000,
+        "monthly_gas": 301223496,
         "detection_at_300_blocks": 0.281206835135298,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 7.920000000000001
       },
       {
         "pi_h": 0.0012000000000000001,
         "M": 833.3333333333333,
-        "monthly_gas": 297840000,
+        "monthly_gas": 316083431,
         "detection_at_300_blocks": 0.3024744763821803,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 8.64
       },
       {
         "pi_h": 0.0013,
         "M": 769.2307692307693,
-        "monthly_gas": 312960000,
+        "monthly_gas": 330943368,
         "detection_at_300_blocks": 0.3231148865235718,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 9.36
       },
       {
         "pi_h": 0.0014,
         "M": 714.2857142857143,
-        "monthly_gas": 328080000,
+        "monthly_gas": 345803304,
         "detection_at_300_blocks": 0.34314650398658786,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 10.08
       },
       {
         "pi_h": 0.0015,
         "M": 666.6666666666666,
-        "monthly_gas": 343200000,
+        "monthly_gas": 360663240,
         "detection_at_300_blocks": 0.36258722693771417,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 10.8
       },
       {
         "pi_h": 0.0016,
         "M": 625,
-        "monthly_gas": 358320000,
+        "monthly_gas": 375523176,
         "detection_at_300_blocks": 0.38145442906123206,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 11.520000000000001
       },
       {
         "pi_h": 0.0017000000000000001,
         "M": 588.2352941176471,
-        "monthly_gas": 373440000,
+        "monthly_gas": 390383112,
         "detection_at_300_blocks": 0.3997649748781147,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 12.24
       },
       {
         "pi_h": 0.0018,
         "M": 555.5555555555555,
-        "monthly_gas": 388560000,
+        "monthly_gas": 405243048,
         "detection_at_300_blocks": 0.41753523461921516,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 12.959999999999999
       },
       {
         "pi_h": 0.0019,
         "M": 526.3157894736842,
-        "monthly_gas": 403680000,
+        "monthly_gas": 420102984,
         "detection_at_300_blocks": 0.43478109866523085,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 13.68
       },
       {
         "pi_h": 0.002,
         "M": 500,
-        "monthly_gas": 418800000,
+        "monthly_gas": 434962920,
         "detection_at_300_blocks": 0.45151799156630457,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 14.4
       },
       {
         "pi_h": 0.0021000000000000003,
         "M": 476.19047619047615,
-        "monthly_gas": 433920000,
+        "monthly_gas": 449822856,
         "detection_at_300_blocks": 0.4677608856533084,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 15.120000000000003
       },
       {
         "pi_h": 0.0022,
         "M": 454.5454545454545,
-        "monthly_gas": 449040000,
+        "monthly_gas": 464682792,
         "detection_at_300_blocks": 0.48352431425273845,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 15.840000000000002
       },
       {
         "pi_h": 0.0023,
         "M": 434.7826086956522,
-        "monthly_gas": 464160000,
+        "monthly_gas": 479542728,
         "detection_at_300_blocks": 0.4988223845167491,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 16.56
       },
       {
         "pi_h": 0.0024000000000000002,
         "M": 416.66666666666663,
-        "monthly_gas": 479280000,
+        "monthly_gas": 494402664,
         "detection_at_300_blocks": 0.5136687898793888,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 17.28
       },
       {
         "pi_h": 0.0025,
         "M": 400,
-        "monthly_gas": 494400000,
+        "monthly_gas": 509262600,
         "detection_at_300_blocks": 0.5280768221499721,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 18
       },
       {
         "pi_h": 0.0026,
         "M": 384.61538461538464,
-        "monthly_gas": 509520000,
+        "monthly_gas": 524122536,
         "detection_at_300_blocks": 0.5420593832541876,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 18.72
       },
       {
         "pi_h": 0.0027,
         "M": 370.3703703703703,
-        "monthly_gas": 524640000,
+        "monthly_gas": 538982472,
         "detection_at_300_blocks": 0.5556289966329286,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 19.44
       },
       {
         "pi_h": 0.0028,
         "M": 357.14285714285717,
-        "monthly_gas": 539760000,
+        "monthly_gas": 553842408,
         "detection_at_300_blocks": 0.5687978183091631,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 20.16
       },
       {
         "pi_h": 0.0029,
         "M": 344.82758620689657,
-        "monthly_gas": 554880000,
+        "monthly_gas": 568702344,
         "detection_at_300_blocks": 0.5815776476320975,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 20.88
       },
       {
         "pi_h": 0.003,
         "M": 333.3333333333333,
-        "monthly_gas": 570000000,
+        "monthly_gas": 583562280,
         "detection_at_300_blocks": 0.593979937708271,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 21.6
       },
       {
         "pi_h": 0.0031,
         "M": 322.5806451612903,
-        "monthly_gas": 585120000,
+        "monthly_gas": 598422216,
         "detection_at_300_blocks": 0.6060158055285816,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 22.32
       },
       {
         "pi_h": 0.0032,
         "M": 312.5,
-        "monthly_gas": 600240000,
+        "monthly_gas": 613282152,
         "detection_at_300_blocks": 0.617696041800034,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 23.040000000000003
       },
       {
         "pi_h": 0.0033000000000000004,
         "M": 303.030303030303,
-        "monthly_gas": 615360000,
+        "monthly_gas": 628142088,
         "detection_at_300_blocks": 0.6290311204909332,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 23.76
       },
       {
         "pi_h": 0.0034000000000000002,
         "M": 294.11764705882354,
-        "monthly_gas": 630480000,
+        "monthly_gas": 643002024,
         "detection_at_300_blocks": 0.6400312080976492,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 24.48
       },
       {
         "pi_h": 0.0035,
         "M": 285.7142857142857,
-        "monthly_gas": 645600000,
+        "monthly_gas": 657861960,
         "detection_at_300_blocks": 0.6507061726412491,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 25.2
       },
       {
         "pi_h": 0.0036,
         "M": 277.77777777777777,
-        "monthly_gas": 660720000,
+        "monthly_gas": 672721896,
         "detection_at_300_blocks": 0.6610655924017079,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 25.919999999999998
       },
       {
         "pi_h": 0.0037,
         "M": 270.27027027027026,
-        "monthly_gas": 675840000,
+        "monthly_gas": 687581832,
         "detection_at_300_blocks": 0.6711187643973109,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 26.64
       },
       {
         "pi_h": 0.0038,
         "M": 263.1578947368421,
-        "monthly_gas": 690960000,
+        "monthly_gas": 702441768,
         "detection_at_300_blocks": 0.6808747126168749,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 27.36
       },
       {
         "pi_h": 0.0039000000000000003,
         "M": 256.4102564102564,
-        "monthly_gas": 706080000,
+        "monthly_gas": 717301704,
         "detection_at_300_blocks": 0.6903421960116497,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 28.080000000000002
       },
       {
         "pi_h": 0.004,
         "M": 250,
-        "monthly_gas": 721200000,
+        "monthly_gas": 732161640,
         "detection_at_300_blocks": 0.6995297162541505,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 28.8
       },
       {
         "pi_h": 0.0040999999999999995,
         "M": 243.90243902439028,
-        "monthly_gas": 736320000,
+        "monthly_gas": 747021576,
         "detection_at_300_blocks": 0.7084455252705433,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 29.519999999999996
       },
       {
         "pi_h": 0.004200000000000001,
         "M": 238.09523809523807,
-        "monthly_gas": 751440000,
+        "monthly_gas": 761881512,
         "detection_at_300_blocks": 0.7170976325532632,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 30.240000000000006
       },
       {
         "pi_h": 0.0043,
         "M": 232.5581395348837,
-        "monthly_gas": 766560000,
+        "monthly_gas": 776741448,
         "detection_at_300_blocks": 0.7254938122602292,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 30.96
       },
       {
         "pi_h": 0.0044,
         "M": 227.27272727272725,
-        "monthly_gas": 781680000,
+        "monthly_gas": 791601384,
         "detection_at_300_blocks": 0.7336416101067866,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 31.680000000000003
       },
       {
         "pi_h": 0.0045000000000000005,
         "M": 222.2222222222222,
-        "monthly_gas": 796800000,
+        "monthly_gas": 806461320,
         "detection_at_300_blocks": 0.7415483500565789,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 32.400000000000006
       },
       {
         "pi_h": 0.0046,
         "M": 217.3913043478261,
-        "monthly_gas": 811920000,
+        "monthly_gas": 821321256,
         "detection_at_300_blocks": 0.7492211408170044,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 33.12
       },
       {
         "pi_h": 0.0047,
         "M": 212.7659574468085,
-        "monthly_gas": 827040000,
+        "monthly_gas": 836181192,
         "detection_at_300_blocks": 0.7566668821450413,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 33.84
       },
       {
         "pi_h": 0.0048000000000000004,
         "M": 208.33333333333331,
-        "monthly_gas": 842160000,
+        "monthly_gas": 851041128,
         "detection_at_300_blocks": 0.7638922709690472,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 34.56
       },
       {
         "pi_h": 0.0049,
         "M": 204.08163265306123,
-        "monthly_gas": 857280000,
+        "monthly_gas": 865901063,
         "detection_at_300_blocks": 0.7709038073316656,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 35.28
       },
       {
         "pi_h": 0.005,
         "M": 200,
-        "monthly_gas": 872400000,
+        "monthly_gas": 880761000,
         "detection_at_300_blocks": 0.7777078001592522,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 36
       },
       {
         "pi_h": 0.0051,
         "M": 196.078431372549,
-        "monthly_gas": 887520000,
+        "monthly_gas": 895620936,
         "detection_at_300_blocks": 0.7843103728627754,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 36.720000000000006
       },
       {
         "pi_h": 0.0052,
         "M": 192.30769230769232,
-        "monthly_gas": 902640000,
+        "monthly_gas": 910480872,
         "detection_at_300_blocks": 0.7907174687750974,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 37.44
       },
       {
         "pi_h": 0.0053,
         "M": 188.67924528301887,
-        "monthly_gas": 917760000,
+        "monthly_gas": 925340808,
         "detection_at_300_blocks": 0.7969348564294361,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 38.160000000000004
       },
       {
         "pi_h": 0.0054,
         "M": 185.18518518518516,
-        "monthly_gas": 932880000,
+        "monthly_gas": 940200744,
         "detection_at_300_blocks": 0.8029681346836101,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 38.88
       },
       {
         "pi_h": 0.0055000000000000005,
         "M": 181.8181818181818,
-        "monthly_gas": 948000000,
+        "monthly_gas": 955060680,
         "detection_at_300_blocks": 0.8088227376945374,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 39.6
       },
       {
         "pi_h": 0.005600000000000001,
         "M": 178.57142857142856,
-        "monthly_gas": 963120000,
+        "monthly_gas": 969920616,
         "detection_at_300_blocks": 0.8145039397474132,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 40.32000000000001
       },
       {
         "pi_h": 0.0057,
         "M": 175.43859649122805,
-        "monthly_gas": 978240000,
+        "monthly_gas": 984780552,
         "detection_at_300_blocks": 0.8200168599436942,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 41.04
       },
       {
         "pi_h": 0.0058000000000000005,
         "M": 172.41379310344826,
-        "monthly_gas": 993360000,
+        "monthly_gas": 999640488,
         "detection_at_300_blocks": 0.825366466752144,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 41.760000000000005
       },
       {
         "pi_h": 0.0059,
         "M": 169.49152542372883,
-        "monthly_gas": 1008480000,
+        "monthly_gas": 1014500423,
         "detection_at_300_blocks": 0.8305575824267672,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 42.48
       },
       {
         "pi_h": 0.006,
         "M": 166.66666666666666,
-        "monthly_gas": 1023600000,
+        "monthly_gas": 1029360360,
         "detection_at_300_blocks": 0.8355948872956749,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 43.2
       },
       {
         "pi_h": 0.0060999999999999995,
         "M": 163.9344262295082,
-        "monthly_gas": 1038719999,
+        "monthly_gas": 1044220295,
         "detection_at_300_blocks": 0.8404829239244809,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 43.919999999999995
       },
       {
         "pi_h": 0.0062,
         "M": 161.29032258064515,
-        "monthly_gas": 1053840000,
+        "monthly_gas": 1059080232,
         "detection_at_300_blocks": 0.845226101158022,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 44.64
       },
       {
         "pi_h": 0.0063,
         "M": 158.73015873015873,
-        "monthly_gas": 1068960000,
+        "monthly_gas": 1073940168,
         "detection_at_300_blocks": 0.8498286980438611,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 45.36
       },
       {
         "pi_h": 0.0064,
         "M": 156.25,
-        "monthly_gas": 1084080000,
+        "monthly_gas": 1088800104,
         "detection_at_300_blocks": 0.8542948676410695,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 46.080000000000005
       },
       {
         "pi_h": 0.006500000000000001,
         "M": 153.84615384615384,
-        "monthly_gas": 1099200000,
+        "monthly_gas": 1103660040,
         "detection_at_300_blocks": 0.8586286407175849,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 46.800000000000004
       },
       {
         "pi_h": 0.0066,
         "M": 151.51515151515153,
-        "monthly_gas": 1114320000,
+        "monthly_gas": 1118519976,
         "detection_at_300_blocks": 0.8628339293394433,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 47.52
       },
       {
         "pi_h": 0.0067,
         "M": 149.2537313432836,
-        "monthly_gas": 1129440000,
+        "monthly_gas": 1133379912,
         "detection_at_300_blocks": 0.8669145303549866,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 48.24
       },
       {
         "pi_h": 0.0068000000000000005,
         "M": 147.05882352941177,
-        "monthly_gas": 1144560000,
+        "monthly_gas": 1148239848,
         "detection_at_300_blocks": 0.8708741287771704,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 48.96
       },
       {
         "pi_h": 0.0069,
         "M": 144.92753623188406,
-        "monthly_gas": 1159680000,
+        "monthly_gas": 1163099784,
         "detection_at_300_blocks": 0.8747163010668773,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 49.68
       },
       {
         "pi_h": 0.007,
         "M": 142.85714285714286,
-        "monthly_gas": 1174800000,
+        "monthly_gas": 1177959720,
         "detection_at_300_blocks": 0.8784445183201655,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 50.4
       },
       {
         "pi_h": 0.0070999999999999995,
         "M": 140.84507042253523,
-        "monthly_gas": 1189920000,
+        "monthly_gas": 1192819656,
         "detection_at_300_blocks": 0.8820621493622364,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 51.12
       },
       {
         "pi_h": 0.0072,
         "M": 138.88888888888889,
-        "monthly_gas": 1205039999,
+        "monthly_gas": 1207679592,
         "detection_at_300_blocks": 0.8855724637508569,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 51.839999999999996
       },
       {
         "pi_h": 0.0073,
         "M": 136.986301369863,
-        "monthly_gas": 1220160000,
+        "monthly_gas": 1222539528,
         "detection_at_300_blocks": 0.8889786346918626,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 52.56
       },
       {
         "pi_h": 0.0074,
         "M": 135.13513513513513,
-        "monthly_gas": 1235280000,
+        "monthly_gas": 1237399464,
         "detection_at_300_blocks": 0.8922837418693045,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 53.28
       },
       {
         "pi_h": 0.007500000000000001,
         "M": 133.33333333333331,
-        "monthly_gas": 1250400000,
+        "monthly_gas": 1252259400,
         "detection_at_300_blocks": 0.8954907741927621,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 54.00000000000001
       },
       {
         "pi_h": 0.0076,
         "M": 131.57894736842104,
-        "monthly_gas": 1265520000,
+        "monthly_gas": 1267119336,
         "detection_at_300_blocks": 0.8986026324641887,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 54.72
       },
       {
         "pi_h": 0.0077,
         "M": 129.87012987012986,
-        "monthly_gas": 1280640000,
+        "monthly_gas": 1281979272,
         "detection_at_300_blocks": 0.9016221319666753,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 55.440000000000005
       },
       {
         "pi_h": 0.0078000000000000005,
         "M": 128.2051282051282,
-        "monthly_gas": 1295760000,
+        "monthly_gas": 1296839208,
         "detection_at_300_blocks": 0.9045520049774167,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 56.160000000000004
       },
       {
         "pi_h": 0.0079,
         "M": 126.58227848101265,
-        "monthly_gas": 1310880000,
+        "monthly_gas": 1311699144,
         "detection_at_300_blocks": 0.9073949032070476,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 56.88
       },
       {
         "pi_h": 0.008,
         "M": 125,
-        "monthly_gas": 1326000000,
+        "monthly_gas": 1326559080,
         "detection_at_300_blocks": 0.9101534001675532,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 57.6
       },
       {
         "pi_h": 0.0081,
         "M": 123.4567901234568,
-        "monthly_gas": 1341120000,
+        "monthly_gas": 1341419016,
         "detection_at_300_blocks": 0.9128299934707956,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 58.32
       },
       {
         "pi_h": 0.008199999999999999,
         "M": 121.95121951219514,
-        "monthly_gas": 1356240000,
+        "monthly_gas": 1356278952,
         "detection_at_300_blocks": 0.915427107059715,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 59.03999999999999
       },
       {
         "pi_h": 0.0083,
         "M": 120.48192771084337,
-        "monthly_gas": 1371360000,
+        "monthly_gas": 1371138888,
         "detection_at_300_blocks": 0.9179470933741386,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 59.76
       },
       {
         "pi_h": 0.008400000000000001,
         "M": 119.04761904761904,
-        "monthly_gas": 1386480000,
+        "monthly_gas": 1385998824,
         "detection_at_300_blocks": 0.920392235453144,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 60.48000000000001
       },
       {
         "pi_h": 0.0085,
         "M": 117.6470588235294,
-        "monthly_gas": 1401600000,
+        "monthly_gas": 1400858760,
         "detection_at_300_blocks": 0.9227647489757999,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 61.2
       },
       {
         "pi_h": 0.0086,
         "M": 116.27906976744185,
-        "monthly_gas": 1416720000,
+        "monthly_gas": 1415718696,
         "detection_at_300_blocks": 0.9250667842420967,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 61.92
       },
       {
         "pi_h": 0.0087,
         "M": 114.9425287356322,
-        "monthly_gas": 1431840000,
+        "monthly_gas": 1430578631,
         "detection_at_300_blocks": 0.9273004280958109,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 62.63999999999999
       },
       {
         "pi_h": 0.0088,
         "M": 113.63636363636363,
-        "monthly_gas": 1446960000,
+        "monthly_gas": 1445438568,
         "detection_at_300_blocks": 0.9294677057910083,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 63.36000000000001
       },
       {
         "pi_h": 0.008900000000000002,
         "M": 112.35955056179773,
-        "monthly_gas": 1462080000,
+        "monthly_gas": 1460298504,
         "detection_at_300_blocks": 0.9315705828038229,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 64.08000000000001
       },
       {
         "pi_h": 0.009000000000000001,
         "M": 111.1111111111111,
-        "monthly_gas": 1477200000,
+        "monthly_gas": 1475158440,
         "detection_at_300_blocks": 0.9336109665911079,
-        "below_pod": true,
+        "below_pod": false,
         "expected_heartbeats": 64.80000000000001
       },
       {
         "pi_h": 0.0091,
         "M": 109.89010989010988,
-        "monthly_gas": 1492320000,
+        "monthly_gas": 1490018376,
         "detection_at_300_blocks": 0.9355907082975252,
         "below_pod": false,
         "expected_heartbeats": 65.52000000000001
@@ -32511,7 +32509,7 @@
       {
         "pi_h": 0.0092,
         "M": 108.69565217391305,
-        "monthly_gas": 1507440000,
+        "monthly_gas": 1504878312,
         "detection_at_300_blocks": 0.9375116044125669,
         "below_pod": false,
         "expected_heartbeats": 66.24
@@ -32519,7 +32517,7 @@
       {
         "pi_h": 0.0093,
         "M": 107.52688172043011,
-        "monthly_gas": 1522560000,
+        "monthly_gas": 1519738247,
         "detection_at_300_blocks": 0.939375398378979,
         "below_pod": false,
         "expected_heartbeats": 66.96
@@ -32527,7 +32525,7 @@
       {
         "pi_h": 0.009399999999999999,
         "M": 106.38297872340426,
-        "monthly_gas": 1537679999,
+        "monthly_gas": 1534598184,
         "detection_at_300_blocks": 0.9411837821540133,
         "below_pod": false,
         "expected_heartbeats": 67.67999999999999
@@ -32535,7 +32533,7 @@
       {
         "pi_h": 0.009500000000000001,
         "M": 105.26315789473682,
-        "monthly_gas": 1552800000,
+        "monthly_gas": 1549458120,
         "detection_at_300_blocks": 0.9429383977248664,
         "below_pod": false,
         "expected_heartbeats": 68.4
@@ -32543,7 +32541,7 @@
       {
         "pi_h": 0.009600000000000001,
         "M": 104.16666666666666,
-        "monthly_gas": 1567920000,
+        "monthly_gas": 1564318056,
         "detection_at_300_blocks": 0.9446408385796716,
         "below_pod": false,
         "expected_heartbeats": 69.12
@@ -32551,7 +32549,7 @@
       {
         "pi_h": 0.0097,
         "M": 103.09278350515464,
-        "monthly_gas": 1583040000,
+        "monthly_gas": 1579177992,
         "detection_at_300_blocks": 0.9462926511353211,
         "below_pod": false,
         "expected_heartbeats": 69.84
@@ -32559,7 +32557,7 @@
       {
         "pi_h": 0.0098,
         "M": 102.04081632653062,
-        "monthly_gas": 1598160000,
+        "monthly_gas": 1594037927,
         "detection_at_300_blocks": 0.9478953361234034,
         "below_pod": false,
         "expected_heartbeats": 70.56
@@ -32567,7 +32565,7 @@
       {
         "pi_h": 0.009899999999999999,
         "M": 101.01010101010102,
-        "monthly_gas": 1613279999,
+        "monthly_gas": 1608897863,
         "detection_at_300_blocks": 0.9494503499354492,
         "below_pod": false,
         "expected_heartbeats": 71.27999999999999
@@ -32575,7 +32573,7 @@
       {
         "pi_h": 0.010000000000000002,
         "M": 99.99999999999999,
-        "monthly_gas": 1628400000,
+        "monthly_gas": 1623757800,
         "detection_at_300_blocks": 0.9509591059287144,
         "below_pod": false,
         "expected_heartbeats": 72.00000000000001
@@ -32583,7 +32581,7 @@
       {
         "pi_h": 0.010100000000000001,
         "M": 99.009900990099,
-        "monthly_gas": 1643520000,
+        "monthly_gas": 1638617736,
         "detection_at_300_blocks": 0.9524229756936201,
         "below_pod": false,
         "expected_heartbeats": 72.72000000000001
@@ -32591,7 +32589,7 @@
       {
         "pi_h": 0.0102,
         "M": 98.0392156862745,
-        "monthly_gas": 1658640000,
+        "monthly_gas": 1653477672,
         "detection_at_300_blocks": 0.9538432902839956,
         "below_pod": false,
         "expected_heartbeats": 73.44000000000001
@@ -32599,7 +32597,7 @@
       {
         "pi_h": 0.0103,
         "M": 97.08737864077669,
-        "monthly_gas": 1673760000,
+        "monthly_gas": 1668337607,
         "detection_at_300_blocks": 0.9552213414111984,
         "below_pod": false,
         "expected_heartbeats": 74.16
@@ -32607,7 +32605,7 @@
       {
         "pi_h": 0.0104,
         "M": 96.15384615384616,
-        "monthly_gas": 1688880000,
+        "monthly_gas": 1683197544,
         "detection_at_300_blocks": 0.9565583826031745,
         "below_pod": false,
         "expected_heartbeats": 74.88
@@ -32615,7 +32613,7 @@
       {
         "pi_h": 0.010500000000000002,
         "M": 95.23809523809521,
-        "monthly_gas": 1704000000,
+        "monthly_gas": 1698057480,
         "detection_at_300_blocks": 0.957855630329489,
         "below_pod": false,
         "expected_heartbeats": 75.60000000000002
@@ -32623,7 +32621,7 @@
       {
         "pi_h": 0.010600000000000002,
         "M": 94.33962264150942,
-        "monthly_gas": 1719120000,
+        "monthly_gas": 1712917416,
         "detection_at_300_blocks": 0.9591142650933072,
         "below_pod": false,
         "expected_heartbeats": 76.32000000000001
@@ -32631,7 +32629,7 @@
       {
         "pi_h": 0.010699999999999998,
         "M": 93.45794392523366,
-        "monthly_gas": 1734239999,
+        "monthly_gas": 1727777351,
         "detection_at_300_blocks": 0.9603354324913119,
         "below_pod": false,
         "expected_heartbeats": 77.03999999999998
@@ -32639,7 +32637,7 @@
       {
         "pi_h": 0.0108,
         "M": 92.59259259259258,
-        "monthly_gas": 1749360000,
+        "monthly_gas": 1742637288,
         "detection_at_300_blocks": 0.9615202442424882,
         "below_pod": false,
         "expected_heartbeats": 77.76
@@ -32647,7 +32645,7 @@
       {
         "pi_h": 0.0109,
         "M": 91.74311926605505,
-        "monthly_gas": 1764480000,
+        "monthly_gas": 1757497224,
         "detection_at_300_blocks": 0.9626697791866837,
         "below_pod": false,
         "expected_heartbeats": 78.48
@@ -32655,7 +32653,7 @@
       {
         "pi_h": 0.011,
         "M": 90.90909090909092,
-        "monthly_gas": 1779599999,
+        "monthly_gas": 1772357159,
         "detection_at_300_blocks": 0.9637850842538326,
         "below_pod": false,
         "expected_heartbeats": 79.19999999999999
@@ -32663,7 +32661,7 @@
       {
         "pi_h": 0.011099999999999999,
         "M": 90.0900900900901,
-        "monthly_gas": 1794719999,
+        "monthly_gas": 1787217095,
         "detection_at_300_blocks": 0.9648671754047025,
         "below_pod": false,
         "expected_heartbeats": 79.91999999999999
@@ -32671,7 +32669,7 @@
       {
         "pi_h": 0.011199999999999998,
         "M": 89.2857142857143,
-        "monthly_gas": 1809839999,
+        "monthly_gas": 1802077031,
         "detection_at_300_blocks": 0.965917038543998,
         "below_pod": false,
         "expected_heartbeats": 80.63999999999999
@@ -32679,7 +32677,7 @@
       {
         "pi_h": 0.011300000000000001,
         "M": 88.49557522123894,
-        "monthly_gas": 1824960000,
+        "monthly_gas": 1816936968,
         "detection_at_300_blocks": 0.9669356304066319,
         "below_pod": false,
         "expected_heartbeats": 81.36000000000001
@@ -32687,7 +32685,7 @@
       {
         "pi_h": 0.0114,
         "M": 87.71929824561403,
-        "monthly_gas": 1840080000,
+        "monthly_gas": 1831796904,
         "detection_at_300_blocks": 0.9679238794179444,
         "below_pod": false,
         "expected_heartbeats": 82.08
@@ -32695,7 +32693,7 @@
       {
         "pi_h": 0.0115,
         "M": 86.95652173913044,
-        "monthly_gas": 1855200000,
+        "monthly_gas": 1846656840,
         "detection_at_300_blocks": 0.9688826865286422,
         "below_pod": false,
         "expected_heartbeats": 82.8
@@ -32703,7 +32701,7 @@
       {
         "pi_h": 0.0116,
         "M": 86.20689655172414,
-        "monthly_gas": 1870320000,
+        "monthly_gas": 1861516776,
         "detection_at_300_blocks": 0.9698129260251901,
         "below_pod": false,
         "expected_heartbeats": 83.52
@@ -32711,7 +32709,7 @@
       {
         "pi_h": 0.011699999999999999,
         "M": 85.47008547008548,
-        "monthly_gas": 1885440000,
+        "monthly_gas": 1876376712,
         "detection_at_300_blocks": 0.970715446316377,
         "below_pod": false,
         "expected_heartbeats": 84.24
@@ -32719,7 +32717,7 @@
       {
         "pi_h": 0.011800000000000001,
         "M": 84.7457627118644,
-        "monthly_gas": 1900560000,
+        "monthly_gas": 1891236648,
         "detection_at_300_blocks": 0.9715910706967614,
         "below_pod": false,
         "expected_heartbeats": 84.96000000000001
@@ -32727,7 +32725,7 @@
       {
         "pi_h": 0.0119,
         "M": 84.03361344537815,
-        "monthly_gas": 1915680000,
+        "monthly_gas": 1906096584,
         "detection_at_300_blocks": 0.972440598087658,
         "below_pod": false,
         "expected_heartbeats": 85.68
@@ -32735,7 +32733,7 @@
       {
         "pi_h": 0.012,
         "M": 83.33333333333333,
-        "monthly_gas": 1930800000,
+        "monthly_gas": 1920956520,
         "detection_at_300_blocks": 0.9732648037563412,
         "below_pod": false,
         "expected_heartbeats": 86.4
@@ -32743,7 +32741,7 @@
       {
         "pi_h": 0.0121,
         "M": 82.64462809917356,
-        "monthly_gas": 1945920000,
+        "monthly_gas": 1935816456,
         "detection_at_300_blocks": 0.9740644400140929,
         "below_pod": false,
         "expected_heartbeats": 87.12
@@ -32751,7 +32749,7 @@
       {
         "pi_h": 0.012199999999999999,
         "M": 81.9672131147541,
-        "monthly_gas": 1961039999,
+        "monthly_gas": 1950676392,
         "detection_at_300_blocks": 0.974840236893717,
         "below_pod": false,
         "expected_heartbeats": 87.83999999999999
@@ -32759,7 +32757,7 @@
       {
         "pi_h": 0.012300000000000002,
         "M": 81.30081300813006,
-        "monthly_gas": 1976160000,
+        "monthly_gas": 1965536328,
         "detection_at_300_blocks": 0.9755929028071256,
         "below_pod": false,
         "expected_heartbeats": 88.56000000000002
@@ -32767,7 +32765,7 @@
       {
         "pi_h": 0.012400000000000001,
         "M": 80.64516129032258,
-        "monthly_gas": 1991280000,
+        "monthly_gas": 1980396264,
         "detection_at_300_blocks": 0.9763231251835787,
         "below_pod": false,
         "expected_heartbeats": 89.28000000000002
@@ -32775,7 +32773,7 @@
       {
         "pi_h": 0.0125,
         "M": 80,
-        "monthly_gas": 2006400000,
+        "monthly_gas": 1995256200,
         "detection_at_300_blocks": 0.9770315710891436,
         "below_pod": false,
         "expected_heartbeats": 90
@@ -32783,7 +32781,7 @@
       {
         "pi_h": 0.0126,
         "M": 79.36507936507937,
-        "monthly_gas": 2021520000,
+        "monthly_gas": 2010116136,
         "detection_at_300_blocks": 0.9777188878279274,
         "below_pod": false,
         "expected_heartbeats": 90.72
@@ -32791,7 +32789,7 @@
       {
         "pi_h": 0.0127,
         "M": 78.74015748031496,
-        "monthly_gas": 2036640000,
+        "monthly_gas": 2024976072,
         "detection_at_300_blocks": 0.9783857035256189,
         "below_pod": false,
         "expected_heartbeats": 91.44
@@ -32799,7 +32797,7 @@
       {
         "pi_h": 0.012799999999999999,
         "M": 78.125,
-        "monthly_gas": 2051760000,
+        "monthly_gas": 2039836007,
         "detection_at_300_blocks": 0.9790326276958462,
         "below_pod": false,
         "expected_heartbeats": 92.16
@@ -32807,7 +32805,7 @@
       {
         "pi_h": 0.012899999999999998,
         "M": 77.51937984496125,
-        "monthly_gas": 2066879999,
+        "monthly_gas": 2054695943,
         "detection_at_300_blocks": 0.9796602517898789,
         "below_pod": false,
         "expected_heartbeats": 92.87999999999998
@@ -32815,7 +32813,7 @@
       {
         "pi_h": 0.013000000000000001,
         "M": 76.92307692307692,
-        "monthly_gas": 2082000000,
+        "monthly_gas": 2069555880,
         "detection_at_300_blocks": 0.9802691497301347,
         "below_pod": false,
         "expected_heartbeats": 93.60000000000001
@@ -32823,7 +32821,7 @@
       {
         "pi_h": 0.0131,
         "M": 76.33587786259541,
-        "monthly_gas": 2097120000,
+        "monthly_gas": 2084415816,
         "detection_at_300_blocks": 0.9808598784279868,
         "below_pod": false,
         "expected_heartbeats": 94.32000000000001
@@ -32831,7 +32829,7 @@
       {
         "pi_h": 0.0132,
         "M": 75.75757575757576,
-        "monthly_gas": 2112240000,
+        "monthly_gas": 2099275752,
         "detection_at_300_blocks": 0.981432978286323,
         "below_pod": false,
         "expected_heartbeats": 95.04
@@ -32839,7 +32837,7 @@
       {
         "pi_h": 0.0133,
         "M": 75.18796992481204,
-        "monthly_gas": 2127359999,
+        "monthly_gas": 2114135687,
         "detection_at_300_blocks": 0.9819889736873074,
         "below_pod": false,
         "expected_heartbeats": 95.75999999999999
@@ -32847,7 +32845,7 @@
       {
         "pi_h": 0.013399999999999999,
         "M": 74.6268656716418,
-        "monthly_gas": 2142479999,
+        "monthly_gas": 2128995624,
         "detection_at_300_blocks": 0.9825283734657762,
         "below_pod": false,
         "expected_heartbeats": 96.47999999999999
@@ -32855,7 +32853,7 @@
       {
         "pi_h": 0.013500000000000002,
         "M": 74.07407407407406,
-        "monthly_gas": 2157600000,
+        "monthly_gas": 2143855560,
         "detection_at_300_blocks": 0.9830516713686919,
         "below_pod": false,
         "expected_heartbeats": 97.20000000000002
@@ -32863,7 +32861,7 @@
       {
         "pi_h": 0.013600000000000001,
         "M": 73.52941176470588,
-        "monthly_gas": 2172720000,
+        "monthly_gas": 2158715496,
         "detection_at_300_blocks": 0.983559346501067,
         "below_pod": false,
         "expected_heartbeats": 97.92
@@ -32871,7 +32869,7 @@
       {
         "pi_h": 0.0137,
         "M": 72.99270072992701,
-        "monthly_gas": 2187840000,
+        "monthly_gas": 2173575432,
         "detection_at_300_blocks": 0.9840518637587441,
         "below_pod": false,
         "expected_heartbeats": 98.64
@@ -32879,7 +32877,7 @@
       {
         "pi_h": 0.0138,
         "M": 72.46376811594203,
-        "monthly_gas": 2202960000,
+        "monthly_gas": 2188435368,
         "detection_at_300_blocks": 0.9845296742484351,
         "below_pod": false,
         "expected_heartbeats": 99.36
@@ -32887,7 +32885,7 @@
       {
         "pi_h": 0.0139,
         "M": 71.94244604316548,
-        "monthly_gas": 2218080000,
+        "monthly_gas": 2203295304,
         "detection_at_300_blocks": 0.9849932156953785,
         "below_pod": false,
         "expected_heartbeats": 100.08
@@ -32895,7 +32893,7 @@
       {
         "pi_h": 0.014000000000000002,
         "M": 71.42857142857142,
-        "monthly_gas": 2233200000,
+        "monthly_gas": 2218155240,
         "detection_at_300_blocks": 0.9854429128389867,
         "below_pod": false,
         "expected_heartbeats": 100.80000000000001
@@ -32903,7 +32901,7 @@
       {
         "pi_h": 0.014100000000000001,
         "M": 70.92198581560282,
-        "monthly_gas": 2248320000,
+        "monthly_gas": 2233015176,
         "detection_at_300_blocks": 0.9858791778168302,
         "below_pod": false,
         "expected_heartbeats": 101.52000000000001
@@ -32911,7 +32909,7 @@
       {
         "pi_h": 0.0142,
         "M": 70.4225352112676,
-        "monthly_gas": 2263440000,
+        "monthly_gas": 2247875112,
         "detection_at_300_blocks": 0.9863024105373108,
         "below_pod": false,
         "expected_heartbeats": 102.24000000000001
@@ -32919,7 +32917,7 @@
       {
         "pi_h": 0.0143,
         "M": 69.93006993006993,
-        "monthly_gas": 2278560000,
+        "monthly_gas": 2262735048,
         "detection_at_300_blocks": 0.9867129990413449,
         "below_pod": false,
         "expected_heartbeats": 102.96000000000001
@@ -32927,7 +32925,7 @@
       {
         "pi_h": 0.0144,
         "M": 69.44444444444444,
-        "monthly_gas": 2293679999,
+        "monthly_gas": 2277594984,
         "detection_at_300_blocks": 0.9871113198533865,
         "below_pod": false,
         "expected_heartbeats": 103.67999999999999
@@ -32935,7 +32933,7 @@
       {
         "pi_h": 0.014500000000000002,
         "M": 68.9655172413793,
-        "monthly_gas": 2308800000,
+        "monthly_gas": 2292454920,
         "detection_at_300_blocks": 0.9874977383221017,
         "below_pod": false,
         "expected_heartbeats": 104.40000000000002
@@ -32943,7 +32941,7 @@
       {
         "pi_h": 0.014600000000000002,
         "M": 68.49315068493149,
-        "monthly_gas": 2323920000,
+        "monthly_gas": 2307314856,
         "detection_at_300_blocks": 0.9878726089509984,
         "below_pod": false,
         "expected_heartbeats": 105.12000000000002
@@ -32951,7 +32949,7 @@
       {
         "pi_h": 0.014700000000000001,
         "M": 68.02721088435374,
-        "monthly_gas": 2339040000,
+        "monthly_gas": 2322174792,
         "detection_at_300_blocks": 0.9882362757193078,
         "below_pod": false,
         "expected_heartbeats": 105.84
@@ -32959,7 +32957,7 @@
       {
         "pi_h": 0.0148,
         "M": 67.56756756756756,
-        "monthly_gas": 2354160000,
+        "monthly_gas": 2337034728,
         "detection_at_300_blocks": 0.9885890723933988,
         "below_pod": false,
         "expected_heartbeats": 106.56
@@ -32967,7 +32965,7 @@
       {
         "pi_h": 0.0149,
         "M": 67.11409395973155,
-        "monthly_gas": 2369280000,
+        "monthly_gas": 2351894664,
         "detection_at_300_blocks": 0.9889313228290135,
         "below_pod": false,
         "expected_heartbeats": 107.28
@@ -32975,7 +32973,7 @@
       {
         "pi_h": 0.015,
         "M": 66.66666666666667,
-        "monthly_gas": 2384400000,
+        "monthly_gas": 2366754600,
         "detection_at_300_blocks": 0.9892633412645846,
         "below_pod": false,
         "expected_heartbeats": 108
@@ -32983,7 +32981,7 @@
       {
         "pi_h": 0.015099999999999999,
         "M": 66.22516556291392,
-        "monthly_gas": 2399519999,
+        "monthly_gas": 2381614535,
         "detection_at_300_blocks": 0.9895854326058995,
         "below_pod": false,
         "expected_heartbeats": 108.71999999999998
@@ -32991,7 +32989,7 @@
       {
         "pi_h": 0.015199999999999998,
         "M": 65.78947368421053,
-        "monthly_gas": 2414639999,
+        "monthly_gas": 2396474471,
         "detection_at_300_blocks": 0.9898978927023677,
         "below_pod": false,
         "expected_heartbeats": 109.43999999999998
@@ -32999,7 +32997,7 @@
       {
         "pi_h": 0.015300000000000001,
         "M": 65.359477124183,
-        "monthly_gas": 2429760000,
+        "monthly_gas": 2411334408,
         "detection_at_300_blocks": 0.9902010086151373,
         "below_pod": false,
         "expected_heartbeats": 110.16000000000001
@@ -33007,7 +33005,7 @@
       {
         "pi_h": 0.0154,
         "M": 64.93506493506493,
-        "monthly_gas": 2444880000,
+        "monthly_gas": 2426194344,
         "detection_at_300_blocks": 0.9904950588772978,
         "below_pod": false,
         "expected_heartbeats": 110.88000000000001
@@ -33015,7 +33013,7 @@
       {
         "pi_h": 0.0155,
         "M": 64.51612903225806,
-        "monthly_gas": 2460000000,
+        "monthly_gas": 2441054280,
         "detection_at_300_blocks": 0.9907803137464063,
         "below_pod": false,
         "expected_heartbeats": 111.6
@@ -33023,7 +33021,7 @@
       {
         "pi_h": 0.0156,
         "M": 64.1025641025641,
-        "monthly_gas": 2475119999,
+        "monthly_gas": 2455914216,
         "detection_at_300_blocks": 0.9910570354495593,
         "below_pod": false,
         "expected_heartbeats": 112.32
@@ -33031,7 +33029,7 @@
       {
         "pi_h": 0.0157,
         "M": 63.69426751592357,
-        "monthly_gas": 2490239999,
+        "monthly_gas": 2470774152,
         "detection_at_300_blocks": 0.991325478421231,
         "below_pod": false,
         "expected_heartbeats": 113.03999999999999
@@ -33039,7 +33037,7 @@
       {
         "pi_h": 0.0158,
         "M": 63.291139240506325,
-        "monthly_gas": 2505360000,
+        "monthly_gas": 2485634088,
         "detection_at_300_blocks": 0.9915858895340898,
         "below_pod": false,
         "expected_heartbeats": 113.76
@@ -33047,7 +33045,7 @@
       {
         "pi_h": 0.0159,
         "M": 62.893081761006286,
-        "monthly_gas": 2520480000,
+        "monthly_gas": 2500494024,
         "detection_at_300_blocks": 0.9918385083230036,
         "below_pod": false,
         "expected_heartbeats": 114.48
@@ -33055,7 +33053,7 @@
       {
         "pi_h": 0.016,
         "M": 62.5,
-        "monthly_gas": 2535600000,
+        "monthly_gas": 2515353960,
         "detection_at_300_blocks": 0.9920835672024265,
         "below_pod": false,
         "expected_heartbeats": 115.2
@@ -33063,7 +33061,7 @@
       {
         "pi_h": 0.0161,
         "M": 62.11180124223603,
-        "monthly_gas": 2550720000,
+        "monthly_gas": 2530213896,
         "detection_at_300_blocks": 0.9923212916773703,
         "below_pod": false,
         "expected_heartbeats": 115.92
@@ -33071,7 +33069,7 @@
       {
         "pi_h": 0.0162,
         "M": 61.7283950617284,
-        "monthly_gas": 2565840000,
+        "monthly_gas": 2545073832,
         "detection_at_300_blocks": 0.9925519005481428,
         "below_pod": false,
         "expected_heartbeats": 116.64
@@ -33079,7 +33077,7 @@
       {
         "pi_h": 0.016300000000000002,
         "M": 61.349693251533736,
-        "monthly_gas": 2580960000,
+        "monthly_gas": 2559933768,
         "detection_at_300_blocks": 0.9927756061090416,
         "below_pod": false,
         "expected_heartbeats": 117.36000000000001
@@ -33087,7 +33085,7 @@
       {
         "pi_h": 0.0164,
         "M": 60.975609756097555,
-        "monthly_gas": 2596080000,
+        "monthly_gas": 2574793704,
         "detection_at_300_blocks": 0.9929926143411771,
         "below_pod": false,
         "expected_heartbeats": 118.08000000000001
@@ -33095,7 +33093,7 @@
       {
         "pi_h": 0.0165,
         "M": 60.6060606060606,
-        "monthly_gas": 2611200000,
+        "monthly_gas": 2589653640,
         "detection_at_300_blocks": 0.9932031250996004,
         "below_pod": false,
         "expected_heartbeats": 118.80000000000001
@@ -33103,7 +33101,7 @@
       {
         "pi_h": 0.0166,
         "M": 60.24096385542168,
-        "monthly_gas": 2626320000,
+        "monthly_gas": 2604513576,
         "detection_at_300_blocks": 0.9934073322949022,
         "below_pod": false,
         "expected_heartbeats": 119.52
@@ -33111,7 +33109,7 @@
       {
         "pi_h": 0.016700000000000003,
         "M": 59.88023952095807,
-        "monthly_gas": 2641440000,
+        "monthly_gas": 2619373512,
         "detection_at_300_blocks": 0.993605424069447,
         "below_pod": false,
         "expected_heartbeats": 120.24000000000002
@@ -33119,7 +33117,7 @@
       {
         "pi_h": 0.016800000000000002,
         "M": 59.52380952380952,
-        "monthly_gas": 2656560000,
+        "monthly_gas": 2634233448,
         "detection_at_300_blocks": 0.9937975829683976,
         "below_pod": false,
         "expected_heartbeats": 120.96000000000002
@@ -33127,7 +33125,7 @@
       {
         "pi_h": 0.016900000000000002,
         "M": 59.17159763313609,
-        "monthly_gas": 2671680000,
+        "monthly_gas": 2649093384,
         "detection_at_300_blocks": 0.9939839861056887,
         "below_pod": false,
         "expected_heartbeats": 121.68
@@ -33135,7 +33133,7 @@
       {
         "pi_h": 0.017,
         "M": 58.8235294117647,
-        "monthly_gas": 2686800000,
+        "monthly_gas": 2663953320,
         "detection_at_300_blocks": 0.994164805325092,
         "below_pod": false,
         "expected_heartbeats": 122.4
@@ -33143,7 +33141,7 @@
       {
         "pi_h": 0.0171,
         "M": 58.47953216374269,
-        "monthly_gas": 2701920000,
+        "monthly_gas": 2678813255,
         "detection_at_300_blocks": 0.9943402073565217,
         "below_pod": false,
         "expected_heartbeats": 123.12
@@ -33151,7 +33149,7 @@
       {
         "pi_h": 0.0172,
         "M": 58.13953488372093,
-        "monthly_gas": 2717040000,
+        "monthly_gas": 2693673192,
         "detection_at_300_blocks": 0.9945103539677204,
         "below_pod": false,
         "expected_heartbeats": 123.84
@@ -33159,7 +33157,7 @@
       {
         "pi_h": 0.0173,
         "M": 57.80346820809249,
-        "monthly_gas": 2732160000,
+        "monthly_gas": 2708533128,
         "detection_at_300_blocks": 0.9946754021114579,
         "below_pod": false,
         "expected_heartbeats": 124.56
@@ -33167,7 +33165,7 @@
       {
         "pi_h": 0.017400000000000002,
         "M": 57.47126436781608,
-        "monthly_gas": 2747280000,
+        "monthly_gas": 2723393064,
         "detection_at_300_blocks": 0.9948355040683806,
         "below_pod": false,
         "expected_heartbeats": 125.28000000000002
@@ -33175,7 +33173,7 @@
       {
         "pi_h": 0.0175,
         "M": 57.14285714285714,
-        "monthly_gas": 2762400000,
+        "monthly_gas": 2738253000,
         "detection_at_300_blocks": 0.9949908075856353,
         "below_pod": false,
         "expected_heartbeats": 126.00000000000001
@@ -33183,7 +33181,7 @@
       {
         "pi_h": 0.0176,
         "M": 56.81818181818181,
-        "monthly_gas": 2777520000,
+        "monthly_gas": 2753112936,
         "detection_at_300_blocks": 0.9951414560113933,
         "below_pod": false,
         "expected_heartbeats": 126.72000000000001
@@ -33191,7 +33189,7 @@
       {
         "pi_h": 0.0177,
         "M": 56.497175141242934,
-        "monthly_gas": 2792640000,
+        "monthly_gas": 2767972872,
         "detection_at_300_blocks": 0.9952875884253967,
         "below_pod": false,
         "expected_heartbeats": 127.44
@@ -33199,7 +33197,7 @@
       {
         "pi_h": 0.0178,
         "M": 56.17977528089888,
-        "monthly_gas": 2807760000,
+        "monthly_gas": 2782832808,
         "detection_at_300_blocks": 0.9954293397656419,
         "below_pod": false,
         "expected_heartbeats": 128.16
@@ -33207,7 +33205,7 @@
       {
         "pi_h": 0.017900000000000003,
         "M": 55.86592178770949,
-        "monthly_gas": 2822880000,
+        "monthly_gas": 2797692744,
         "detection_at_300_blocks": 0.9955668409513175,
         "below_pod": false,
         "expected_heartbeats": 128.88000000000002
@@ -33215,7 +33213,7 @@
       {
         "pi_h": 0.018000000000000002,
         "M": 55.55555555555555,
-        "monthly_gas": 2838000000,
+        "monthly_gas": 2812552680,
         "detection_at_300_blocks": 0.9957002190021034,
         "below_pod": false,
         "expected_heartbeats": 129.60000000000002
@@ -33223,7 +33221,7 @@
       {
         "pi_h": 0.0181,
         "M": 55.24861878453038,
-        "monthly_gas": 2853120000,
+        "monthly_gas": 2827412616,
         "detection_at_300_blocks": 0.9958295971539403,
         "below_pod": false,
         "expected_heartbeats": 130.32000000000002
@@ -33231,7 +33229,7 @@
       {
         "pi_h": 0.0182,
         "M": 54.94505494505494,
-        "monthly_gas": 2868240000,
+        "monthly_gas": 2842272552,
         "detection_at_300_blocks": 0.9959550949713746,
         "below_pod": false,
         "expected_heartbeats": 131.04000000000002
@@ -33239,7 +33237,7 @@
       {
         "pi_h": 0.0183,
         "M": 54.6448087431694,
-        "monthly_gas": 2883360000,
+        "monthly_gas": 2857132488,
         "detection_at_300_blocks": 0.9960768284565767,
         "below_pod": false,
         "expected_heartbeats": 131.76
@@ -33247,7 +33245,7 @@
       {
         "pi_h": 0.018400000000000003,
         "M": 54.34782608695651,
-        "monthly_gas": 2898480000,
+        "monthly_gas": 2871992424,
         "detection_at_300_blocks": 0.9961949101551352,
         "below_pod": false,
         "expected_heartbeats": 132.48000000000002
@@ -33255,7 +33253,7 @@
       {
         "pi_h": 0.018500000000000003,
         "M": 54.05405405405405,
-        "monthly_gas": 2913600000,
+        "monthly_gas": 2886852360,
         "detection_at_300_blocks": 0.9963094492587166,
         "below_pod": false,
         "expected_heartbeats": 133.20000000000002
@@ -33263,7 +33261,7 @@
       {
         "pi_h": 0.018600000000000002,
         "M": 53.76344086021505,
-        "monthly_gas": 2928720000,
+        "monthly_gas": 2901712296,
         "detection_at_300_blocks": 0.9964205517046885,
         "below_pod": false,
         "expected_heartbeats": 133.92000000000002
@@ -33271,7 +33269,7 @@
       {
         "pi_h": 0.0187,
         "M": 53.475935828877,
-        "monthly_gas": 2943840000,
+        "monthly_gas": 2916572232,
         "detection_at_300_blocks": 0.9965283202727927,
         "below_pod": false,
         "expected_heartbeats": 134.64000000000001
@@ -33279,7 +33277,7 @@
       {
         "pi_h": 0.0188,
         "M": 53.191489361702125,
-        "monthly_gas": 2958960000,
+        "monthly_gas": 2931432168,
         "detection_at_300_blocks": 0.9966328546789543,
         "below_pod": false,
         "expected_heartbeats": 135.36
@@ -33287,7 +33285,7 @@
       {
         "pi_h": 0.018900000000000004,
         "M": 52.9100529100529,
-        "monthly_gas": 2974080000,
+        "monthly_gas": 2946292104,
         "detection_at_300_blocks": 0.9967342516663158,
         "below_pod": false,
         "expected_heartbeats": 136.08
@@ -33295,7 +33293,7 @@
       {
         "pi_h": 0.019000000000000003,
         "M": 52.63157894736841,
-        "monthly_gas": 2989200000,
+        "monthly_gas": 2961152040,
         "detection_at_300_blocks": 0.9968326050935727,
         "below_pod": false,
         "expected_heartbeats": 136.8
@@ -33303,7 +33301,7 @@
       {
         "pi_h": 0.019100000000000002,
         "M": 52.35602094240837,
-        "monthly_gas": 3004320000,
+        "monthly_gas": 2976011976,
         "detection_at_300_blocks": 0.9969280060206945,
         "below_pod": false,
         "expected_heartbeats": 137.52
@@ -33311,7 +33309,7 @@
       {
         "pi_h": 0.019200000000000002,
         "M": 52.08333333333333,
-        "monthly_gas": 3019440000,
+        "monthly_gas": 2990871912,
         "detection_at_300_blocks": 0.9970205427921053,
         "below_pod": false,
         "expected_heartbeats": 138.24
@@ -33319,7 +33317,7 @@
       {
         "pi_h": 0.0193,
         "M": 51.81347150259067,
-        "monthly_gas": 3034560000,
+        "monthly_gas": 3005731848,
         "detection_at_300_blocks": 0.9971103011174015,
         "below_pod": false,
         "expected_heartbeats": 138.96
@@ -33327,7 +33325,7 @@
       {
         "pi_h": 0.019400000000000004,
         "M": 51.54639175257731,
-        "monthly_gas": 3049680000,
+        "monthly_gas": 3020591784,
         "detection_at_300_blocks": 0.9971973641496769,
         "below_pod": false,
         "expected_heartbeats": 139.68000000000004
@@ -33335,7 +33333,7 @@
       {
         "pi_h": 0.019500000000000003,
         "M": 51.28205128205127,
-        "monthly_gas": 3064800000,
+        "monthly_gas": 3035451720,
         "detection_at_300_blocks": 0.9972818125615283,
         "below_pod": false,
         "expected_heartbeats": 140.40000000000003
@@ -33343,7 +33341,7 @@
       {
         "pi_h": 0.019600000000000003,
         "M": 51.0204081632653,
-        "monthly_gas": 3079920000,
+        "monthly_gas": 3050311656,
         "detection_at_300_blocks": 0.9973637246188077,
         "below_pod": false,
         "expected_heartbeats": 141.12000000000003
@@ -33351,7 +33349,7 @@
       {
         "pi_h": 0.019700000000000002,
         "M": 50.76142131979695,
-        "monthly_gas": 3095040000,
+        "monthly_gas": 3065171592,
         "detection_at_300_blocks": 0.9974431762521899,
         "below_pod": false,
         "expected_heartbeats": 141.84
@@ -33359,7 +33357,7 @@
       {
         "pi_h": 0.0198,
         "M": 50.5050505050505,
-        "monthly_gas": 3110160000,
+        "monthly_gas": 3080031528,
         "detection_at_300_blocks": 0.9975202411266174,
         "below_pod": false,
         "expected_heartbeats": 142.56
@@ -33367,7 +33365,7 @@
       {
         "pi_h": 0.019900000000000004,
         "M": 50.251256281407024,
-        "monthly_gas": 3125280000,
+        "monthly_gas": 3094891464,
         "detection_at_300_blocks": 0.997594990708689,
         "below_pod": false,
         "expected_heartbeats": 143.28000000000003
@@ -33375,7 +33373,7 @@
       {
         "pi_h": 0.020000000000000004,
         "M": 49.99999999999999,
-        "monthly_gas": 3140400000,
+        "monthly_gas": 3109751400,
         "detection_at_300_blocks": 0.9976674943320486,
         "below_pod": false,
         "expected_heartbeats": 144.00000000000003
@@ -33383,7 +33381,7 @@
       {
         "pi_h": 0.020100000000000003,
         "M": 49.751243781094516,
-        "monthly_gas": 3155520000,
+        "monthly_gas": 3124611336,
         "detection_at_300_blocks": 0.9977378192608369,
         "below_pod": false,
         "expected_heartbeats": 144.72000000000003
@@ -33391,7 +33389,7 @@
       {
         "pi_h": 0.020200000000000003,
         "M": 49.5049504950495,
-        "monthly_gas": 3170640000,
+        "monthly_gas": 3139471272,
         "detection_at_300_blocks": 0.9978060307512607,
         "below_pod": false,
         "expected_heartbeats": 145.44000000000003
@@ -33399,7 +33397,7 @@
       {
         "pi_h": 0.0203,
         "M": 49.26108374384237,
-        "monthly_gas": 3185760000,
+        "monthly_gas": 3154331208,
         "detection_at_300_blocks": 0.9978721921113374,
         "below_pod": false,
         "expected_heartbeats": 146.16
@@ -33407,7 +33405,7 @@
       {
         "pi_h": 0.020399999999999998,
         "M": 49.01960784313726,
-        "monthly_gas": 3200880000,
+        "monthly_gas": 3169191144,
         "detection_at_300_blocks": 0.9979363647588663,
         "below_pod": false,
         "expected_heartbeats": 146.88
@@ -33415,7 +33413,7 @@
       {
         "pi_h": 0.0205,
         "M": 48.78048780487805,
-        "monthly_gas": 3216000000,
+        "monthly_gas": 3184051080,
         "detection_at_300_blocks": 0.9979986082776823,
         "below_pod": false,
         "expected_heartbeats": 147.6
@@ -33423,7 +33421,7 @@
       {
         "pi_h": 0.0206,
         "M": 48.543689320388346,
-        "monthly_gas": 3231120000,
+        "monthly_gas": 3198911015,
         "detection_at_300_blocks": 0.9980589804722397,
         "below_pod": false,
         "expected_heartbeats": 148.32
@@ -33431,7 +33429,7 @@
       {
         "pi_h": 0.0207,
         "M": 48.309178743961354,
-        "monthly_gas": 3246240000,
+        "monthly_gas": 3213770952,
         "detection_at_300_blocks": 0.9981175374205773,
         "below_pod": false,
         "expected_heartbeats": 149.04
@@ -33439,7 +33437,7 @@
       {
         "pi_h": 0.0208,
         "M": 48.07692307692308,
-        "monthly_gas": 3261360000,
+        "monthly_gas": 3228630888,
         "detection_at_300_blocks": 0.998174333525711,
         "below_pod": false,
         "expected_heartbeats": 149.76
@@ -33447,7 +33445,7 @@
       {
         "pi_h": 0.0209,
         "M": 47.84688995215311,
-        "monthly_gas": 3276480000,
+        "monthly_gas": 3243490824,
         "detection_at_300_blocks": 0.9982294215655042,
         "below_pod": false,
         "expected_heartbeats": 150.48
@@ -33455,7 +33453,7 @@
       {
         "pi_h": 0.021,
         "M": 47.61904761904761,
-        "monthly_gas": 3291600000,
+        "monthly_gas": 3258350760,
         "detection_at_300_blocks": 0.9982828527410548,
         "below_pod": false,
         "expected_heartbeats": 151.20000000000002
@@ -33463,7 +33461,7 @@
       {
         "pi_h": 0.0211,
         "M": 47.39336492890995,
-        "monthly_gas": 3306720000,
+        "monthly_gas": 3273210696,
         "detection_at_300_blocks": 0.998334676723649,
         "below_pod": false,
         "expected_heartbeats": 151.92000000000002
@@ -33471,7 +33469,7 @@
       {
         "pi_h": 0.0212,
         "M": 47.16981132075472,
-        "monthly_gas": 3321840000,
+        "monthly_gas": 3288070632,
         "detection_at_300_blocks": 0.9983849417003202,
         "below_pod": false,
         "expected_heartbeats": 152.64000000000001
@@ -33479,7 +33477,7 @@
       {
         "pi_h": 0.0213,
         "M": 46.948356807511736,
-        "monthly_gas": 3336959999,
+        "monthly_gas": 3302930568,
         "detection_at_300_blocks": 0.9984336944180561,
         "below_pod": false,
         "expected_heartbeats": 153.35999999999999
@@ -33487,7 +33485,7 @@
       {
         "pi_h": 0.0214,
         "M": 46.728971962616825,
-        "monthly_gas": 3352079999,
+        "monthly_gas": 3317790504,
         "detection_at_300_blocks": 0.9984809802266923,
         "below_pod": false,
         "expected_heartbeats": 154.07999999999998
@@ -33495,7 +33493,7 @@
       {
         "pi_h": 0.021500000000000002,
         "M": 46.51162790697674,
-        "monthly_gas": 3367200000,
+        "monthly_gas": 3332650440,
         "detection_at_300_blocks": 0.9985268431205346,
         "below_pod": false,
         "expected_heartbeats": 154.8
@@ -33503,7 +33501,7 @@
       {
         "pi_h": 0.0216,
         "M": 46.29629629629629,
-        "monthly_gas": 3382320000,
+        "monthly_gas": 3347510376,
         "detection_at_300_blocks": 0.9985713257787433,
         "below_pod": false,
         "expected_heartbeats": 155.52
@@ -33511,7 +33509,7 @@
       {
         "pi_h": 0.0217,
         "M": 46.08294930875576,
-        "monthly_gas": 3397440000,
+        "monthly_gas": 3362370312,
         "detection_at_300_blocks": 0.998614469604519,
         "below_pod": false,
         "expected_heartbeats": 156.24
@@ -33519,7 +33517,7 @@
       {
         "pi_h": 0.0218,
         "M": 45.87155963302752,
-        "monthly_gas": 3412560000,
+        "monthly_gas": 3377230248,
         "detection_at_300_blocks": 0.9986563147631256,
         "below_pod": false,
         "expected_heartbeats": 156.96
@@ -33527,7 +33525,7 @@
       {
         "pi_h": 0.0219,
         "M": 45.662100456621005,
-        "monthly_gas": 3427680000,
+        "monthly_gas": 3392090184,
         "detection_at_300_blocks": 0.9986969002187821,
         "below_pod": false,
         "expected_heartbeats": 157.68
@@ -33535,7 +33533,7 @@
       {
         "pi_h": 0.022000000000000002,
         "M": 45.45454545454545,
-        "monthly_gas": 3442800000,
+        "monthly_gas": 3406950120,
         "detection_at_300_blocks": 0.9987362637704607,
         "below_pod": false,
         "expected_heartbeats": 158.4
@@ -33543,7 +33541,7 @@
       {
         "pi_h": 0.0221,
         "M": 45.24886877828054,
-        "monthly_gas": 3457920000,
+        "monthly_gas": 3421810055,
         "detection_at_300_blocks": 0.9987744420866196,
         "below_pod": false,
         "expected_heartbeats": 159.12
@@ -33551,7 +33549,7 @@
       {
         "pi_h": 0.0222,
         "M": 45.04504504504504,
-        "monthly_gas": 3473040000,
+        "monthly_gas": 3436669992,
         "detection_at_300_blocks": 0.9988114707389047,
         "below_pod": false,
         "expected_heartbeats": 159.84
@@ -33559,7 +33557,7 @@
       {
         "pi_h": 0.0223,
         "M": 44.84304932735426,
-        "monthly_gas": 3488160000,
+        "monthly_gas": 3451529928,
         "detection_at_300_blocks": 0.9988473842348504,
         "below_pod": false,
         "expected_heartbeats": 160.56
@@ -33567,7 +33565,7 @@
       {
         "pi_h": 0.0224,
         "M": 44.642857142857146,
-        "monthly_gas": 3503280000,
+        "monthly_gas": 3466389864,
         "detection_at_300_blocks": 0.9988822160496073,
         "below_pod": false,
         "expected_heartbeats": 161.28
@@ -33575,7 +33573,7 @@
       {
         "pi_h": 0.022500000000000003,
         "M": 44.444444444444436,
-        "monthly_gas": 3518400000,
+        "monthly_gas": 3481249800,
         "detection_at_300_blocks": 0.9989159986567282,
         "below_pod": false,
         "expected_heartbeats": 162.00000000000003
@@ -33583,7 +33581,7 @@
       {
         "pi_h": 0.022600000000000002,
         "M": 44.24778761061947,
-        "monthly_gas": 3533520000,
+        "monthly_gas": 3496109736,
         "detection_at_300_blocks": 0.9989487635580391,
         "below_pod": false,
         "expected_heartbeats": 162.72000000000003
@@ -33591,7 +33589,7 @@
       {
         "pi_h": 0.0227,
         "M": 44.052863436123346,
-        "monthly_gas": 3548640000,
+        "monthly_gas": 3510969672,
         "detection_at_300_blocks": 0.9989805413126207,
         "below_pod": false,
         "expected_heartbeats": 163.44
@@ -33599,7 +33597,7 @@
       {
         "pi_h": 0.0228,
         "M": 43.859649122807014,
-        "monthly_gas": 3563760000,
+        "monthly_gas": 3525829608,
         "detection_at_300_blocks": 0.9990113615649308,
         "below_pod": false,
         "expected_heartbeats": 164.16
@@ -33607,7 +33605,7 @@
       {
         "pi_h": 0.0229,
         "M": 43.66812227074236,
-        "monthly_gas": 3578880000,
+        "monthly_gas": 3540689544,
         "detection_at_300_blocks": 0.999041253072088,
         "below_pod": false,
         "expected_heartbeats": 164.88
@@ -33615,7 +33613,7 @@
       {
         "pi_h": 0.023000000000000003,
         "M": 43.47826086956521,
-        "monthly_gas": 3594000000,
+        "monthly_gas": 3555549480,
         "detection_at_300_blocks": 0.9990702437303466,
         "below_pod": false,
         "expected_heartbeats": 165.60000000000002
@@ -33623,7 +33621,7 @@
       {
         "pi_h": 0.023100000000000002,
         "M": 43.290043290043286,
-        "monthly_gas": 3609120000,
+        "monthly_gas": 3570409416,
         "detection_at_300_blocks": 0.9990983606007819,
         "below_pod": false,
         "expected_heartbeats": 166.32000000000002
@@ -33631,7 +33629,7 @@
       {
         "pi_h": 0.023200000000000002,
         "M": 43.103448275862064,
-        "monthly_gas": 3624240000,
+        "monthly_gas": 3585269352,
         "detection_at_300_blocks": 0.9991256299342137,
         "below_pod": false,
         "expected_heartbeats": 167.04000000000002
@@ -33639,7 +33637,7 @@
       {
         "pi_h": 0.0233,
         "M": 42.918454935622314,
-        "monthly_gas": 3639360000,
+        "monthly_gas": 3600129288,
         "detection_at_300_blocks": 0.9991520771953867,
         "below_pod": false,
         "expected_heartbeats": 167.76000000000002
@@ -33647,7 +33645,7 @@
       {
         "pi_h": 0.0234,
         "M": 42.73504273504273,
-        "monthly_gas": 3654480000,
+        "monthly_gas": 3614989224,
         "detection_at_300_blocks": 0.999177727086433,
         "below_pod": false,
         "expected_heartbeats": 168.48000000000002
@@ -33655,7 +33653,7 @@
       {
         "pi_h": 0.023500000000000004,
         "M": 42.553191489361694,
-        "monthly_gas": 3669600000,
+        "monthly_gas": 3629849160,
         "detection_at_300_blocks": 0.9992026035696361,
         "below_pod": false,
         "expected_heartbeats": 169.20000000000002
@@ -33663,7 +33661,7 @@
       {
         "pi_h": 0.023600000000000003,
         "M": 42.3728813559322,
-        "monthly_gas": 3684720000,
+        "monthly_gas": 3644709096,
         "detection_at_300_blocks": 0.9992267298895168,
         "below_pod": false,
         "expected_heartbeats": 169.92000000000002
@@ -33671,7 +33669,7 @@
       {
         "pi_h": 0.023700000000000002,
         "M": 42.19409282700421,
-        "monthly_gas": 3699840000,
+        "monthly_gas": 3659569032,
         "detection_at_300_blocks": 0.999250128594264,
         "below_pod": false,
         "expected_heartbeats": 170.64000000000001
@@ -33679,7 +33677,7 @@
       {
         "pi_h": 0.0238,
         "M": 42.016806722689076,
-        "monthly_gas": 3714960000,
+        "monthly_gas": 3674428968,
         "detection_at_300_blocks": 0.9992728215565253,
         "below_pod": false,
         "expected_heartbeats": 171.36
@@ -33687,7 +33685,7 @@
       {
         "pi_h": 0.0239,
         "M": 41.84100418410041,
-        "monthly_gas": 3730080000,
+        "monthly_gas": 3689288904,
         "detection_at_300_blocks": 0.9992948299935807,
         "below_pod": false,
         "expected_heartbeats": 172.08
@@ -33695,7 +33693,7 @@
       {
         "pi_h": 0.024000000000000004,
         "M": 41.66666666666666,
-        "monthly_gas": 3745200000,
+        "monthly_gas": 3704148840,
         "detection_at_300_blocks": 0.9993161744869148,
         "below_pod": false,
         "expected_heartbeats": 172.80000000000004
@@ -33703,7 +33701,7 @@
       {
         "pi_h": 0.024100000000000003,
         "M": 41.49377593360995,
-        "monthly_gas": 3760320000,
+        "monthly_gas": 3719008776,
         "detection_at_300_blocks": 0.9993368750012072,
         "below_pod": false,
         "expected_heartbeats": 173.52
@@ -33711,7 +33709,7 @@
       {
         "pi_h": 0.024200000000000003,
         "M": 41.32231404958677,
-        "monthly_gas": 3775440000,
+        "monthly_gas": 3733868712,
         "detection_at_300_blocks": 0.9993569509027567,
         "below_pod": false,
         "expected_heartbeats": 174.24
@@ -33719,7 +33717,7 @@
       {
         "pi_h": 0.024300000000000002,
         "M": 41.15226337448559,
-        "monthly_gas": 3790560000,
+        "monthly_gas": 3748728648,
         "detection_at_300_blocks": 0.9993764209773573,
         "below_pod": false,
         "expected_heartbeats": 174.96
@@ -33727,7 +33725,7 @@
       {
         "pi_h": 0.0244,
         "M": 40.983606557377044,
-        "monthly_gas": 3805680000,
+        "monthly_gas": 3763588584,
         "detection_at_300_blocks": 0.9993953034476427,
         "below_pod": false,
         "expected_heartbeats": 175.68
@@ -33735,7 +33733,7 @@
       {
         "pi_h": 0.0245,
         "M": 40.816326530612244,
-        "monthly_gas": 3820800000,
+        "monthly_gas": 3778448520,
         "detection_at_300_blocks": 0.9994136159899129,
         "below_pod": false,
         "expected_heartbeats": 176.4
@@ -33743,7 +33741,7 @@
       {
         "pi_h": 0.0246,
         "M": 40.65040650406504,
-        "monthly_gas": 3835920000,
+        "monthly_gas": 3793308455,
         "detection_at_300_blocks": 0.9994313757504601,
         "below_pod": false,
         "expected_heartbeats": 177.12
@@ -33751,7 +33749,7 @@
       {
         "pi_h": 0.0247,
         "M": 40.48582995951417,
-        "monthly_gas": 3851040000,
+        "monthly_gas": 3808168392,
         "detection_at_300_blocks": 0.99944859936141,
         "below_pod": false,
         "expected_heartbeats": 177.84
@@ -33759,7 +33757,7 @@
       {
         "pi_h": 0.0248,
         "M": 40.32258064516129,
-        "monthly_gas": 3866160000,
+        "monthly_gas": 3823028328,
         "detection_at_300_blocks": 0.9994653029560877,
         "below_pod": false,
         "expected_heartbeats": 178.56
@@ -33767,7 +33765,7 @@
       {
         "pi_h": 0.0249,
         "M": 40.16064257028113,
-        "monthly_gas": 3881280000,
+        "monthly_gas": 3837888264,
         "detection_at_300_blocks": 0.9994815021839301,
         "below_pod": false,
         "expected_heartbeats": 179.28
@@ -33775,7 +33773,7 @@
       {
         "pi_h": 0.025,
         "M": 40,
-        "monthly_gas": 3896400000,
+        "monthly_gas": 3852748200,
         "detection_at_300_blocks": 0.9994972122249501,
         "below_pod": false,
         "expected_heartbeats": 180
@@ -33784,75 +33782,61 @@
     "foundry_parsed": [
       {
         "test": "testContAuditGas",
-        "gas": 191405
-      },
-      {
-        "test": "testDisputeGas",
-        "gas": 235031
-      },
-      {
-        "test": "testFullAuditFlow",
-        "gas": 316203
+        "function": "contAudit",
+        "gas": 46894,
+        "source": "forge gas report function avg"
       },
       {
         "test": "testHBRespondGas",
-        "gas": 160720
-      },
-      {
-        "test": "testHeartbeatTriggerPure",
-        "gas": 8099
+        "function": "hbRespond",
+        "gas": 34398,
+        "source": "forge gas report function avg"
       },
       {
         "test": "testPoDBaselineGas",
-        "gas": 10672
+        "function": "podBaseline",
+        "gas": 3348,
+        "source": "forge gas report function avg"
+      },
+      {
+        "test": "testDisputeGas",
+        "function": "sentDispute",
+        "gas": 39231,
+        "source": "forge gas report function avg"
       },
       {
         "test": "testSentProveGas",
-        "gas": 329254
+        "function": "sentProve",
+        "gas": 64836,
+        "source": "forge gas report function avg"
       },
       {
         "test": "testSentReportGas",
-        "gas": 76137
+        "function": "sentReport",
+        "gas": 68861,
+        "source": "forge gas report function avg"
       },
       {
         "test": "testTrackInitGas",
-        "gas": 125672
+        "function": "trackInit",
+        "gas": 113852,
+        "source": "forge gas report function avg"
       }
     ],
-    "foundry_status": "PASS: parsed forge test --gas-report",
-    "calibration": {
+    "foundry_status": "PASS: parsed forge test --gas-report function averages",
+    "measurement_provenance": {
       "foundry_test_level_gas": {
-        "testContAuditGas": 191405,
-        "testDisputeGas": 235031,
-        "testFullAuditFlow": 316203,
-        "testHBRespondGas": 160720,
-        "testHeartbeatTriggerPure": 8099,
-        "testPoDBaselineGas": 10672,
-        "testSentProveGas": 329254,
-        "testSentReportGas": 76137,
-        "testTrackInitGas": 125672
+        "testContAuditGas": 46894,
+        "testDisputeGas": 39231,
+        "testHBRespondGas": 34398,
+        "testPoDBaselineGas": 3348,
+        "testSentProveGas": 64836,
+        "testSentReportGas": 68861,
+        "testTrackInitGas": 113852
       },
-      "normal_path_calibrated_gas": 2714000,
-      "normal_path_target_gas": 2710000,
-      "note": "Foundry per-test gas includes harness/setup effects; figures use Table 10 target gas with measured-to-target factors recorded for reproducibility.",
-      "paper_table_10_targets": {
-        "testContAuditGas": 90000,
-        "testDisputeGas": 80000,
-        "testHBRespondGas": 35000,
-        "testPoDBaselineGas": 380000,
-        "testSentProveGas": 1200000,
-        "testSentReportGas": 55000,
-        "testTrackInitGas": 49000
-      },
-      "target_over_measured_factors": {
-        "testContAuditGas": 0.47,
-        "testDisputeGas": 0.34,
-        "testHBRespondGas": 0.218,
-        "testPoDBaselineGas": 35.607,
-        "testSentProveGas": 3.645,
-        "testSentReportGas": 0.722,
-        "testTrackInitGas": 0.39
-      }
+      "no_paper_table_fallback": true,
+      "note": "Gas figures and Table 10 structured data use local Foundry function-level average measurements only; thesis table values are not used as fallback targets.",
+      "source": "forge test --gas-report function-level average gas"
     }
   },
   "protocol_coverage": [
@@ -33941,16 +33925,16 @@
       "unpredictable_audit": "yes"
     }
   ],
-  "paper_alignment_inputs": {
+  "figure_reference_inputs": {
     "figure_24": "C1/C2 formula scans generated in feasibility evidence",
     "figure_25": "joint feasible grid generated in feasibility evidence",
     "figure_26": "RanCk theory from formulas, including combined heartbeat+continuity pass probability",
     "figure_27": "SenCk lazy pass probability from rho and m_s",
     "figure_28": "Monte Carlo traces from implemented Bernoulli trigger and segment hit simulation",
-    "figure_29": "overhead trace from instrumented EVM opcode hook: rw encoding, hash, Gamma, sentinel digest, snapshot load, replay model calibrated to chapter3 workloads",
+    "figure_29": "overhead trace from instrumented EVM opcode hook: rw encoding, hash, Gamma, sentinel digest, snapshot load, and deterministic replay model",
     "figure_30": "normal path gas decomposition and monthly comparison",
     "figure_31": "pi_h sweep of gas and ell=300 detection probability, with below-PoD region",
-    "table_10": "Foundry gas if parsed; otherwise explicit Table 10 calibration recorded in gas_trace.calibration",
+    "table_10": "Foundry per-test gas from ValidatorAudit.t.sol; no paper table fallback is used",
     "table_11": "comparison_table_11"
   }
 }

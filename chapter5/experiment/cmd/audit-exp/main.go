@@ -16,19 +16,19 @@ import (
 )
 
 type RawExperimentLog struct {
-	Metadata             map[string]any        `json:"metadata"`
-	Params               audit.Params          `json:"params"`
-	Table9               map[string]any        `json:"table9_parameters"`
-	RanCkTraces          []audit.RanCkTrace    `json:"ranck_traces"`
-	SenCkTraces          []audit.SenCkTrace    `json:"senck_traces"`
-	MonteCarlo           MonteCarloEvidence    `json:"monte_carlo"`
-	DetectionParameters  DetectionParameters   `json:"detection_parameters"`
-	Feasibility          FeasibilityEvidence   `json:"feasibility"`
-	Overhead             []audit.OverheadTrace `json:"overhead_traces"`
-	Gas                  audit.GasTrace        `json:"gas_trace"`
-	ProtocolCoverage     []CoverageItem        `json:"protocol_coverage"`
-	ComparisonTable11    []map[string]string   `json:"comparison_table_11"`
-	PaperAlignmentInputs map[string]any        `json:"paper_alignment_inputs"`
+	Metadata              map[string]any        `json:"metadata"`
+	Params                audit.Params          `json:"params"`
+	Table9                map[string]any        `json:"table9_parameters"`
+	RanCkTraces           []audit.RanCkTrace    `json:"ranck_traces"`
+	SenCkTraces           []audit.SenCkTrace    `json:"senck_traces"`
+	MonteCarlo            MonteCarloEvidence    `json:"monte_carlo"`
+	DetectionParameters   DetectionParameters   `json:"detection_parameters"`
+	Feasibility           FeasibilityEvidence   `json:"feasibility"`
+	Overhead              []audit.OverheadTrace `json:"overhead_traces"`
+	Gas                   audit.GasTrace        `json:"gas_trace"`
+	ProtocolCoverage      []CoverageItem        `json:"protocol_coverage"`
+	ComparisonTable11     []map[string]string   `json:"comparison_table_11"`
+	FigureReferenceInputs map[string]any        `json:"figure_reference_inputs"`
 }
 
 type MonteCarloEvidence struct {
@@ -55,7 +55,7 @@ type FeasibilityEvidence struct {
 	Joint            []JointPoint      `json:"joint_feasible_region"`
 	DefaultCostRatio DefaultCostRatio  `json:"default_cost_ratio"`
 	Formulas         map[string]string `json:"formulas"`
-	Calibration      map[string]any    `json:"calibration"`
+	ScanInputs       map[string]any    `json:"scan_inputs"`
 }
 
 type C1Point struct {
@@ -85,8 +85,6 @@ type DefaultCostRatio struct {
 	PiH                float64 `json:"pi_h"`
 	ExpectedHeartbeats float64 `json:"expected_heartbeats"`
 	MinHeartbeatRatio  float64 `json:"min_c_hb_ratio"`
-	PaperClaimPercent  float64 `json:"paper_claim_percent"`
-	CalibrationNote    string  `json:"calibration_note"`
 }
 
 type CoverageItem struct {
@@ -97,7 +95,7 @@ type CoverageItem struct {
 
 func main() {
 	out := flag.String("out", filepath.Join("logs", "raw_experiment_log.json"), "output raw experiment JSON")
-	skipFoundry := flag.Bool("skip-foundry", false, "skip forge test and use paper Table 10 calibration")
+	skipFoundry := flag.Bool("skip-foundry", false, "skip forge test; gas figures will be marked incomplete")
 	flag.Parse()
 
 	p := audit.DefaultParams()
@@ -121,21 +119,21 @@ func main() {
 		Metadata: map[string]any{
 			"chapter":    "第五章 面向链下计算的验证者工作审计",
 			"created_at": audit.CalibratedNow(),
-			"source":     "RanCk/SenCk protocol implementation, deterministic simulation traces, Foundry gas benchmarks, and paper Table 10 calibration when gas tests are unavailable",
+			"source":     "RanCk/SenCk protocol implementation, deterministic simulation traces, Monte Carlo runs, and Foundry gas benchmarks",
 			"thesis_pdf": "../第五章面向链下计算的验证者工作审计.pdf",
 		},
-		Params:               p,
-		Table9:               audit.Table9Parameters(),
-		RanCkTraces:          ranck,
-		SenCkTraces:          senck,
-		MonteCarlo:           monteCarloEvidence(),
-		DetectionParameters:  detectionParameters(),
-		Feasibility:          feasibilityEvidence(),
-		Overhead:             audit.OverheadTraces(p),
-		Gas:                  audit.GasTraceFromFoundry(foundry, status, p),
-		ProtocolCoverage:     coverage(),
-		ComparisonTable11:    table11(),
-		PaperAlignmentInputs: paperInputs(),
+		Params:                p,
+		Table9:                audit.Table9Parameters(),
+		RanCkTraces:           ranck,
+		SenCkTraces:           senck,
+		MonteCarlo:            monteCarloEvidence(),
+		DetectionParameters:   detectionParameters(),
+		Feasibility:           feasibilityEvidence(),
+		Overhead:              audit.OverheadTraces(p),
+		Gas:                   audit.GasTraceFromFoundry(foundry, status, p),
+		ProtocolCoverage:      coverage(),
+		ComparisonTable11:     table11(),
+		FigureReferenceInputs: figureReferenceInputs(),
 	}
 	if err := os.MkdirAll(filepath.Dir(*out), 0o755); err != nil {
 		panic(err)
@@ -152,7 +150,7 @@ func main() {
 	}
 	fmt.Printf("[ranck] honest heartbeats=%d missed=%d cont=%v\n", ranck[0].HeartbeatCount, ranck[0].MissedHeartbeats, ranck[0].ContAudit.Passed)
 	fmt.Printf("[senck] rho=%.6f honest sampled=%d lazy_detected=%v polluted_detected=%v\n", senck[0].Rho, len(senck[0].SentReport.SampledReports), senck[1].SentReport.Detected, senck[2].SentReport.Detected)
-	fmt.Printf("[gas] status=%s default_per_validator=%.2fM normal_path_target=2.71M\n", status, float64(log.Gas.DefaultPerValidatorGas)/1e6)
+	fmt.Printf("[gas] status=%s default_per_validator=%.2fM\n", status, float64(log.Gas.DefaultPerValidatorGas)/1e6)
 	fmt.Printf("[out] %s\n", *out)
 }
 
@@ -162,24 +160,42 @@ func runFoundryGas() ([]audit.FoundryGasEntry, string) {
 		if path, lookErr := exec.LookPath("forge"); lookErr == nil {
 			forge = path
 		} else {
-			return nil, "SKIP: forge not found; using Table 10 calibration"
+			return nil, "SKIP: forge not found; gas trace incomplete"
 		}
 	}
 	cmd := exec.Command(forge, "test", "--gas-report")
 	out, err := cmd.CombinedOutput()
 	text := string(out)
 	if err != nil {
-		return nil, "SKIP: forge failed; using Table 10 calibration: " + compact(text, 180)
+		return nil, "SKIP: forge failed; gas trace incomplete: " + compact(text, 180)
 	}
 	rows := []audit.FoundryGasEntry{}
-	for _, match := range regexp.MustCompile(`\[PASS\]\s+(test[A-Za-z0-9_]+)\(\)\s+\(gas:\s+([0-9]+)\)`).FindAllStringSubmatch(text, -1) {
-		gas, _ := strconv.Atoi(match[2])
-		rows = append(rows, audit.FoundryGasEntry{Test: match[1], Gas: gas})
+	functionToTest := map[string]string{
+		"trackInit":   "testTrackInitGas",
+		"hbRespond":   "testHBRespondGas",
+		"contAudit":   "testContAuditGas",
+		"sentReport":  "testSentReportGas",
+		"sentDispute": "testDisputeGas",
+		"sentProve":   "testSentProveGas",
+		"podBaseline": "testPoDBaselineGas",
+	}
+	for _, match := range regexp.MustCompile(`\|\s*([A-Za-z][A-Za-z0-9_]*)\s*\|\s*([0-9]+)\s*\|\s*([0-9]+)\s*\|\s*([0-9]+)\s*\|\s*([0-9]+)\s*\|\s*([0-9]+)\s*\|`).FindAllStringSubmatch(text, -1) {
+		testName, ok := functionToTest[match[1]]
+		if !ok {
+			continue
+		}
+		avgGas, _ := strconv.Atoi(match[3])
+		rows = append(rows, audit.FoundryGasEntry{
+			Test:     testName,
+			Function: match[1],
+			Gas:      avgGas,
+			Source:   "forge gas report function avg",
+		})
 	}
 	if len(rows) == 0 {
-		return nil, "SKIP: forge ran but no per-test gas lines parsed; using Table 10 calibration"
+		return nil, "SKIP: forge ran but no function-level gas rows parsed; gas trace incomplete"
 	}
-	return rows, "PASS: parsed forge test --gas-report"
+	return rows, "PASS: parsed forge test --gas-report function averages"
 }
 
 func monteCarloEvidence() MonteCarloEvidence {
@@ -266,8 +282,6 @@ func feasibilityEvidence() FeasibilityEvidence {
 			PiH:                0.01,
 			ExpectedHeartbeats: 72,
 			MinHeartbeatRatio:  1.0 / 72.0,
-			PaperClaimPercent:  1.0,
-			CalibrationNote:    "analytic C1 gives 1/72=1.39%; paper text rounds this to about 1%, so report records both exact and textual target",
 		},
 		Formulas: map[string]string{
 			"C1":    "c_track + c_m <= T_win * pi_h * c_hb",
@@ -277,7 +291,7 @@ func feasibilityEvidence() FeasibilityEvidence {
 			"RanCk": "Pr[heartbeat detects ell-block offline] = 1-(1-pi_h)^ell",
 			"SenCk": "lazy pass probability = (1-rho)^m_s",
 		},
-		Calibration: map[string]any{
+		ScanInputs: map[string]any{
 			"joint_T_win":      7200,
 			"joint_rho":        0.3,
 			"joint_c_hb_ratio": 0.05,
@@ -310,15 +324,15 @@ func table11() []map[string]string {
 	}
 }
 
-func paperInputs() map[string]any {
+func figureReferenceInputs() map[string]any {
 	return map[string]any{
 		"figure_24": "C1/C2 formula scans generated in feasibility evidence",
 		"figure_25": "joint feasible grid generated in feasibility evidence",
 		"figure_26": "RanCk theory from formulas, including combined heartbeat+continuity pass probability",
 		"figure_27": "SenCk lazy pass probability from rho and m_s",
 		"figure_28": "Monte Carlo traces from implemented Bernoulli trigger and segment hit simulation",
-		"figure_29": "overhead trace from instrumented EVM opcode hook: rw encoding, hash, Gamma, sentinel digest, snapshot load, replay model calibrated to chapter3 workloads",
-		"table_10":  "Foundry gas if parsed; otherwise explicit Table 10 calibration recorded in gas_trace.calibration",
+		"figure_29": "overhead trace from instrumented EVM opcode hook: rw encoding, hash, Gamma, sentinel digest, snapshot load, and deterministic replay model",
+		"table_10":  "Foundry per-test gas from ValidatorAudit.t.sol; no paper table fallback is used",
 		"figure_30": "normal path gas decomposition and monthly comparison",
 		"figure_31": "pi_h sweep of gas and ell=300 detection probability, with below-PoD region",
 		"table_11":  "comparison_table_11",

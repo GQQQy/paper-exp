@@ -220,7 +220,7 @@ type GammaHitPoint struct {
 
 type Workload struct {
 	Name               string  `json:"name"`
-	PaperGas           float64 `json:"paper_gas"`
+	WorkloadGas        float64 `json:"workload_gas"`
 	ExecStepMicroS     float64 `json:"exec_step_us"`
 	SnapshotMilliS     float64 `json:"snapshot_ms"`
 	SlicingOverheadPC  float64 `json:"chapter3_slicing_overhead_percent"`
@@ -259,7 +259,7 @@ type GasTrace struct {
 	PiHSweep               []GasSweepPoint   `json:"pi_h_sweep"`
 	FoundryParsed          []FoundryGasEntry `json:"foundry_parsed"`
 	FoundryStatus          string            `json:"foundry_status"`
-	Calibration            map[string]any    `json:"calibration"`
+	MeasurementProvenance  map[string]any    `json:"measurement_provenance"`
 }
 
 type GasSweepPoint struct {
@@ -272,8 +272,10 @@ type GasSweepPoint struct {
 }
 
 type FoundryGasEntry struct {
-	Test string `json:"test"`
-	Gas  int    `json:"gas"`
+	Test     string `json:"test"`
+	Function string `json:"function,omitempty"`
+	Gas      int    `json:"gas"`
+	Source   string `json:"source,omitempty"`
 }
 
 func DefaultParams() Params {
@@ -525,10 +527,10 @@ func onlineForBehavior(behavior string, t, tWin int) (bool, string) {
 
 func Workloads() []Workload {
 	return []Workload{
-		{Name: "Fibonacci", PaperGas: 1e9, ExecStepMicroS: 42.0, SnapshotMilliS: 8.0, SlicingOverheadPC: 2.5, EncodingBaseMicroS: 0.25},
-		{Name: "Poly-Chain", PaperGas: 1e10, ExecStepMicroS: 68.0, SnapshotMilliS: 22.0, SlicingOverheadPC: 3.8, EncodingBaseMicroS: 0.42},
-		{Name: "Sort-Large", PaperGas: 1e11, ExecStepMicroS: 102.0, SnapshotMilliS: 52.0, SlicingOverheadPC: 7.2, EncodingBaseMicroS: 0.68},
-		{Name: "DP-Large", PaperGas: 1e12, ExecStepMicroS: 135.0, SnapshotMilliS: 88.0, SlicingOverheadPC: 9.6, EncodingBaseMicroS: 0.55},
+		{Name: "Fibonacci", WorkloadGas: 1e9, ExecStepMicroS: 42.0, SnapshotMilliS: 8.0, SlicingOverheadPC: 2.5, EncodingBaseMicroS: 0.25},
+		{Name: "Poly-Chain", WorkloadGas: 1e10, ExecStepMicroS: 68.0, SnapshotMilliS: 22.0, SlicingOverheadPC: 3.8, EncodingBaseMicroS: 0.42},
+		{Name: "Sort-Large", WorkloadGas: 1e11, ExecStepMicroS: 102.0, SnapshotMilliS: 52.0, SlicingOverheadPC: 7.2, EncodingBaseMicroS: 0.68},
+		{Name: "DP-Large", WorkloadGas: 1e12, ExecStepMicroS: 135.0, SnapshotMilliS: 88.0, SlicingOverheadPC: 9.6, EncodingBaseMicroS: 0.55},
 	}
 }
 
@@ -1182,24 +1184,35 @@ func GasTraceFromFoundry(foundry []FoundryGasEntry, status string, p Params) Gas
 	for _, row := range foundry {
 		byTest[row.Test] = row.Gas
 	}
-	paperTargets := map[string]int{
-		"testTrackInitGas":   49000,
-		"testHBRespondGas":   35000,
-		"testContAuditGas":   90000,
-		"testSentReportGas":  55000,
-		"testDisputeGas":     80000,
-		"testSentProveGas":   1200000,
-		"testPoDBaselineGas": 380000,
+	required := []string{
+		"testTrackInitGas",
+		"testHBRespondGas",
+		"testContAuditGas",
+		"testSentReportGas",
+		"testDisputeGas",
+		"testSentProveGas",
+		"testPoDBaselineGas",
 	}
-	calibration := map[string]float64{}
-	for k, target := range paperTargets {
-		if byTest[k] > 0 {
-			calibration[k] = round3(float64(target) / float64(byTest[k]))
-		} else {
-			calibration[k] = 1.0
+	missing := []string{}
+	for _, name := range required {
+		if byTest[name] <= 0 {
+			missing = append(missing, name)
 		}
 	}
-	byGas := paperTargets
+	if len(missing) > 0 {
+		return GasTrace{
+			FoundryParsed: foundry,
+			FoundryStatus: status,
+			MeasurementProvenance: map[string]any{
+				"source":                  "forge test --gas-report function-level average gas",
+				"status":                  "missing required Foundry gas benchmarks",
+				"missing_foundry_tests":   missing,
+				"no_paper_table_fallback": true,
+			},
+		}
+	}
+
+	byGas := byTest
 	hbDefault := int(math.Round(float64(p.TWin) / float64(p.M)))
 	defaultPV := byGas["testTrackInitGas"] + hbDefault*byGas["testHBRespondGas"] + byGas["testContAuditGas"] + byGas["testSentReportGas"]
 	reducedHB := int(math.Round(float64(p.TWin) / 200.0))
@@ -1209,12 +1222,12 @@ func GasTraceFromFoundry(foundry []FoundryGasEntry, status string, p Params) Gas
 	podTheta := 0.9
 	podMonthly := int(float64(podEpochsMonth) * podTheta * float64(byGas["testPoDBaselineGas"]))
 	ops := []GasOperation{
-		{Name: "RanCk TrackInit", Gas: byGas["testTrackInitGas"], DefaultUses: 1, Source: "Foundry measured then calibrated to paper Table 10 target"},
-		{Name: "RanCk HBRespond", Gas: byGas["testHBRespondGas"], DefaultUses: hbDefault, Source: "Foundry measured then calibrated to paper Table 10 target"},
-		{Name: "RanCk ContAudit", Gas: byGas["testContAuditGas"], DefaultUses: 1, Source: "Foundry measured then calibrated to paper Table 10 target"},
-		{Name: "SenCk SentReport", Gas: byGas["testSentReportGas"], DefaultUses: 1, Source: "Foundry measured then calibrated to paper Table 10 target"},
-		{Name: "Dispute", Gas: byGas["testDisputeGas"], DefaultUses: 0, Source: "Foundry measured then calibrated to paper Table 10 target"},
-		{Name: "SentProve/VerSeg", Gas: byGas["testSentProveGas"], DefaultUses: 0, Source: "Foundry measured then calibrated to paper Table 10 target"},
+		{Name: "RanCk TrackInit", Gas: byGas["testTrackInitGas"], DefaultUses: 1, Source: "Foundry function-level gas report from ValidatorAudit.sol"},
+		{Name: "RanCk HBRespond", Gas: byGas["testHBRespondGas"], DefaultUses: hbDefault, Source: "Foundry function-level gas report from ValidatorAudit.sol"},
+		{Name: "RanCk ContAudit", Gas: byGas["testContAuditGas"], DefaultUses: 1, Source: "Foundry function-level gas report from ValidatorAudit.sol"},
+		{Name: "SenCk SentReport", Gas: byGas["testSentReportGas"], DefaultUses: 1, Source: "Foundry function-level gas report from ValidatorAudit.sol"},
+		{Name: "Dispute", Gas: byGas["testDisputeGas"], DefaultUses: 0, Source: "Foundry function-level gas report from ValidatorAudit.sol"},
+		{Name: "SentProve/VerSeg", Gas: byGas["testSentProveGas"], DefaultUses: 0, Source: "Foundry function-level gas report from ValidatorAudit.sol"},
 	}
 	sweep := make([]GasSweepPoint, 0)
 	for i := 0; i <= 240; i++ {
@@ -1248,13 +1261,11 @@ func GasTraceFromFoundry(foundry []FoundryGasEntry, status string, p Params) Gas
 		PiHSweep:      sweep,
 		FoundryParsed: foundry,
 		FoundryStatus: status,
-		Calibration: map[string]any{
-			"paper_table_10_targets":       paperTargets,
-			"foundry_test_level_gas":       byTest,
-			"target_over_measured_factors": calibration,
-			"normal_path_target_gas":       2710000,
-			"normal_path_calibrated_gas":   defaultPV,
-			"note":                         "Foundry per-test gas includes harness/setup effects; figures use Table 10 target gas with measured-to-target factors recorded for reproducibility.",
+		MeasurementProvenance: map[string]any{
+			"source":                  "forge test --gas-report function-level average gas",
+			"foundry_test_level_gas":  byTest,
+			"no_paper_table_fallback": true,
+			"note":                    "Gas figures and Table 10 structured data use local Foundry function-level average measurements only; thesis table values are not used as fallback targets.",
 		},
 	}
 }

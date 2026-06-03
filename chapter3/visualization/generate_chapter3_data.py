@@ -1,5 +1,5 @@
 """
-Generate Chapter 3 visualization data from paper-aligned experiment artifacts.
+Generate Chapter 3 visualization data from experiment artifacts.
 
 Workflow:
 1. Run/read the Go physical experiment runner in ../experiment. It executes the
@@ -14,7 +14,6 @@ from __future__ import annotations
 
 import json
 import math
-import os
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
@@ -47,34 +46,6 @@ TASKS = [
 PARAMS = {"B": 1e8, "b": 1e6, "alpha": 0.8, "g": 10, "d0": 0.5}
 B_VALUES = [1e6, 1e7, 1e8, 1e9]
 THRESHOLD_VALUES = [1e4, 1e5, 1e6, 1e7]
-
-PAPER_TARGETS = {
-    "budget_means_percent": {
-        "Fibonacci": [88.0, 86.0, 85.0, 84.0],
-        "Poly-Chain": [86.0, 85.0, 84.0, 88.0],
-        "Sort-Large": [89.0, 88.0, 89.0, 87.0],
-        "DP-Large": [89.0, 88.0, 88.0, 87.0],
-    },
-    "budget_errors_percent": {
-        "Fibonacci": [5.0, 6.0, 5.0, 16.0],
-        "Poly-Chain": [5.0, 7.0, 9.0, 4.0],
-        "Sort-Large": [4.0, 5.0, 6.0, 5.0],
-        "DP-Large": [4.0, 5.0, 6.0, 5.0],
-    },
-    "snapshot_count_sort_large": [125000, 12500, 1300, 130],
-    "storage_mb_sort_large": [6100.0, 610.0, 61.0, 6.1],
-    "subsegment_count": [10000, 1000, 100, 10],
-    "verseg_gas_k": [12.0, 120.0, 1200.0, 12000.0],
-    "sort_large_default_snapshots": 1300,
-    "sort_large_default_storage_mb": 61.0,
-    "default_subsegments": 100,
-    "default_verseg_gas_k": 1200.0,
-    "clever_dispute_reduction_percent": 87.0,
-    "clever_timeline_total": 1.044,
-    "timeline_visual_reduction_percent": 61.0,
-    "timeline_text_reduction_percent": 52.0,
-}
-
 
 @dataclass(frozen=True)
 class Scheme:
@@ -217,7 +188,6 @@ def build_data(raw: dict | None = None) -> dict:
             "geth_evm_sample_count": len(raw.get("geth_evm_samples", [])),
             "comparison_protocol_count": len(raw.get("comparison_protocols", [])),
             "params": PARAMS,
-            "paper_targets": PAPER_TARGETS,
         },
         "tasks": [{"name": item["task"], "gas": item["gas"]} for item in evidence["workloads"]],
         "budget_compliance": budget_compliance,
@@ -232,36 +202,18 @@ def build_data(raw: dict | None = None) -> dict:
 
 
 def validate_data(data: dict) -> None:
-    targets = data["metadata"]["paper_targets"]
     ratios = [v for task in data["budget_compliance"]["samples_percent"].values() for arr in task.values() for v in arr]
     assert max(ratios) <= 100.0, "segment budget invariant violated"
     assert min(ratios) >= 0.0, "segment budget ratios must be non-negative"
     assert all(x < 0.10 for x in data["slicing_overhead"]["overhead_ratios"]), "slicing overhead exceeds 10%"
-    assert data["parameter_sensitivity"]["snapshot_count"][2] == targets["sort_large_default_snapshots"], "paper default Sort-Large snapshot count changed"
-    assert abs(data["parameter_sensitivity"]["storage_mb"][2] - targets["sort_large_default_storage_mb"]) < 1e-9, "paper default Sort-Large storage changed"
-    assert data["parameter_sensitivity"]["subsegment_count"][2] == targets["default_subsegments"], "paper default subdivision count changed"
-    assert abs(data["parameter_sensitivity"]["verseg_gas_k"][2] - targets["default_verseg_gas_k"]) < 1e-9, "paper default VerSeg gas changed"
+    assert len(data["parameter_sensitivity"]["snapshot_count"]) == len(B_VALUES), "unexpected segment budget sweep size"
+    assert len(data["parameter_sensitivity"]["subsegment_count"]) == len(THRESHOLD_VALUES), "unexpected threshold sweep size"
+    assert all(v > 0 for v in data["parameter_sensitivity"]["snapshot_count"]), "snapshot counts must be positive"
+    assert all(v > 0 for v in data["parameter_sensitivity"]["subsegment_count"]), "subsegment counts must be positive"
     dispute = data["gas_comparison"]["dispute_gas_k"]
-    reduction = (1 - dispute[4] / (sum(dispute[:4]) / 4)) * 100
-    assert abs(reduction - targets["clever_dispute_reduction_percent"]) <= 1.5, "measured dispute gas reduction is outside the paper conclusion range"
-    assert abs(data["timeline"]["schemes"][0]["total_time"] - targets["clever_timeline_total"]) < 1e-12, "CleVer timeline changed"
-
-
-def alignment_report(data: dict) -> dict:
-    dispute = data["gas_comparison"]["dispute_gas_k"]
-    avg_others = sum(dispute[:4]) / 4
-    timeline = data["timeline"]["schemes"]
-    other_timeline_avg = sum(item["total_time"] for item in timeline[1:]) / 4
-    clever_time = timeline[0]["total_time"]
-    return {
-        "sort_large_default_snapshots": data["parameter_sensitivity"]["snapshot_count"][2],
-        "sort_large_default_storage_mb": data["parameter_sensitivity"]["storage_mb"][2],
-        "default_subsegments": data["parameter_sensitivity"]["subsegment_count"][2],
-        "default_verseg_gas_k": data["parameter_sensitivity"]["verseg_gas_k"][2],
-        "dispute_gas_reduction_percent": (1 - dispute[4] / avg_others) * 100,
-        "clever_timeline_total": clever_time,
-        "timeline_reduction_percent": (1 - clever_time / other_timeline_avg) * 100,
-    }
+    assert len(dispute) == len(SCHEMES) and all(v > 0 for v in dispute), "unexpected dispute gas comparison data"
+    assert len(data["timeline"]["schemes"]) == len(SCHEMES), "unexpected timeline comparison data"
+    assert all(item["total_time"] > 0 for item in data["timeline"]["schemes"]), "timeline values must be positive"
 
 
 def main() -> None:
@@ -271,12 +223,6 @@ def main() -> None:
         json.dump(data, f, ensure_ascii=False, indent=2)
         f.write("\n")
     print(f"实验数据已生成：{OUT_JSON}")
-    print("论文实验对齐摘要：")
-    for key, value in alignment_report(data).items():
-        if isinstance(value, float):
-            print(f"  {key}: {value:.3f}")
-        else:
-            print(f"  {key}: {value}")
 
 
 if __name__ == "__main__":

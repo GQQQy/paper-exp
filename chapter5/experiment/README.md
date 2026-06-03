@@ -8,11 +8,11 @@
 - SenCk：在 instrumented EVM-style opcode interpreter 的每个 opcode 执行后，通过 `AfterOpcodeHook` 采集 `pc_t/op_t`、memory/storage/stack 访问，编码运行时 `rw_t` 与 `val_t`，计算 `Gamma(r,tid,k,t,rw_t)`，生成哨兵事件和段摘要 `dig_k`，再从快照段局部重放提交 `SentReport`。
 - 行为模型：覆盖诚实在线、完全离线、间歇在线、补算失败、凭证链不一致、惰性猜摘要、执行方污染 `ComAud` 等偏离。
 - Foundry：提供最小审计合约和 gas benchmark 测试，覆盖 `TrackInit`、`HBRespond`、`ContAudit`、`SentReport`、`Dispute`、`SentProve` 和 PoD baseline。
-- 可视化：从 `logs/raw_experiment_log.json` 生成结构化数据、图 24-31 和 `paper_alignment_report.md`。
+- 可视化：从 `logs/raw_experiment_log.json` 生成结构化数据和图 24-31。
 
 ## 目录说明
 
-- `audit/protocol.go`：RanCk/SenCk 协议实现、instrumented EVM opcode hook、Monte Carlo、旁路开销和 Gas 校准数据结构。
+- `audit/protocol.go`：RanCk/SenCk 协议实现、instrumented EVM opcode hook、Monte Carlo、旁路开销和 Foundry Gas 数据结构。
 - `audit/protocol_test.go`：RanCk、SenCk 和完整审计流单元/集成测试。
 - `cmd/audit-exp/main.go`：实验入口，生成 `logs/raw_experiment_log.json`。
 - `src/ValidatorAudit.sol`：链上审计 benchmark 合约。
@@ -21,37 +21,40 @@
 
 ## 环境配置
 
-需要：
+需要 Go、Foundry、Python，以及 Python 包 `matplotlib`、`numpy`。
 
 ```bash
-/usr/local/go/bin/go version
-/Users/gqy/.foundry/bin/forge --version
+go version
+forge --version
 python3 -c "import matplotlib, numpy; print('python deps ok')"
 ```
 
-如果本机 PATH 已包含 `go` 与 `forge`，也可以直接使用短命令。
+如果 Go 或 Matplotlib 缓存目录不可写：
+
+```bash
+export GOCACHE="${TMPDIR:-/tmp}/chapter5-gocache"
+export MPLCONFIGDIR="${TMPDIR:-/tmp}/mplconfig-ch5"
+mkdir -p "$GOCACHE" "$MPLCONFIGDIR"
+```
 
 ## 运行测试
 
 ```bash
-cd chapter5/experiment
-mkdir -p /private/tmp/chapter5-gocache
-GOCACHE=/private/tmp/chapter5-gocache /usr/local/go/bin/go test ./...
-/Users/gqy/.foundry/bin/forge test --gas-report
+go test ./...
+forge test --gas-report
 ```
 
 ## 生成 raw log
 
 ```bash
-cd chapter5/experiment
-GOCACHE=/private/tmp/chapter5-gocache /usr/local/go/bin/go run ./cmd/audit-exp --out logs/raw_experiment_log.json
+go run ./cmd/audit-exp --out logs/raw_experiment_log.json
 ```
 
-实验入口会解析 Foundry per-test gas。由于本地测试合约的 per-test gas 会包含 harness/setup 效应，raw log 同时记录 Foundry 实测值、论文表 10 目标值和 target/measured 校准因子；图 30-31 使用论文表 10 目标值生成，并在报告中说明校准来源。
+实验入口会解析 Foundry gas report 的函数级平均 Gas。raw log 会记录 Foundry 实测值和测量来源；图 30-31 使用本地 Foundry 函数级 Gas 生成。如果 Foundry 不可用，Gas 数据会被标记为不完整，而不会回退到论文表 10 目标值。
 
-## 生成可视化与报告
+## 生成可视化
 
-在仓库根目录运行：
+回到仓库根目录运行：
 
 ```bash
 python3 chapter5/visualization/chapter5_all_figures.py
@@ -68,10 +71,9 @@ python3 chapter5/visualization/chapter5_all_figures.py
 - `chapter5/visualization/正确图片输出/fig29_overhead.png`
 - `chapter5/visualization/正确图片输出/fig30_gas_comparison.png`
 - `chapter5/visualization/正确图片输出/fig31_tradeoff.png`
-- `chapter5/visualization/paper_alignment_report.md`
 
 ## 注意事项
 
 - `out/`、`cache/`、`__pycache__/`、生成 PDF 和其他可重建产物不提交。
 - 如果重新生成图表，应先重新运行实验入口或让可视化脚本自动补齐 raw log。
-- 所有图表数据均来自 RanCk/SenCk 协议实现、SenCk instrumented EVM opcode hook、公式扫描、Monte Carlo trace、Foundry 输出或报告中记录的表 10 校准参数。
+- 所有图表数据均来自 RanCk/SenCk 协议实现、SenCk instrumented EVM opcode hook、公式扫描、Monte Carlo trace 或 Foundry 输出。

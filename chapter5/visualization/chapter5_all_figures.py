@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Generate Chapter 5 experiment data, figures, and alignment report.
+"""Generate Chapter 5 experiment data and figures.
 
 The script consumes chapter5/experiment/logs/raw_experiment_log.json. If the
 raw log is missing, it runs the Go experiment entrypoint first. All plot arrays
 are derived from the raw protocol traces, formulas recorded in the raw log,
-Monte Carlo outputs, Foundry gas measurements, or explicit Table 10 calibration
-parameters stored in the raw log.
+Monte Carlo outputs, and Foundry gas measurements. Thesis table values are not
+used as fallback plot data.
 """
 
 from __future__ import annotations
@@ -33,7 +33,6 @@ VIS_DIR = ROOT / "visualization"
 RAW_LOG = EXP_DIR / "logs" / "raw_experiment_log.json"
 OUT_JSON = VIS_DIR / "chapter5_experiment_data.json"
 OUT_DIR = VIS_DIR / "正确图片输出"
-REPORT = VIS_DIR / "paper_alignment_report.md"
 
 GO = "/usr/local/go/bin/go"
 
@@ -98,7 +97,13 @@ def ensure_raw_log() -> dict:
     if not RAW_LOG.exists():
         regenerate_raw_log()
     raw = json.loads(RAW_LOG.read_text(encoding="utf-8"))
-    if "detection_parameters" not in raw or "gamma_hit_sweep" not in raw.get("monte_carlo", {}):
+    gas = raw.get("gas_trace", {})
+    provenance = gas.get("measurement_provenance", {})
+    if (
+        "detection_parameters" not in raw
+        or "gamma_hit_sweep" not in raw.get("monte_carlo", {})
+        or not provenance.get("no_paper_table_fallback")
+    ):
         regenerate_raw_log()
         raw = json.loads(RAW_LOG.read_text(encoding="utf-8"))
     validate_raw(raw)
@@ -118,6 +123,7 @@ def validate_raw(raw: dict) -> None:
     assert any(t["cont_audit"]["detected"] for t in raw["ranck_traces"][1:]), "RanCk deviations not detected"
     assert any(t["sent_report"]["detected"] for t in raw["senck_traces"][1:]), "SenCk deviations not detected"
     assert raw["gas_trace"]["default_per_validator_gas"] > 0
+    assert raw["gas_trace"]["measurement_provenance"]["no_paper_table_fallback"], "gas trace uses paper table fallback"
 
 
 def ranck_detect(pi_h: float, ell: np.ndarray | float) -> np.ndarray | float:
@@ -464,7 +470,7 @@ def fig30(data: dict) -> None:
     ax1.set_xticks(range(len(vals)))
     ax1.set_xticklabels(labels, fontsize=8)
     ax1.set_ylabel("Gas（K）")
-    ax1.set_ylim(0, 3200)
+    ax1.set_ylim(0, max(vals / 1000) * 1.20)
     ax1.text(0.98, 0.95, f"总计：{gas['default_per_validator_gas']/1e6:.2f}M gas/验证者/窗口", transform=ax1.transAxes, ha="right", va="top", fontsize=9)
     bottom_title(ax1, "（a）单验证者正常路径 Gas 构成")
 
@@ -478,7 +484,7 @@ def fig30(data: dict) -> None:
     ax2.set_xticks(range(3))
     ax2.set_xticklabels(schemes)
     ax2.set_ylabel("系统月度 Gas（十亿）")
-    ax2.set_ylim(0, 2.0)
+    ax2.set_ylim(0, max(np.array(values) / 1e9) * 1.20)
     bottom_title(ax2, "（b）系统月度 Gas 对比（N=20）")
     fig.tight_layout(rect=[0, 0.08, 1, 1])
     save(fig, "fig30_gas_comparison")
@@ -499,7 +505,7 @@ def fig31(data: dict) -> None:
     ax.set_xlabel(r"心跳触发概率 $\pi_h$")
     ax.set_ylabel("系统月度 Gas（十亿）", color=COLORS["cyan"])
     ax.tick_params(axis="y", labelcolor=COLORS["cyan"])
-    ax.set_ylim(0, 2.0)
+    ax.set_ylim(0, max(monthly.max(), pod) * 1.12)
     for ph, label in [(0.01, "默认 M=100"), (0.005, "降频 M=200")]:
         idx = int(np.argmin(np.abs(pi - ph)))
         ax.plot(pi[idx], monthly[idx], "o", color=COLORS["cyan"], ms=6)
@@ -516,68 +522,6 @@ def fig31(data: dict) -> None:
     save(fig, "fig31_tradeoff")
 
 
-def status_line(name: str, status: str, source: str, note: str) -> str:
-    return f"| {name} | {status} | {source} | {note} |"
-
-
-def write_report(data: dict) -> None:
-    p = data["metadata"]["params"]
-    ranck_honest = data["ranck_traces"][0]
-    senck_honest = data["senck_traces"][0]
-    gas = data["gas"]
-    default_ratio = data["feasibility"]["default_cost_ratio"]
-    fig26_pass_200 = ranck_combined_pass(0.01, np.array([200]), 500, 10)[0]
-    rows = [
-        status_line("表 9 参数落实", "PASS", "raw.table9_parameters + params", f"12s, T_win={p['T_win']}, N={p['N']}, B={p['B']:.0e}, b={p['b']:.0e}, M={p['M']}, M_c={p['M_c']}, L={p['L']}, m_s={p['m_s']}"),
-        status_line("RanCk 协议实现", "PASS", "audit/protocol.go + protocol_test.go", f"诚实 trace 心跳 {ranck_honest['heartbeat_count']} 次，ContAudit={ranck_honest['cont_audit']['passed']}"),
-        status_line("SenCk 协议实现", "PASS", "InstrumentedEVM.ExecuteStep + AfterOpcodeHook + protocol_test.go", f"rho={senck_honest['rho']:.6f}, 抽样段 {len(senck_honest['sent_report']['sampled_reports'])} 个；rw_t 来自 opcode 后置 hook"),
-        status_line("图 24 激励边界", "PASS", "feasibility.C1/C2 formula scan", f"C1 默认精确阈值 {default_ratio['min_c_hb_ratio']*100:.2f}%，论文文字约 {default_ratio['paper_claim_percent']:.0f}%"),
-        status_line("图 25 联合可行域", "PASS", "feasibility.joint grid", "默认 c_hb=0.05, c_sent=1.5, rho=0.3；仅左下角不可行"),
-        status_line("图 26 RanCk 检测", "PASS", "formula + implemented trigger traces", f"s=10, ell=200 联合侥幸通过率 {fig26_pass_200:.3e}"),
-        status_line("图 27 SenCk 检测", "PASS", "rho/m_s formula", "侥幸通过概率随 m_s 指数衰减"),
-        status_line("图 28 Monte Carlo", "PASS", "raw.monte_carlo + SenCk trigger stats", "RanCk/SenCk 模拟点落入理论曲线统计置信范围；Gamma 命中率 sweep 来自 EVM hook trace"),
-        status_line("图 29 旁路审计开销", "PASS", "raw.overhead_traces", "opcode 后置 hook、rw 编码、哈希、Gamma、快照加载和局部重放均记录到 raw log"),
-        status_line("表 10 链上 Gas", "PASS", "Foundry parsed + Table 10 calibration", f"{gas['foundry_status']}；图表采用校准正常路径 {gas['default_per_validator_gas']/1e6:.2f}M gas"),
-        status_line("图 30 Gas 对比", "PASS", "gas.operations + monthly_by_scheme", "默认路径心跳为主要成本；降频后低于 PoD"),
-        status_line("图 31 pi_h 权衡", "PASS", "gas.pi_h_sweep", "pi_h 同时影响 Gas 和 ell=300 检测概率，并标出低于 PoD 区域"),
-        status_line("表 11 综合对比", "PASS", "raw.comparison_table_11", "RanCk+SenCk 同时覆盖在线状态审计和语义勤勉检测"),
-    ]
-    report = [
-        "# 第五章论文实验对齐报告",
-        "",
-        "## 数据来源",
-        "",
-        f"- Raw log: `{RAW_LOG}`",
-        f"- Structured data: `{OUT_JSON}`",
-        "- 证据链：论文机制 -> Go 协议实现/Foundry 合约 -> 测试与实验运行 -> raw log -> structured data -> figures -> 本报告。",
-        "",
-        "## 校准说明",
-        "",
-        "- RanCk/SenCk 检测概率、激励可行域和 Monte Carlo 均由协议实现或公式逐点生成。",
-        "- Foundry per-test gas 受测试 harness/setup 影响，raw log 保留本地实测值；图 30-31 使用论文表 10 目标值，并记录 target/measured 校准因子。",
-        "- C1 默认精确阈值为 1/72=1.39%，与论文“约 1%”文字结论一致，报告同时保留精确值和论文表述。",
-        "",
-        "## 对齐检查",
-        "",
-        "| 项目 | 状态 | 数据来源 | 说明 |",
-        "| --- | --- | --- | --- |",
-        *rows,
-        "",
-        "## 生成文件",
-        "",
-        "- 只输出 600 DPI PNG，不生成 PDF。",
-        "- `fig24_feasibility_ab.png`",
-        "- `fig25_joint_feasibility.png`",
-        "- `fig26_ranck_detection.png`",
-        "- `fig27_senck_passthrough.png`",
-        "- `fig28_monte_carlo_and_gate.png`",
-        "- `fig29_overhead.png`",
-        "- `fig30_gas_comparison.png`",
-        "- `fig31_tradeoff.png`",
-    ]
-    REPORT.write_text("\n".join(report) + "\n", encoding="utf-8")
-
-
 def main() -> None:
     configure_matplotlib()
     OUT_DIR.mkdir(parents=True, exist_ok=True)
@@ -591,10 +535,8 @@ def main() -> None:
     fig29(data)
     fig30(data)
     fig31(data)
-    write_report(data)
     print(f"structured data: {OUT_JSON}")
     print(f"figures: {OUT_DIR}")
-    print(f"report: {REPORT}")
 
 
 if __name__ == "__main__":
