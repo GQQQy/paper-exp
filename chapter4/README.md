@@ -108,6 +108,14 @@ fi
 
 ```bash
 cd chapter4/experiment
+mkdir -p build/circuits
+CIRCOM_BIN="${CIRCOM:-circom}"
+if ! command -v "$CIRCOM_BIN" >/dev/null 2>&1 && [ -x ./tools/bin/circom ]; then
+  CIRCOM_BIN=./tools/bin/circom
+fi
+"$CIRCOM_BIN" circuits/anost_register.circom --r1cs --wasm --sym -o build/circuits
+"$CIRCOM_BIN" circuits/anost_stake.circom --r1cs --wasm --sym -o build/circuits
+"$CIRCOM_BIN" circuits/anost_credential.circom --r1cs --wasm --sym -o build/circuits
 node scripts/verify_circuits.js
 forge test --gas-report
 
@@ -117,6 +125,7 @@ python3 chapter4/visualization/chapter4_all_figures.py
 
 说明：
 
+- 前三条 `"$CIRCOM_BIN" ...` 命令编译三个 AnoSt 电路，生成 `build/circuits/*.r1cs` 和 witness 生成器。
 - `node scripts/verify_circuits.js` 使用编译后的 wasm 生成 witness，运行 `snarkjs wtns check`，并校验 Poseidon 承诺、nullifier、余额约束和 Merkle 路径相关公开输出。
 - `forge test --gas-report` 运行 7 个 Gas 基准测试：`testPublicReg`、`testPublicStake`、`testCandidateDeclare`、`testAnonyReg`、`testAnonyStake`、`testPresentCred`、`testElectCTWR`。
 - `chapter4_all_figures.py` 会重新执行 Foundry Gas、自动编译/检查 Circom 电路、运行 witness 检查、读取 R1CS 约束数、计算 CTWR 解析曲线、执行 Monte Carlo 仿真、生成图 14-22，并写出 raw log 和结构化数据。

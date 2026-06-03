@@ -59,9 +59,13 @@ python3 -m pip install matplotlib numpy Pillow
 
 ```bash
 mkdir -p build/circuits
-circom circuits/anost_register.circom --r1cs --wasm --sym -o build/circuits
-circom circuits/anost_stake.circom --r1cs --wasm --sym -o build/circuits
-circom circuits/anost_credential.circom --r1cs --wasm --sym -o build/circuits
+CIRCOM_BIN="${CIRCOM:-circom}"
+if ! command -v "$CIRCOM_BIN" >/dev/null 2>&1 && [ -x ./tools/bin/circom ]; then
+  CIRCOM_BIN=./tools/bin/circom
+fi
+"$CIRCOM_BIN" circuits/anost_register.circom --r1cs --wasm --sym -o build/circuits
+"$CIRCOM_BIN" circuits/anost_stake.circom --r1cs --wasm --sym -o build/circuits
+"$CIRCOM_BIN" circuits/anost_credential.circom --r1cs --wasm --sym -o build/circuits
 node scripts/verify_circuits.js
 ```
 
