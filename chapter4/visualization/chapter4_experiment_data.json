@@ -25,11 +25,11 @@
     "tooling": {
       "local_snarkjs_available": true,
       "forge_available": true,
-      "circom": "tools/bin/circom",
+      "circom": "/usr/local/bin/circom",
       "compiled_circuits": [
         {
           "circuit": "anost_credential",
-          "compiler": "tools/bin/circom",
+          "compiler": "/usr/local/bin/circom",
           "compiled": false,
           "outputs": [
             "build/circuits/anost_credential.r1cs",
@@ -40,7 +40,7 @@
         },
         {
           "circuit": "anost_register",
-          "compiler": "tools/bin/circom",
+          "compiler": "/usr/local/bin/circom",
           "compiled": false,
           "outputs": [
             "build/circuits/anost_register.r1cs",
@@ -51,7 +51,7 @@
         },
         {
           "circuit": "anost_stake",
-          "compiler": "tools/bin/circom",
+          "compiler": "/usr/local/bin/circom",
           "compiled": false,
           "outputs": [
             "build/circuits/anost_stake.r1cs",

@@ -1220,14 +1220,16 @@ func GasTraceFromFoundry(foundry []FoundryGasEntry, status string, p Params) Gas
 	windowsMonth := 30
 	podEpochsMonth := 6 * 24 * 30
 	podTheta := 0.9
-	podMonthly := int(float64(podEpochsMonth) * podTheta * float64(byGas["testPoDBaselineGas"]))
+	podMonthly := int(float64(podEpochsMonth) * podTheta * float64(p.ValidatorN) * float64(byGas["testPoDBaselineGas"]))
+	verSegReplayGas := int(math.Round(1.2 * p.ThresholdB))
+	sentProveVerSegGas := byGas["testSentProveGas"] + verSegReplayGas
 	ops := []GasOperation{
 		{Name: "RanCk TrackInit", Gas: byGas["testTrackInitGas"], DefaultUses: 1, Source: "Foundry function-level gas report from ValidatorAudit.sol"},
 		{Name: "RanCk HBRespond", Gas: byGas["testHBRespondGas"], DefaultUses: hbDefault, Source: "Foundry function-level gas report from ValidatorAudit.sol"},
 		{Name: "RanCk ContAudit", Gas: byGas["testContAuditGas"], DefaultUses: 1, Source: "Foundry function-level gas report from ValidatorAudit.sol"},
 		{Name: "SenCk SentReport", Gas: byGas["testSentReportGas"], DefaultUses: 1, Source: "Foundry function-level gas report from ValidatorAudit.sol"},
 		{Name: "Dispute", Gas: byGas["testDisputeGas"], DefaultUses: 0, Source: "Foundry function-level gas report from ValidatorAudit.sol"},
-		{Name: "SentProve/VerSeg", Gas: byGas["testSentProveGas"], DefaultUses: 0, Source: "Foundry function-level gas report from ValidatorAudit.sol"},
+		{Name: "SentProve/VerSeg", Gas: sentProveVerSegGas, DefaultUses: 0, Source: "Foundry sentProve submission gas plus Chapter 3 bounded VerSeg replay calibration at b=1e6"},
 	}
 	sweep := make([]GasSweepPoint, 0)
 	for i := 0; i <= 240; i++ {
@@ -1262,10 +1264,15 @@ func GasTraceFromFoundry(foundry []FoundryGasEntry, status string, p Params) Gas
 		FoundryParsed: foundry,
 		FoundryStatus: status,
 		MeasurementProvenance: map[string]any{
-			"source":                  "forge test --gas-report function-level average gas",
-			"foundry_test_level_gas":  byTest,
-			"no_paper_table_fallback": true,
-			"note":                    "Gas figures and Table 10 structured data use local Foundry function-level average measurements only; thesis table values are not used as fallback targets.",
+			"source":                    "forge test --gas-report function-level average gas",
+			"foundry_test_level_gas":    byTest,
+			"pod_monthly_formula":       "monthly_pod_epochs * pod_theta * validator_count * local PoD baseline gas",
+			"pod_validator_count":       p.ValidatorN,
+			"sent_prove_submission_gas": byGas["testSentProveGas"],
+			"verseg_replay_gas":         verSegReplayGas,
+			"verseg_replay_formula":     "1.2 * b, using Chapter 3 bounded VerSeg replay calibration",
+			"no_paper_table_fallback":   true,
+			"note":                      "Normal-path Gas figures use local Foundry function-level averages. SentProve/VerSeg adds the Chapter 3 bounded VerSeg replay calibration because that row covers the reused adjudication interface rather than only the proof-submission wrapper.",
 		},
 	}
 }

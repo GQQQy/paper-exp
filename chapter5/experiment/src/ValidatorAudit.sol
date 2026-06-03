@@ -25,6 +25,7 @@ contract ValidatorAudit {
     mapping(bytes32 => mapping(address => TrackState)) public tracks;
     mapping(bytes32 => mapping(address => SentState)) public reports;
     mapping(bytes32 => bytes32) public audRoots;
+    mapping(bytes32 => mapping(address => mapping(uint256 => bytes32))) public podProofs;
 
     event TrackInitialized(bytes32 indexed tid, address indexed validator, bytes32 tc0);
     event Heartbeat(bytes32 indexed tid, address indexed validator, uint256 blockNumber, bytes32 commitment);
@@ -32,6 +33,7 @@ contract ValidatorAudit {
     event SentinelReport(bytes32 indexed tid, address indexed validator, bytes32 digest);
     event Disputed(bytes32 indexed tid, address indexed validator, bytes32 claim);
     event Slashed(bytes32 indexed tid, address indexed validator, uint256 amount);
+    event PoDAttested(bytes32 indexed tid, address indexed validator, uint256 indexed epoch, bytes32 proof);
 
     function trackInit(bytes32 tid, bytes32 seedHash, bytes32 nonceHash) external returns (bytes32 tc0) {
         tc0 = keccak256(abi.encodePacked("TC0", tid, msg.sender, seedHash, nonceHash));
@@ -124,11 +126,14 @@ contract ValidatorAudit {
         }
     }
 
-    function podBaseline(bytes32 tid, address validator, uint256 epoch, bytes32 watchtowerProof) external pure returns (bytes32) {
+    function podBaseline(bytes32 tid, address validator, uint256 epoch, bytes32 watchtowerProof) external returns (bytes32) {
+        require(validator != address(0), "bad validator");
         bytes32 acc = keccak256(abi.encodePacked(tid, validator, epoch, watchtowerProof));
         for (uint256 i = 0; i < 12; i++) {
             acc = keccak256(abi.encodePacked(acc, i));
         }
+        podProofs[tid][validator][epoch] = acc;
+        emit PoDAttested(tid, validator, epoch, acc);
         return acc;
     }
 }

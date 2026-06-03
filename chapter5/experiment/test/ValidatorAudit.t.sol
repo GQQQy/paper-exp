@@ -57,7 +57,7 @@ contract ValidatorAuditTest {
         audit.sentProve(tid, address(this), events, digest);
     }
 
-    function testPoDBaselineGas() public view {
+    function testPoDBaselineGas() public {
         audit.podBaseline(tid, address(this), 7, keccak256("watchtower"));
     }
 
