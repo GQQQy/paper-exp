@@ -460,6 +460,78 @@ def run_foundry_gas() -> tuple[list[dict], dict]:
     return runs, by_name
 
 
+def circom_path() -> Path:
+    env_path = os.environ.get("CIRCOM")
+    candidates = []
+    if env_path:
+        candidates.append(Path(env_path))
+    which_path = shutil.which("circom")
+    if which_path:
+        candidates.append(Path(which_path))
+    candidates.append(EXP_DIR / "tools" / "bin" / "circom")
+    for candidate in candidates:
+        if candidate.exists() and os.access(candidate, os.X_OK):
+            return candidate
+    raise RuntimeError("missing circom compiler; install circom or set CIRCOM=/path/to/circom")
+
+
+def display_path(path: Path) -> str:
+    try:
+        return str(path.relative_to(EXP_DIR))
+    except ValueError:
+        try:
+            return str(path.relative_to(ROOT))
+        except ValueError:
+            return str(path)
+
+
+def compiled_outputs_for(stem: str) -> list[Path]:
+    return [
+        EXP_DIR / "build" / "circuits" / f"{stem}.r1cs",
+        EXP_DIR / "build" / "circuits" / f"{stem}.sym",
+        EXP_DIR / "build" / "circuits" / f"{stem}_js" / f"{stem}.wasm",
+        EXP_DIR / "build" / "circuits" / f"{stem}_js" / "generate_witness.js",
+    ]
+
+
+def ensure_circuits_compiled() -> list[dict]:
+    compiler = circom_path()
+    compiler_label = display_path(compiler)
+    out_dir = EXP_DIR / "build" / "circuits"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    results = []
+    for circuit in sorted((EXP_DIR / "circuits").glob("*.circom")):
+        stem = circuit.stem
+        outputs = compiled_outputs_for(stem)
+        needs_compile = any(not output.exists() for output in outputs)
+        if not needs_compile:
+            newest_output = min(output.stat().st_mtime for output in outputs)
+            needs_compile = circuit.stat().st_mtime > newest_output
+        if needs_compile:
+            subprocess.run(
+                [
+                    str(compiler),
+                    str(circuit.relative_to(EXP_DIR)),
+                    "--r1cs",
+                    "--wasm",
+                    "--sym",
+                    "-o",
+                    str(out_dir.relative_to(EXP_DIR)),
+                ],
+                cwd=EXP_DIR,
+                check=True,
+                text=True,
+                capture_output=True,
+            )
+        results.append({
+            "circuit": stem,
+            "compiler": compiler_label,
+            "compiled": needs_compile,
+            "outputs": [str(output.relative_to(EXP_DIR)) for output in outputs],
+        })
+    return results
+
+
 def run_circuit_witness_check() -> dict:
     script = EXP_DIR / "scripts" / "verify_circuits.js"
     subprocess.run(["node", str(script)], cwd=EXP_DIR, check=True, text=True, capture_output=True)
@@ -573,6 +645,7 @@ def protocol_trace() -> dict:
 def build_experiment_data() -> dict:
     ctx = make_context()
     gas_runs, gas_by_name = run_foundry_gas()
+    compile_results = ensure_circuits_compiled()
     circuits = circuit_stats()
     figures = {
         "fig14": fig14(ctx),
@@ -592,6 +665,8 @@ def build_experiment_data() -> dict:
             "tooling": {
                 "local_snarkjs_available": snarkjs_path().exists(),
                 "forge_available": shutil.which("forge") is not None,
+                "circom": display_path(circom_path()),
+                "compiled_circuits": compile_results,
                 "groth16_smoke": "skipped_long_running_not_plotted",
             },
         },
@@ -922,8 +997,8 @@ def write_report(data: dict) -> None:
         "",
         "## Evidence Chain",
         "",
-        f"- Raw local execution log: `{RAW_LOG}`",
-        f"- Visualization data: `{DATA_PATH}`",
+        f"- Raw local execution log: `{RAW_LOG.relative_to(ROOT)}`",
+        f"- Visualization data: `{DATA_PATH.relative_to(ROOT)}`",
         "- Paper-scale target: PDF Section 4.5 and Figures 14-22 of Chapter 4",
         "- Rule: analytic curves use the formulas specified in the PDF; Monte Carlo figures execute the stated 1000-run simulation; engineering overhead uses Foundry/snarkjs outputs only.",
         "",

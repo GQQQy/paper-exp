@@ -25,6 +25,42 @@
     "tooling": {
       "local_snarkjs_available": true,
       "forge_available": true,
+      "circom": "tools/bin/circom",
+      "compiled_circuits": [
+        {
+          "circuit": "anost_credential",
+          "compiler": "tools/bin/circom",
+          "compiled": false,
+          "outputs": [
+            "build/circuits/anost_credential.r1cs",
+            "build/circuits/anost_credential.sym",
+            "build/circuits/anost_credential_js/anost_credential.wasm",
+            "build/circuits/anost_credential_js/generate_witness.js"
+          ]
+        },
+        {
+          "circuit": "anost_register",
+          "compiler": "tools/bin/circom",
+          "compiled": false,
+          "outputs": [
+            "build/circuits/anost_register.r1cs",
+            "build/circuits/anost_register.sym",
+            "build/circuits/anost_register_js/anost_register.wasm",
+            "build/circuits/anost_register_js/generate_witness.js"
+          ]
+        },
+        {
+          "circuit": "anost_stake",
+          "compiler": "tools/bin/circom",
+          "compiled": false,
+          "outputs": [
+            "build/circuits/anost_stake.r1cs",
+            "build/circuits/anost_stake.sym",
+            "build/circuits/anost_stake_js/anost_stake.wasm",
+            "build/circuits/anost_stake_js/generate_witness.js"
+          ]
+        }
+      ],
       "groth16_smoke": "skipped_long_running_not_plotted"
     }
   },

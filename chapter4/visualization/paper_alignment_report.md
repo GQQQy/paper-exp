@@ -2,8 +2,8 @@
 
 ## Evidence Chain
 
-- Raw local execution log: `/Users/gqy/Desktop/data/DR/毕业/毕业答辩/实验室验收材料/paper-exp/chapter4/experiment/logs/raw_experiment_log.json`
-- Visualization data: `/Users/gqy/Desktop/data/DR/毕业/毕业答辩/实验室验收材料/paper-exp/chapter4/visualization/chapter4_experiment_data.json`
+- Raw local execution log: `experiment/logs/raw_experiment_log.json`
+- Visualization data: `visualization/chapter4_experiment_data.json`
 - Paper-scale target: PDF Section 4.5 and Figures 14-22 of Chapter 4
 - Rule: analytic curves use the formulas specified in the PDF; Monte Carlo figures execute the stated 1000-run simulation; engineering overhead uses Foundry/snarkjs outputs only.
 
