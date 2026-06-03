@@ -73,6 +73,45 @@ func TestSenCkHonestReplayGeneratesDigest(t *testing.T) {
 	}
 }
 
+func TestSenCkTraceComesFromEVMOpcodeHook(t *testing.T) {
+	trace := SimulateSenCk(shortParams(), BehaviorHonest)
+	if len(trace.TraceSample) == 0 {
+		t.Fatal("missing EVM hook trace sample")
+	}
+	seenMemoryOrStorage := false
+	seenStack := false
+	for _, step := range trace.TraceSample {
+		if step.HookSource != "EVM opcode post-execution audit hook" {
+			t.Fatalf("unexpected hook source: %q", step.HookSource)
+		}
+		if step.OpName == "" || step.RW == "" || step.Value == "" {
+			t.Fatalf("opcode hook did not emit pc/op/rw_t/val_t: %+v", step)
+		}
+		for _, access := range step.Accesses {
+			switch access.Kind {
+			case "memory_read", "memory_write", "storage_read", "storage_write":
+				seenMemoryOrStorage = true
+			case "stack_push", "stack_pop":
+				seenStack = true
+			}
+		}
+	}
+	if !seenMemoryOrStorage {
+		t.Fatal("EVM hook trace did not include memory/storage runtime accesses")
+	}
+	if !seenStack {
+		t.Fatal("EVM hook trace did not include stack runtime accesses")
+	}
+	for _, report := range trace.SegmentReports {
+		if report.ExecutionLayer != "instrumented local EVM opcode interpreter" {
+			t.Fatalf("segment report is not tied to the instrumented EVM layer: %+v", report)
+		}
+		if report.BytecodeHash == "" || report.SnapshotCommitment == "" {
+			t.Fatalf("segment report missing bytecode/snapshot provenance: %+v", report)
+		}
+	}
+}
+
 func TestSenCkLazyGuessCannotStablyPass(t *testing.T) {
 	trace := SimulateSenCk(shortParams(), BehaviorLazyGuess)
 	if trace.SentReport.Passed || !trace.SentReport.Detected {

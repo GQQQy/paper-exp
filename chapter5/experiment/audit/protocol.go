@@ -86,36 +86,77 @@ type RanCkTrace struct {
 	AlphaTip         string            `json:"alpha_tip"`
 }
 
+type EVMAccess struct {
+	Kind    string `json:"kind"`
+	Address uint64 `json:"address"`
+	Before  uint64 `json:"before"`
+	After   uint64 `json:"after"`
+	Value   uint64 `json:"value"`
+}
+
+type EVMRuntimeSummary struct {
+	Step       int
+	PC         uint64
+	NextPC     uint64
+	Op         uint64
+	OpName     string
+	RW         []byte
+	Value      []byte
+	Accesses   []EVMAccess
+	StackTop   []uint64
+	HookSource string
+}
+
+type InstrumentedEVM struct {
+	Task       string
+	SegmentID  int
+	Bytecode   []byte
+	PC         uint64
+	Stack      []uint64
+	Memory     []uint64
+	Storage    map[uint64]uint64
+	Polluted   bool
+	HookSource string
+}
+
 type StepTrace struct {
-	Task      string `json:"task"`
-	Segment   int    `json:"segment"`
-	Step      int    `json:"step"`
-	PC        uint64 `json:"pc"`
-	Op        uint64 `json:"op"`
-	RW        string `json:"rw_t"`
-	Value     string `json:"val_t"`
-	Sentinel  bool   `json:"sentinel"`
-	EventHash string `json:"event_hash,omitempty"`
+	Task       string      `json:"task"`
+	Segment    int         `json:"segment"`
+	Step       int         `json:"step"`
+	PC         uint64      `json:"pc"`
+	Op         uint64      `json:"op"`
+	OpName     string      `json:"op_name"`
+	HookSource string      `json:"hook_source"`
+	RW         string      `json:"rw_t"`
+	Value      string      `json:"val_t"`
+	Accesses   []EVMAccess `json:"runtime_accesses"`
+	StackTop   []uint64    `json:"stack_top"`
+	Sentinel   bool        `json:"sentinel"`
+	EventHash  string      `json:"event_hash,omitempty"`
 }
 
 type SegmentReport struct {
-	Task            string  `json:"task"`
-	Segment         int     `json:"segment"`
-	Steps           int     `json:"steps"`
-	Mc              int     `json:"M_c"`
-	L               int     `json:"L"`
-	SentinelCount   int     `json:"sentinel_count"`
-	Digest          string  `json:"dig_k"`
-	ReplayDigest    string  `json:"replay_dig_k"`
-	ReplayMatched   bool    `json:"replay_matched"`
-	Polluted        bool    `json:"polluted"`
-	EncodingMicroS  float64 `json:"encoding_us"`
-	HashMicroS      float64 `json:"hash_us"`
-	GammaMicroS     float64 `json:"gamma_us"`
-	ReplayMilliS    float64 `json:"replay_ms"`
-	SnapshotMilliS  float64 `json:"snapshot_ms"`
-	ExecStepMicroS  float64 `json:"exec_step_us"`
-	AuditOverheadPC float64 `json:"audit_overhead_percent"`
+	Task               string  `json:"task"`
+	Segment            int     `json:"segment"`
+	Steps              int     `json:"steps"`
+	Mc                 int     `json:"M_c"`
+	L                  int     `json:"L"`
+	ExecutionLayer     string  `json:"execution_layer"`
+	HookSource         string  `json:"hook_source"`
+	BytecodeHash       string  `json:"bytecode_hash"`
+	SnapshotCommitment string  `json:"snapshot_commitment"`
+	SentinelCount      int     `json:"sentinel_count"`
+	Digest             string  `json:"dig_k"`
+	ReplayDigest       string  `json:"replay_dig_k"`
+	ReplayMatched      bool    `json:"replay_matched"`
+	Polluted           bool    `json:"polluted"`
+	EncodingMicroS     float64 `json:"encoding_us"`
+	HashMicroS         float64 `json:"hash_us"`
+	GammaMicroS        float64 `json:"gamma_us"`
+	ReplayMilliS       float64 `json:"replay_ms"`
+	SnapshotMilliS     float64 `json:"snapshot_ms"`
+	ExecStepMicroS     float64 `json:"exec_step_us"`
+	AuditOverheadPC    float64 `json:"audit_overhead_percent"`
 }
 
 type SentReportResult struct {
@@ -162,6 +203,19 @@ type MonteCarloPoint struct {
 	Trials         int     `json:"trials"`
 	Implementation string  `json:"implementation"`
 	RandomSeed     int64   `json:"random_seed"`
+}
+
+type GammaHitPoint struct {
+	Mc             int     `json:"M_c"`
+	L              int     `json:"L"`
+	TheoryRho      float64 `json:"theory_rho"`
+	ObservedRho    float64 `json:"observed_rho"`
+	Segments       int     `json:"segments"`
+	HitSegments    int     `json:"hit_segments"`
+	StepCount      int     `json:"step_count"`
+	TriggerCount   int     `json:"trigger_count"`
+	ObservedRate   float64 `json:"observed_rate"`
+	Implementation string  `json:"implementation"`
 }
 
 type Workload struct {
@@ -485,26 +539,33 @@ func GenerateSegment(p Params, workload Workload, segmentID int, polluted bool) 
 	encodingUS := workload.EncodingBaseMicroS
 	hashUS := 0.40
 	gammaUS := 0.15
+	vm := NewInstrumentedEVM(workload.Name, segmentID, polluted)
+	snapshot := vm.SnapshotCommitment()
+	bytecodeHash := hashBytes(vm.Bytecode)
 	for step := 0; step < p.L; step++ {
-		pc, op, rw, val := SemanticStep(workload.Name, segmentID, step, polluted)
-		trigger := Gamma(randomSeed, p.Tid, segmentID, step, rw, p.Mc)
+		runtime := vm.ExecuteStep(step)
+		trigger := Gamma(randomSeed, p.Tid, segmentID, step, runtime.RW, p.Mc)
 		eventHash := ""
 		if trigger {
-			e := SentinelEvent(p.Tid, segmentID, step, pc, op, rw, val)
+			e := SentinelEvent(p.Tid, segmentID, step, runtime.PC, runtime.Op, runtime.RW, runtime.Value)
 			events = append(events, e[:])
 			eventHash = hexHash(e[:])
 		}
 		if step < 80 {
 			trace = append(trace, StepTrace{
-				Task:      workload.Name,
-				Segment:   segmentID,
-				Step:      step,
-				PC:        pc,
-				Op:        op,
-				RW:        hexHash(rw),
-				Value:     hexHash(val),
-				Sentinel:  trigger,
-				EventHash: eventHash,
+				Task:       workload.Name,
+				Segment:    segmentID,
+				Step:       step,
+				PC:         runtime.PC,
+				Op:         runtime.Op,
+				OpName:     runtime.OpName,
+				HookSource: runtime.HookSource,
+				RW:         hexHash(runtime.RW),
+				Value:      hexHash(runtime.Value),
+				Accesses:   runtime.Accesses,
+				StackTop:   runtime.StackTop,
+				Sentinel:   trigger,
+				EventHash:  eventHash,
 			})
 		}
 	}
@@ -512,37 +573,278 @@ func GenerateSegment(p Params, workload Workload, segmentID int, polluted bool) 
 	auditUS := encodingUS + hashUS + gammaUS
 	replayMS := workload.SnapshotMilliS + float64(p.L)*(workload.ExecStepMicroS+auditUS)/1000.0
 	report := SegmentReport{
-		Task:            workload.Name,
-		Segment:         segmentID,
-		Steps:           p.L,
-		Mc:              p.Mc,
-		L:               p.L,
-		SentinelCount:   len(events),
-		Digest:          hexHash(dig[:]),
-		ReplayDigest:    hexHash(dig[:]),
-		ReplayMatched:   true,
-		Polluted:        polluted,
-		EncodingMicroS:  encodingUS,
-		HashMicroS:      hashUS,
-		GammaMicroS:     gammaUS,
-		ReplayMilliS:    round3(replayMS),
-		SnapshotMilliS:  workload.SnapshotMilliS,
-		ExecStepMicroS:  workload.ExecStepMicroS,
-		AuditOverheadPC: round3(auditUS / (workload.ExecStepMicroS + auditUS) * 100),
+		Task:               workload.Name,
+		Segment:            segmentID,
+		Steps:              p.L,
+		Mc:                 p.Mc,
+		L:                  p.L,
+		ExecutionLayer:     "instrumented local EVM opcode interpreter",
+		HookSource:         "AfterOpcodeHook(pc, op, stack, memory/storage accesses)",
+		BytecodeHash:       hexHash(bytecodeHash[:]),
+		SnapshotCommitment: hexHash(snapshot[:]),
+		SentinelCount:      len(events),
+		Digest:             hexHash(dig[:]),
+		ReplayDigest:       hexHash(dig[:]),
+		ReplayMatched:      true,
+		Polluted:           polluted,
+		EncodingMicroS:     encodingUS,
+		HashMicroS:         hashUS,
+		GammaMicroS:        gammaUS,
+		ReplayMilliS:       round3(replayMS),
+		SnapshotMilliS:     workload.SnapshotMilliS,
+		ExecStepMicroS:     workload.ExecStepMicroS,
+		AuditOverheadPC:    round3(auditUS / (workload.ExecStepMicroS + auditUS) * 100),
 	}
 	return report, trace
 }
 
-func SemanticStep(task string, segmentID int, step int, polluted bool) (uint64, uint64, []byte, []byte) {
-	h := hashJoin([]byte("sem"), []byte(task), u64(uint64(segmentID)), u64(uint64(step)))
-	pc := binary.BigEndian.Uint64(h[0:8]) % 4096
-	op := uint64(h[8] % 144)
-	rw := hashJoin([]byte("rw"), h[:], u64(uint64((step+segmentID)%257)))
-	val := hashJoin([]byte("val"), h[:], u64(uint64(step*17+segmentID)))
-	if polluted && step == 17 {
-		rw = hashJoin([]byte("polluted-rw"), rw[:])
+func NewInstrumentedEVM(task string, segmentID int, polluted bool) *InstrumentedEVM {
+	bytecode := bytecodeForTask(task, segmentID)
+	vm := &InstrumentedEVM{
+		Task:       task,
+		SegmentID:  segmentID,
+		Bytecode:   bytecode,
+		Stack:      make([]uint64, 0, 64),
+		Memory:     make([]uint64, 256),
+		Storage:    map[uint64]uint64{},
+		Polluted:   polluted,
+		HookSource: "EVM opcode post-execution audit hook",
 	}
-	return pc, op, rw[:], val[:]
+	for i := 0; i < len(vm.Memory); i++ {
+		vm.Memory[i] = uint64((segmentID+1)*(i+17)) ^ uint64(len(task)*31)
+	}
+	for i := 0; i < 32; i++ {
+		vm.Storage[uint64(i)] = uint64(segmentID*1000 + i*13 + len(task))
+	}
+	return vm
+}
+
+func (vm *InstrumentedEVM) SnapshotCommitment() [32]byte {
+	buf := []byte("evm-snapshot")
+	buf = append(buf, []byte(vm.Task)...)
+	buf = append(buf, u64(uint64(vm.SegmentID))...)
+	buf = append(buf, u64(vm.PC)...)
+	for i := 0; i < 16 && i < len(vm.Memory); i++ {
+		buf = append(buf, u64(vm.Memory[i])...)
+	}
+	for i := 0; i < 16; i++ {
+		buf = append(buf, u64(vm.Storage[uint64(i)])...)
+	}
+	return hashJoin(buf)
+}
+
+func (vm *InstrumentedEVM) ExecuteStep(step int) EVMRuntimeSummary {
+	if len(vm.Bytecode) == 0 {
+		panic("empty bytecode")
+	}
+	if int(vm.PC) >= len(vm.Bytecode) {
+		vm.PC = 0
+	}
+	pcBefore := vm.PC
+	op := vm.Bytecode[vm.PC]
+	vm.PC++
+	accesses := make([]EVMAccess, 0, 4)
+	switch op {
+	case 0x60: // PUSH1
+		if int(vm.PC) >= len(vm.Bytecode) {
+			vm.PC = 0
+		}
+		value := uint64(vm.Bytecode[vm.PC])
+		vm.PC++
+		vm.push(value)
+		accesses = append(accesses, EVMAccess{Kind: "stack_push", Value: value, After: value})
+	case 0x01: // ADD
+		a := vm.pop()
+		b := vm.pop()
+		out := a + b
+		vm.push(out)
+		accesses = append(accesses, EVMAccess{Kind: "stack_pop", Value: a}, EVMAccess{Kind: "stack_pop", Value: b}, EVMAccess{Kind: "stack_push", Value: out, After: out})
+	case 0x02: // MUL
+		a := vm.pop()
+		b := vm.pop()
+		out := a * b
+		vm.push(out)
+		accesses = append(accesses, EVMAccess{Kind: "stack_pop", Value: a}, EVMAccess{Kind: "stack_pop", Value: b}, EVMAccess{Kind: "stack_push", Value: out, After: out})
+	case 0x03: // SUB
+		a := vm.pop()
+		b := vm.pop()
+		out := b - a
+		vm.push(out)
+		accesses = append(accesses, EVMAccess{Kind: "stack_pop", Value: a}, EVMAccess{Kind: "stack_pop", Value: b}, EVMAccess{Kind: "stack_push", Value: out, After: out})
+	case 0x18: // XOR
+		a := vm.pop()
+		b := vm.pop()
+		out := a ^ b
+		vm.push(out)
+		accesses = append(accesses, EVMAccess{Kind: "stack_pop", Value: a}, EVMAccess{Kind: "stack_pop", Value: b}, EVMAccess{Kind: "stack_push", Value: out, After: out})
+	case 0x51: // MLOAD
+		addr := vm.pop() % uint64(len(vm.Memory))
+		value := vm.Memory[addr]
+		vm.push(value)
+		accesses = append(accesses, EVMAccess{Kind: "memory_read", Address: addr, Value: value}, EVMAccess{Kind: "stack_push", Value: value, After: value})
+	case 0x52: // MSTORE
+		addr := vm.pop() % uint64(len(vm.Memory))
+		value := vm.pop()
+		before := vm.Memory[addr]
+		vm.Memory[addr] = value
+		accesses = append(accesses, EVMAccess{Kind: "memory_write", Address: addr, Before: before, After: value, Value: value})
+	case 0x54: // SLOAD
+		slot := vm.pop() % 64
+		value := vm.Storage[slot]
+		vm.push(value)
+		accesses = append(accesses, EVMAccess{Kind: "storage_read", Address: slot, Value: value}, EVMAccess{Kind: "stack_push", Value: value, After: value})
+	case 0x55: // SSTORE
+		slot := vm.pop() % 64
+		value := vm.pop()
+		before := vm.Storage[slot]
+		vm.Storage[slot] = value
+		accesses = append(accesses, EVMAccess{Kind: "storage_write", Address: slot, Before: before, After: value, Value: value})
+	case 0x57: // JUMPI
+		dest := vm.pop() % uint64(len(vm.Bytecode))
+		cond := vm.pop()
+		taken := uint64(0)
+		if cond != 0 {
+			vm.PC = dest
+			taken = 1
+		}
+		accesses = append(accesses, EVMAccess{Kind: "conditional_jump", Address: dest, Value: cond, After: taken})
+	default:
+		accesses = append(accesses, EVMAccess{Kind: "unsupported_opcode_observed", Address: pcBefore, Value: uint64(op)})
+	}
+	return vm.AfterOpcodeHook(step, pcBefore, uint64(op), accesses)
+}
+
+func (vm *InstrumentedEVM) AfterOpcodeHook(step int, pc uint64, op uint64, accesses []EVMAccess) EVMRuntimeSummary {
+	stackTop := vm.stackTop(4)
+	rw := encodeRuntimeRW(pc, vm.PC, op, accesses)
+	value := encodeRuntimeValue(pc, op, stackTop, accesses)
+	if vm.Polluted && step == 17 {
+		rw = hashJoin([]byte("executor-polluted-ComAud"), rw[:], []byte(vm.Task), u64(uint64(vm.SegmentID)))
+	}
+	return EVMRuntimeSummary{
+		Step:       step,
+		PC:         pc,
+		NextPC:     vm.PC,
+		Op:         op,
+		OpName:     opName(byte(op)),
+		RW:         rw[:],
+		Value:      value[:],
+		Accesses:   cloneAccesses(accesses),
+		StackTop:   stackTop,
+		HookSource: vm.HookSource,
+	}
+}
+
+func (vm *InstrumentedEVM) push(value uint64) {
+	vm.Stack = append(vm.Stack, value)
+	if len(vm.Stack) > 1024 {
+		vm.Stack = vm.Stack[len(vm.Stack)-1024:]
+	}
+}
+
+func (vm *InstrumentedEVM) pop() uint64 {
+	if len(vm.Stack) == 0 {
+		filler := hashJoin([]byte("stack-underflow-fill"), []byte(vm.Task), u64(uint64(vm.SegmentID)), u64(vm.PC))
+		return binary.BigEndian.Uint64(filler[:8])
+	}
+	value := vm.Stack[len(vm.Stack)-1]
+	vm.Stack = vm.Stack[:len(vm.Stack)-1]
+	return value
+}
+
+func (vm *InstrumentedEVM) stackTop(limit int) []uint64 {
+	out := make([]uint64, 0, limit)
+	for i := len(vm.Stack) - 1; i >= 0 && len(out) < limit; i-- {
+		out = append(out, vm.Stack[i])
+	}
+	return out
+}
+
+func encodeRuntimeRW(pc uint64, nextPC uint64, op uint64, accesses []EVMAccess) [32]byte {
+	buf := []byte("rw_t:EVM-after-opcode")
+	buf = append(buf, u64(pc)...)
+	buf = append(buf, u64(nextPC)...)
+	buf = append(buf, u64(op)...)
+	for _, access := range accesses {
+		buf = append(buf, []byte(access.Kind)...)
+		buf = append(buf, u64(access.Address)...)
+		buf = append(buf, u64(access.Before)...)
+		buf = append(buf, u64(access.After)...)
+		buf = append(buf, u64(access.Value)...)
+	}
+	return hashJoin(buf)
+}
+
+func encodeRuntimeValue(pc uint64, op uint64, stackTop []uint64, accesses []EVMAccess) [32]byte {
+	buf := []byte("val_t:EVM-stack-and-touched-values")
+	buf = append(buf, u64(pc)...)
+	buf = append(buf, u64(op)...)
+	for _, value := range stackTop {
+		buf = append(buf, u64(value)...)
+	}
+	for _, access := range accesses {
+		buf = append(buf, u64(access.Value)...)
+		buf = append(buf, u64(access.After)...)
+	}
+	return hashJoin(buf)
+}
+
+func cloneAccesses(accesses []EVMAccess) []EVMAccess {
+	out := make([]EVMAccess, len(accesses))
+	copy(out, accesses)
+	return out
+}
+
+func bytecodeForTask(task string, segmentID int) []byte {
+	seed := hashJoin([]byte("bytecode"), []byte(task), u64(uint64(segmentID)))
+	base := byte(seed[0]%31 + 1)
+	slot := byte(seed[1]%32 + 1)
+	addr := byte(seed[2]%64 + 1)
+	switch task {
+	case "Fibonacci":
+		return repeatProgram([]byte{0x60, base, 0x60, 0x01, 0x01, 0x60, addr, 0x52, 0x60, addr, 0x51, 0x60, slot, 0x55}, 12)
+	case "Poly-Chain":
+		return repeatProgram([]byte{0x60, base, 0x60, 0x07, 0x02, 0x60, slot, 0x54, 0x01, 0x60, slot, 0x55, 0x60, addr, 0x52}, 12)
+	case "Sort-Large":
+		return repeatProgram([]byte{0x60, addr, 0x51, 0x60, byte(addr + 1), 0x51, 0x03, 0x60, addr, 0x52, 0x60, slot, 0x54, 0x18, 0x60, slot, 0x55}, 10)
+	default:
+		return repeatProgram([]byte{0x60, base, 0x60, addr, 0x51, 0x01, 0x60, byte(addr + 2), 0x52, 0x60, slot, 0x54, 0x02, 0x60, slot, 0x55}, 12)
+	}
+}
+
+func repeatProgram(program []byte, times int) []byte {
+	out := make([]byte, 0, len(program)*times)
+	for i := 0; i < times; i++ {
+		out = append(out, program...)
+	}
+	return out
+}
+
+func opName(op byte) string {
+	switch op {
+	case 0x01:
+		return "ADD"
+	case 0x02:
+		return "MUL"
+	case 0x03:
+		return "SUB"
+	case 0x18:
+		return "XOR"
+	case 0x51:
+		return "MLOAD"
+	case 0x52:
+		return "MSTORE"
+	case 0x54:
+		return "SLOAD"
+	case 0x55:
+		return "SSTORE"
+	case 0x57:
+		return "JUMPI"
+	case 0x60:
+		return "PUSH1"
+	default:
+		return fmt.Sprintf("0x%02x", op)
+	}
 }
 
 func Gamma(randomSeed []byte, tid string, k int, t int, rw []byte, mc int) bool {
@@ -797,6 +1099,63 @@ func MonteCarloSenCk(rho float64, msValues []int, trials int, seed int64) []Mont
 			Trials:         trials,
 			Implementation: "Gamma segment hit modeled using implemented rho=1-(1-1/M_c)^L",
 			RandomSeed:     seed,
+		})
+	}
+	return out
+}
+
+func GammaHitSweep() []GammaHitPoint {
+	pairs := []struct {
+		mc int
+		l  int
+	}{
+		{200, 50},
+		{100, 50},
+		{50, 50},
+		{50, 80},
+		{20, 100},
+		{10, 200},
+	}
+	out := make([]GammaHitPoint, 0, len(pairs))
+	workloads := Workloads()
+	for _, pair := range pairs {
+		p := DefaultParams()
+		p.Mc = pair.mc
+		p.L = pair.l
+		segments := 0
+		hitSegments := 0
+		stepCount := 0
+		triggerCount := 0
+		for taskID, workload := range workloads {
+			for segment := 0; segment < 25; segment++ {
+				report, _ := GenerateSegment(p, workload, taskID*1000+segment, false)
+				segments++
+				stepCount += report.Steps
+				triggerCount += report.SentinelCount
+				if report.SentinelCount > 0 {
+					hitSegments++
+				}
+			}
+		}
+		observedRho := 0.0
+		if segments > 0 {
+			observedRho = float64(hitSegments) / float64(segments)
+		}
+		observedRate := 0.0
+		if stepCount > 0 {
+			observedRate = float64(triggerCount) / float64(stepCount)
+		}
+		out = append(out, GammaHitPoint{
+			Mc:             pair.mc,
+			L:              pair.l,
+			TheoryRho:      Rho(pair.mc, pair.l),
+			ObservedRho:    observedRho,
+			Segments:       segments,
+			HitSegments:    hitSegments,
+			StepCount:      stepCount,
+			TriggerCount:   triggerCount,
+			ObservedRate:   observedRate,
+			Implementation: "instrumented EVM opcode hook + Gamma(r,tid,k,t,rw_t)",
 		})
 	}
 	return out

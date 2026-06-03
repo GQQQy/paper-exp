@@ -11,7 +11,6 @@ parameters stored in the raw log.
 from __future__ import annotations
 
 import json
-import hashlib
 import math
 import os
 import subprocess
@@ -79,8 +78,6 @@ def configure_matplotlib() -> None:
             "font.family": "sans-serif",
             "font.sans-serif": usable,
             "mathtext.fontset": "dejavusans",
-            "pdf.fonttype": 42,
-            "ps.fonttype": 42,
             "axes.unicode_minus": False,
             "axes.grid": True,
             "grid.alpha": 0.25,
@@ -90,13 +87,20 @@ def configure_matplotlib() -> None:
     )
 
 
+def regenerate_raw_log() -> None:
+    env = os.environ.copy()
+    env["GOCACHE"] = "/private/tmp/chapter5-gocache"
+    Path(env["GOCACHE"]).mkdir(parents=True, exist_ok=True)
+    subprocess.run([GO, "run", "./cmd/audit-exp", "--out", str(RAW_LOG)], cwd=EXP_DIR, env=env, check=True)
+
+
 def ensure_raw_log() -> dict:
     if not RAW_LOG.exists():
-        env = os.environ.copy()
-        env["GOCACHE"] = "/private/tmp/chapter5-gocache"
-        Path(env["GOCACHE"]).mkdir(parents=True, exist_ok=True)
-        subprocess.run([GO, "run", "./cmd/audit-exp", "--out", str(RAW_LOG)], cwd=EXP_DIR, env=env, check=True)
+        regenerate_raw_log()
     raw = json.loads(RAW_LOG.read_text(encoding="utf-8"))
+    if "detection_parameters" not in raw or "gamma_hit_sweep" not in raw.get("monte_carlo", {}):
+        regenerate_raw_log()
+        raw = json.loads(RAW_LOG.read_text(encoding="utf-8"))
     validate_raw(raw)
     return raw
 
@@ -107,15 +111,13 @@ def validate_raw(raw: dict) -> None:
     assert raw["params"]["b"] == 1e6
     assert raw["ranck_traces"], "missing RanCk traces"
     assert raw["senck_traces"], "missing SenCk traces"
+    assert raw["detection_parameters"], "missing detection parameter provenance"
+    assert raw["monte_carlo"]["gamma_hit_sweep"], "missing Gamma hit sweep"
     assert raw["ranck_traces"][0]["cont_audit"]["passed"], "honest RanCk failed"
     assert raw["senck_traces"][0]["sent_report"]["passed"], "honest SenCk failed"
     assert any(t["cont_audit"]["detected"] for t in raw["ranck_traces"][1:]), "RanCk deviations not detected"
     assert any(t["sent_report"]["detected"] for t in raw["senck_traces"][1:]), "SenCk deviations not detected"
     assert raw["gas_trace"]["default_per_validator_gas"] > 0
-
-
-def rho(mc: int, L: int) -> float:
-    return 1.0 - (1.0 - 1.0 / mc) ** L
 
 
 def ranck_detect(pi_h: float, ell: np.ndarray | float) -> np.ndarray | float:
@@ -132,42 +134,33 @@ def senck_pass(r: float, ms: np.ndarray | int) -> np.ndarray | float:
     return (1.0 - r) ** ms
 
 
-def deterministic_mod(*parts: object, modulus: int) -> int:
-    h = hashlib.sha256()
-    for part in parts:
-        h.update(str(part).encode("utf-8"))
-        h.update(b"|")
-    return int.from_bytes(h.digest()[:8], "big") % modulus
-
-
 def build_data(raw: dict) -> dict:
     params = raw["params"]
-    ell = np.arange(1, 501)
+    det_params = raw["detection_parameters"]
+    ell = np.arange(1, det_params["offline_length_max_blocks"] + 1)
+    ms_values = list(range(det_params["senck_m_s_min"], det_params["senck_m_s_max"] + 1))
     detection = {
         "ranck_heartbeat": {
             "ell": ell.tolist(),
-            "series": {
-                "M=500": ranck_detect(1 / 500, ell).tolist(),
-                "M=200": ranck_detect(1 / 200, ell).tolist(),
-                "M=100": ranck_detect(1 / 100, ell).tolist(),
-                "M=50": ranck_detect(1 / 50, ell).tolist(),
-            },
+            "series": {f"M={m}": ranck_detect(1 / m, ell).tolist() for m in det_params["heartbeat_M_values"]},
         },
         "ranck_combined_pass": {
             "ell": ell.tolist(),
-            "pi_h": 0.01,
-            "n": 500,
-            "series": {f"s={s}": ranck_combined_pass(0.01, ell, 500, s).tolist() for s in [5, 10, 15]},
+            "pi_h": det_params["combined_pi_h"],
+            "n": det_params["combined_audit_window_blocks"],
+            "series": {
+                f"s={s}": ranck_combined_pass(
+                    det_params["combined_pi_h"],
+                    ell,
+                    det_params["combined_audit_window_blocks"],
+                    s,
+                ).tolist()
+                for s in det_params["continuity_sample_sizes"]
+            },
         },
         "senck_lazy_pass": {
-            "m_s": list(range(1, 21)),
-            "series": {
-                "rho=0.2": [senck_pass(0.2, m) for m in range(1, 21)],
-                "rho=0.4": [senck_pass(0.4, m) for m in range(1, 21)],
-                "rho=0.6": [senck_pass(0.6, m) for m in range(1, 21)],
-                "rho=0.8": [senck_pass(0.8, m) for m in range(1, 21)],
-                "rho=0.95": [senck_pass(0.95, m) for m in range(1, 21)],
-            },
+            "m_s": ms_values,
+            "series": {f"rho={r:g}": [senck_pass(r, m) for m in ms_values] for r in det_params["senck_rho_values"]},
         },
     }
     data = {
@@ -181,6 +174,7 @@ def build_data(raw: dict) -> dict:
         "protocol_coverage": raw["protocol_coverage"],
         "ranck_traces": raw["ranck_traces"],
         "senck_traces": raw["senck_traces"],
+        "detection_parameters": det_params,
         "feasibility": raw["feasibility"],
         "detection": detection,
         "monte_carlo": raw["monte_carlo"],
@@ -213,13 +207,6 @@ def log_axis(ax) -> None:
 def save(fig, name: str) -> None:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     fig.savefig(OUT_DIR / f"{name}.png", bbox_inches="tight")
-    pdf_path = OUT_DIR / f"{name}.pdf"
-    try:
-        fig.savefig(pdf_path, bbox_inches="tight")
-    except RuntimeError as exc:
-        if pdf_path.exists():
-            pdf_path.unlink()
-        print(f"[warn] skipped PDF for {name}: {exc}")
     plt.close(fig)
 
 
@@ -280,6 +267,7 @@ def fig25(data: dict) -> None:
         grid[idx_ms[p["m_s"]], idx_pi[round(p["pi_h"], 12)]] = value
     fig, ax = plt.subplots(figsize=(7.2, 5.4))
     cmap = ListedColormap([COLORS["pale"], COLORS["light_blue"], "#FCE8B2", "#BFE7D3"])
+    ax.grid(False)
     ax.pcolormesh(pi_values, ms_values, grid, cmap=cmap, shading="nearest")
     ax.set_xlabel(r"心跳触发概率 $\pi_h$")
     ax.set_ylabel(r"抽样段数量 $m_s$")
@@ -387,22 +375,11 @@ def fig28(data: dict) -> None:
     ax3.set_title(f"steps={stats['step_count']:,}, triggers={stats['trigger_count']:,}")
     bottom_title(ax3, "（c）Gamma 门控触发率")
 
-    pairs = [(200, 50), (100, 50), (50, 50), (50, 80), (20, 100), (10, 200)]
-    labels = [f"({mc},{L})" for mc, L in pairs]
-    theory = [rho(mc, L) for mc, L in pairs]
-    observed = []
-    for mc, L in pairs:
-        hits = 0
-        segments = 3000
-        for k in range(segments):
-            h = 0
-            for t in range(L):
-                if deterministic_mod(mc, L, k, t, "chapter5", modulus=mc) == 0:
-                    h = 1
-                    break
-            hits += h
-        observed.append(hits / segments)
-    x = np.arange(len(pairs))
+    gamma = data["monte_carlo"]["gamma_hit_sweep"]
+    labels = [f"({p['M_c']},{p['L']})" for p in gamma]
+    theory = [p["theory_rho"] for p in gamma]
+    observed = [p["observed_rho"] for p in gamma]
+    x = np.arange(len(gamma))
     ax4.plot(x, theory, "o-", color=COLORS["dark_blue"], lw=1.8, label="理论")
     ax4.plot(x, observed, "s", color=COLORS["dark_orange"], ms=5, markerfacecolor="white", label="仿真")
     ax4.set_xticks(x)
@@ -553,13 +530,13 @@ def write_report(data: dict) -> None:
     rows = [
         status_line("表 9 参数落实", "PASS", "raw.table9_parameters + params", f"12s, T_win={p['T_win']}, N={p['N']}, B={p['B']:.0e}, b={p['b']:.0e}, M={p['M']}, M_c={p['M_c']}, L={p['L']}, m_s={p['m_s']}"),
         status_line("RanCk 协议实现", "PASS", "audit/protocol.go + protocol_test.go", f"诚实 trace 心跳 {ranck_honest['heartbeat_count']} 次，ContAudit={ranck_honest['cont_audit']['passed']}"),
-        status_line("SenCk 协议实现", "PASS", "audit/protocol.go + protocol_test.go", f"rho={senck_honest['rho']:.6f}, 抽样段 {len(senck_honest['sent_report']['sampled_reports'])} 个"),
+        status_line("SenCk 协议实现", "PASS", "InstrumentedEVM.ExecuteStep + AfterOpcodeHook + protocol_test.go", f"rho={senck_honest['rho']:.6f}, 抽样段 {len(senck_honest['sent_report']['sampled_reports'])} 个；rw_t 来自 opcode 后置 hook"),
         status_line("图 24 激励边界", "PASS", "feasibility.C1/C2 formula scan", f"C1 默认精确阈值 {default_ratio['min_c_hb_ratio']*100:.2f}%，论文文字约 {default_ratio['paper_claim_percent']:.0f}%"),
         status_line("图 25 联合可行域", "PASS", "feasibility.joint grid", "默认 c_hb=0.05, c_sent=1.5, rho=0.3；仅左下角不可行"),
         status_line("图 26 RanCk 检测", "PASS", "formula + implemented trigger traces", f"s=10, ell=200 联合侥幸通过率 {fig26_pass_200:.3e}"),
         status_line("图 27 SenCk 检测", "PASS", "rho/m_s formula", "侥幸通过概率随 m_s 指数衰减"),
-        status_line("图 28 Monte Carlo", "PASS", "raw.monte_carlo + SenCk trigger stats", "RanCk/SenCk 模拟点落入理论曲线统计置信范围；Gamma 触发率来自实现 trace"),
-        status_line("图 29 旁路审计开销", "PASS", "raw.overhead_traces", "rw 编码、哈希、Gamma、快照加载和局部重放均记录到 raw log"),
+        status_line("图 28 Monte Carlo", "PASS", "raw.monte_carlo + SenCk trigger stats", "RanCk/SenCk 模拟点落入理论曲线统计置信范围；Gamma 命中率 sweep 来自 EVM hook trace"),
+        status_line("图 29 旁路审计开销", "PASS", "raw.overhead_traces", "opcode 后置 hook、rw 编码、哈希、Gamma、快照加载和局部重放均记录到 raw log"),
         status_line("表 10 链上 Gas", "PASS", "Foundry parsed + Table 10 calibration", f"{gas['foundry_status']}；图表采用校准正常路径 {gas['default_per_validator_gas']/1e6:.2f}M gas"),
         status_line("图 30 Gas 对比", "PASS", "gas.operations + monthly_by_scheme", "默认路径心跳为主要成本；降频后低于 PoD"),
         status_line("图 31 pi_h 权衡", "PASS", "gas.pi_h_sweep", "pi_h 同时影响 Gas 和 ell=300 检测概率，并标出低于 PoD 区域"),
@@ -588,6 +565,7 @@ def write_report(data: dict) -> None:
         "",
         "## 生成文件",
         "",
+        "- 只输出 600 DPI PNG，不生成 PDF。",
         "- `fig24_feasibility_ab.png`",
         "- `fig25_joint_feasibility.png`",
         "- `fig26_ranck_detection.png`",

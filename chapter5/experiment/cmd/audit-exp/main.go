@@ -22,6 +22,7 @@ type RawExperimentLog struct {
 	RanCkTraces          []audit.RanCkTrace    `json:"ranck_traces"`
 	SenCkTraces          []audit.SenCkTrace    `json:"senck_traces"`
 	MonteCarlo           MonteCarloEvidence    `json:"monte_carlo"`
+	DetectionParameters  DetectionParameters   `json:"detection_parameters"`
 	Feasibility          FeasibilityEvidence   `json:"feasibility"`
 	Overhead             []audit.OverheadTrace `json:"overhead_traces"`
 	Gas                  audit.GasTrace        `json:"gas_trace"`
@@ -31,8 +32,21 @@ type RawExperimentLog struct {
 }
 
 type MonteCarloEvidence struct {
-	RanCk map[string][]audit.MonteCarloPoint `json:"ranck"`
-	SenCk map[string][]audit.MonteCarloPoint `json:"senck"`
+	RanCk    map[string][]audit.MonteCarloPoint `json:"ranck"`
+	SenCk    map[string][]audit.MonteCarloPoint `json:"senck"`
+	GammaHit []audit.GammaHitPoint              `json:"gamma_hit_sweep"`
+}
+
+type DetectionParameters struct {
+	OfflineLengthMaxBlocks    int       `json:"offline_length_max_blocks"`
+	HeartbeatMValues          []int     `json:"heartbeat_M_values"`
+	CombinedPiH               float64   `json:"combined_pi_h"`
+	CombinedAuditWindowBlocks int       `json:"combined_audit_window_blocks"`
+	ContinuitySampleSizes     []int     `json:"continuity_sample_sizes"`
+	SenCkRhoValues            []float64 `json:"senck_rho_values"`
+	SenCkMsMin                int       `json:"senck_m_s_min"`
+	SenCkMsMax                int       `json:"senck_m_s_max"`
+	Source                    string    `json:"source"`
 }
 
 type FeasibilityEvidence struct {
@@ -115,6 +129,7 @@ func main() {
 		RanCkTraces:          ranck,
 		SenCkTraces:          senck,
 		MonteCarlo:           monteCarloEvidence(),
+		DetectionParameters:  detectionParameters(),
 		Feasibility:          feasibilityEvidence(),
 		Overhead:             audit.OverheadTraces(p),
 		Gas:                  audit.GasTraceFromFoundry(foundry, status, p),
@@ -182,6 +197,21 @@ func monteCarloEvidence() MonteCarloEvidence {
 			"rho_0.6": audit.MonteCarloSenCk(0.6, ms, 50000, 20260513),
 			"rho_0.8": audit.MonteCarloSenCk(0.8, ms, 50000, 20260514),
 		},
+		GammaHit: audit.GammaHitSweep(),
+	}
+}
+
+func detectionParameters() DetectionParameters {
+	return DetectionParameters{
+		OfflineLengthMaxBlocks:    500,
+		HeartbeatMValues:          []int{500, 200, 100, 50},
+		CombinedPiH:               0.01,
+		CombinedAuditWindowBlocks: 500,
+		ContinuitySampleSizes:     []int{5, 10, 20},
+		SenCkRhoValues:            []float64{0.2, 0.4, 0.6, 0.8, 0.95},
+		SenCkMsMin:                1,
+		SenCkMsMax:                20,
+		Source:                    "Figure 26/27 parameter scan derived from Table 9 ranges and Section 5.5 detection formulas",
 	}
 }
 
@@ -263,9 +293,9 @@ func coverage() []CoverageItem {
 		{"RanCk Trigger(t,i)=H(bh_t||tid||i) mod M", "audit.Trigger", "PASS"},
 		{"RanCk HBRespond within Delta and c_hb for miss", "audit.SimulateRanCk + ValidatorAudit.sol", "PASS"},
 		{"RanCk ContAudit sampled single-step witnesses", "audit.ContAudit", "PASS"},
-		{"SenCk rw_t/val_t/pc_t/op_t runtime summaries", "audit.SemanticStep", "PASS"},
+		{"SenCk EVM opcode hook captures pc/op/rw_t/val_t", "audit.InstrumentedEVM.ExecuteStep + AfterOpcodeHook", "PASS"},
 		{"SenCk Gamma(r,tid,k,t,rw_t)", "audit.Gamma", "PASS"},
-		{"SenCk SentReport local replay from snapshots", "audit.GenerateSegment + SimulateSenCk", "PASS"},
+		{"SenCk SentReport local replay from snapshots", "audit.GenerateSegment uses instrumented EVM replay", "PASS"},
 		{"SenCk SentDispute/SentProve polluted or wrong report", "audit.SimulateSenCk + Solidity sentProve", "PASS"},
 		{"Integrated submit -> init -> heartbeat -> continuity -> sent report -> final", "protocol_test.go", "PASS"},
 	}
@@ -287,7 +317,7 @@ func paperInputs() map[string]any {
 		"figure_26": "RanCk theory from formulas, including combined heartbeat+continuity pass probability",
 		"figure_27": "SenCk lazy pass probability from rho and m_s",
 		"figure_28": "Monte Carlo traces from implemented Bernoulli trigger and segment hit simulation",
-		"figure_29": "overhead trace from per-step rw encoding, hash, Gamma, sentinel digest, snapshot load, replay model calibrated to chapter3 workloads",
+		"figure_29": "overhead trace from instrumented EVM opcode hook: rw encoding, hash, Gamma, sentinel digest, snapshot load, replay model calibrated to chapter3 workloads",
 		"table_10":  "Foundry gas if parsed; otherwise explicit Table 10 calibration recorded in gas_trace.calibration",
 		"figure_30": "normal path gas decomposition and monthly comparison",
 		"figure_31": "pi_h sweep of gas and ell=300 detection probability, with below-PoD region",

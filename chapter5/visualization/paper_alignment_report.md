@@ -18,13 +18,13 @@
 | --- | --- | --- | --- |
 | 表 9 参数落实 | PASS | raw.table9_parameters + params | 12s, T_win=7200, N=20, B=1e+08, b=1e+06, M=100, M_c=100, L=5000, m_s=10 |
 | RanCk 协议实现 | PASS | audit/protocol.go + protocol_test.go | 诚实 trace 心跳 68 次，ContAudit=True |
-| SenCk 协议实现 | PASS | audit/protocol.go + protocol_test.go | rho=1.000000, 抽样段 10 个 |
+| SenCk 协议实现 | PASS | InstrumentedEVM.ExecuteStep + AfterOpcodeHook + protocol_test.go | rho=1.000000, 抽样段 10 个；rw_t 来自 opcode 后置 hook |
 | 图 24 激励边界 | PASS | feasibility.C1/C2 formula scan | C1 默认精确阈值 1.39%，论文文字约 1% |
 | 图 25 联合可行域 | PASS | feasibility.joint grid | 默认 c_hb=0.05, c_sent=1.5, rho=0.3；仅左下角不可行 |
 | 图 26 RanCk 检测 | PASS | formula + implemented trigger traces | s=10, ell=200 联合侥幸通过率 8.101e-04 |
 | 图 27 SenCk 检测 | PASS | rho/m_s formula | 侥幸通过概率随 m_s 指数衰减 |
-| 图 28 Monte Carlo | PASS | raw.monte_carlo + SenCk trigger stats | RanCk/SenCk 模拟点落入理论曲线统计置信范围；Gamma 触发率来自实现 trace |
-| 图 29 旁路审计开销 | PASS | raw.overhead_traces | rw 编码、哈希、Gamma、快照加载和局部重放均记录到 raw log |
+| 图 28 Monte Carlo | PASS | raw.monte_carlo + SenCk trigger stats | RanCk/SenCk 模拟点落入理论曲线统计置信范围；Gamma 命中率 sweep 来自 EVM hook trace |
+| 图 29 旁路审计开销 | PASS | raw.overhead_traces | opcode 后置 hook、rw 编码、哈希、Gamma、快照加载和局部重放均记录到 raw log |
 | 表 10 链上 Gas | PASS | Foundry parsed + Table 10 calibration | PASS: parsed forge test --gas-report；图表采用校准正常路径 2.71M gas |
 | 图 30 Gas 对比 | PASS | gas.operations + monthly_by_scheme | 默认路径心跳为主要成本；降频后低于 PoD |
 | 图 31 pi_h 权衡 | PASS | gas.pi_h_sweep | pi_h 同时影响 Gas 和 ell=300 检测概率，并标出低于 PoD 区域 |
@@ -32,6 +32,7 @@
 
 ## 生成文件
 
+- 只输出 600 DPI PNG，不生成 PDF。
 - `fig24_feasibility_ab.png`
 - `fig25_joint_feasibility.png`
 - `fig26_ranck_detection.png`
