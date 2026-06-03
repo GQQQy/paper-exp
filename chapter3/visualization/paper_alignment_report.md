@@ -2,8 +2,8 @@
 
 ## Evidence Chain
 
-- Raw local execution log: `/Users/gqy/Desktop/data/DR/毕业/毕业答辩/实验室验收材料/第三章/chapter3/experiment/logs/raw_experiment_log.json`
-- Visualization data: `/Users/gqy/Desktop/data/DR/毕业/毕业答辩/实验室验收材料/第三章/chapter3/visualization/chapter3_experiment_data.json`
+- Raw local execution log: `/Users/gqy/Desktop/data/DR/毕业/毕业答辩/实验室验收材料/paper-exp/chapter3/experiment/logs/raw_experiment_log.json`
+- Visualization data: `/Users/gqy/Desktop/data/DR/毕业/毕业答辩/实验室验收材料/paper-exp/chapter3/visualization/chapter3_experiment_data.json`
 - Paper-scale target: Section 3.5 and Figures 7-12 of Chapter 3
 - Rule: generated figure data must match the thesis text targets before visualization
 

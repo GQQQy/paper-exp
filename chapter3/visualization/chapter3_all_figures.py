@@ -129,29 +129,30 @@ def fig_budget_compliance():
     section = DATA["budget_compliance"]
     b_values = section["b_values"]
     alpha = section["alpha"]
-    means = section["means_percent"]
-    errors = section["errors_percent"]
     x = np.arange(len(TASK_NAMES))
-    w = 0.18
+    w = 0.16
     colors = [COLORS["light_blue"], COLORS["cyan_blue"], COLORS["dark_blue"], COLORS["gold"]]
     labels = ["$10^6$", "$10^7$", "$10^8$", "$10^9$"]
 
     for idx, (_b_value, color, label) in enumerate(zip(b_values, colors, labels)):
-        values = [means[task][idx] for task in TASK_NAMES]
-        yerr = [errors[task][idx] for task in TASK_NAMES]
-        ax.bar(
-            x + (idx - 1.5) * w,
+        positions = x + (idx - 1.5) * w
+        values = [section["samples_percent"][task][f"{_b_value:.0f}"] for task in TASK_NAMES]
+        box = ax.boxplot(
             values,
-            w,
-            yerr=yerr,
-            label=label,
-            color=color,
-            alpha=0.9,
-            edgecolor=COLORS["navy"],
-            linewidth=0.6,
-            capsize=3,
-            error_kw=dict(elinewidth=0.8, ecolor="#555555"),
+            positions=positions,
+            widths=w * 0.86,
+            patch_artist=True,
+            showmeans=True,
+            manage_ticks=False,
+            whis=(0, 100),
+            boxprops=dict(facecolor=color, alpha=0.82, edgecolor=COLORS["navy"], linewidth=0.8),
+            medianprops=dict(color=COLORS["navy"], linewidth=1.2),
+            meanprops=dict(marker="o", markerfacecolor="white", markeredgecolor=COLORS["dark_orange"], markersize=4),
+            whiskerprops=dict(color="#555555", linewidth=0.8),
+            capprops=dict(color="#555555", linewidth=0.8),
+            flierprops=dict(marker=".", markerfacecolor=color, markeredgecolor=color, alpha=0.45, markersize=3),
         )
+        box["boxes"][0].set_label(label)
 
     ax.axhline(y=100, color=COLORS["dark_orange"], linestyle="--", linewidth=1.2, alpha=0.8, label="预算上限")
     ax.axhline(y=alpha * 100, color="#888888", linestyle=":", linewidth=1.1, alpha=0.8, label=f"$\\alpha B$={alpha * 100:.0f}%")
@@ -161,7 +162,9 @@ def fig_budget_compliance():
     ax.set_xlabel("任务类型", fontsize=9.5)
     ax.set_ylabel("段权重占预算比例 $W(\\mathrm{Seg}_i)/B$（%）", fontsize=9.5)
     ax.set_ylim(0, 108)
-    ax.legend(loc="lower center", bbox_to_anchor=(0.5, -0.28), ncol=6, fontsize=8.2, framealpha=0.95)
+    handles, legend_labels = ax.get_legend_handles_labels()
+    unique = dict(zip(legend_labels, handles))
+    ax.legend(unique.values(), unique.keys(), loc="lower center", bbox_to_anchor=(0.5, -0.28), ncol=6, fontsize=8.2, framealpha=0.95)
     fig.tight_layout()
     savefig(fig, "fig1_budget_compliance.png")
     print("  -> 图7/fig1_budget_compliance.png 已生成")
