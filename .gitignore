@@ -10,6 +10,7 @@ cache/
 # Local generated experiment artifacts
 chapter4/experiment/build/
 chapter4/experiment/tools/bin/circom
+chapter5/visualization/正确图片输出/*.pdf
 
 # Local editor files
 .idea/
