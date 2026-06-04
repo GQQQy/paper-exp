@@ -1,21 +1,111 @@
 # 第五章实验复现说明
 
-本目录对应论文第五章“面向链下计算的验证者工作审计”。实验覆盖论文 5.5 节、图 24-31 与表 9-11，工程链路为：运行 RanCk/SenCk Go 实验入口生成 raw log，再从 raw log 生成结构化数据和 PNG 图片。
+本目录对应论文第五章“面向链下计算的验证者工作审计”。实验覆盖论文 5.5 节、图 24-31 与表 9-11，目标是复现 RanCk 在线跟踪审计、SenCk 语义勤勉检测、激励可行域、检测概率、旁路审计开销和链上 Gas 对比结果。
 
-## 实验内容
+实验链路为：
 
-- RanCk 在线跟踪审计：生成验证者私有 `seed/nonce`，提交 `TC_0`，按 `alpha_t = H(alpha_{t-1} || bh_t || PRF(seed_i,t) || tau_t)` 维护凭证链，使用 `Trigger(t,i)=H(bh_t||tid||i) mod M` 触发心跳，并对端点凭证与抽样点执行连续性审计。
-- SenCk 语义勤勉检测：在本地 instrumented EVM-style opcode interpreter 中通过 `AfterOpcodeHook` 采集 `pc/op/rw_t/val_t`、栈、memory/storage 访问，计算 `Gamma(r,tid,k,t,rw_t)`，生成哨兵事件、段摘要 `dig_k` 和 `AudRoot`，再从快照段局部重放提交 `SentReport`。
-- 偏离行为：覆盖诚实在线、完全离线、间歇在线、补算失败、凭证链不一致、惰性猜摘要、执行方污染 `ComAud`。
-- 激励与检测分析：按论文 5.4-5.5 的 C1/C2 条件、RanCk/SenCk 检测公式和固定随机种子的 Monte Carlo 仿真生成图 24-28。
-- 旁路审计开销：记录 opcode hook 的 `rw_t` 编码、哈希、Gamma 判断、快照加载和局部重放时间模型，生成图 29。
-- 链上开销：用 Foundry 测试 `TrackInit`、`HBRespond`、`ContAudit`、`SentReport`、`Dispute`、`SentProve` 和 PoD baseline；raw log 和图 30-31 使用本地 Foundry 函数级 Gas report，不使用论文表 10 目标值作为回退数据。
+```text
+experiment/audit/protocol.go
+  -> experiment/cmd/audit-exp/main.go
+  -> experiment/logs/raw_experiment_log.json
+  -> visualization/chapter5_all_figures.py
+  -> visualization/chapter5_experiment_data.json
+  -> visualization/正确图片输出/*.png
+```
 
-## 实现范围
+## 实验总览
 
-RanCk 的 Go 实现位于 `experiment/audit/protocol.go`，包含初始化承诺、凭证链更新、心跳触发、心跳响应模拟、端点一致性检查和抽样单步凭证审计。Solidity 合约 `experiment/src/ValidatorAudit.sol` 提供对应的最小链上 benchmark 接口。
+默认参数如下。
 
-SenCk 的 Go 实现位于 `experiment/audit/protocol.go`，使用本地 opcode interpreter 模拟 EVM 执行层的后置 hook，记录运行时访问并生成 `rw_t/val_t`、哨兵事件、段摘要和补证重放结果。该实现用于复现实验与图表数据，不是完整 Geth 客户端补丁；论文中“注入 EVM 解释器轻量回调钩子”的工程对象在这里以可复现的 instrumented local EVM 形式落地。
+| 参数 | 值 | 用途 |
+| --- | --- | --- |
+| 区块时间 | `12 s` | 心跳窗口和检测延迟的时间基准 |
+| 窗口长度 `T_win` | `7200` blocks | 每个审计窗口长度 |
+| 验证者规模 `N` | `20` | 图 30/31 的系统级 Gas 对比规模 |
+| 段预算 `B` | `1e8 Gas` | 沿用第三章切片段预算 |
+| 裁决阈值 `b` | `1e6 Gas` | 沿用第三章 VerSeg 裁决阈值 |
+| RanCk 心跳间隔 `M` | `100` | 默认心跳触发概率 `pi_h=1/M=0.01` |
+| 响应时限 `Delta` | `7` blocks | 心跳响应允许延迟 |
+| 连续性抽样规模 `s` | `10` | RanCk 凭证连续性抽样点数 |
+| SenCk 哨兵周期 `M_c` | `100` | 单步门控函数触发周期 |
+| 重放长度 `L` | `5000` steps | 每个抽样段局部重放步数 |
+| 抽样段数 `m_s` | `10` | SenCk 勤勉检测抽样段数 |
+
+## 测试内容与结果
+
+| 测试/图表 | 测试对象 | 数据来源 | 当前关键结果 | 输出 |
+| --- | --- | --- | --- | --- |
+| 表 9 参数配置 | 审计窗口、验证者规模、RanCk/SenCk 参数范围和默认值 | `table9_parameters`、`metadata.params` | 默认值为 `T_win=7200,N=20,B=1e8,b=1e6,M=100,Delta=7,s=10,M_c=100,L=5000,m_s=10` | `visualization/chapter5_experiment_data.json` |
+| 图 24 C1/C2 归一化边界 | 在线偏离抑制 C1 与勤勉偏离抑制 C2 的罚没条件 | `feasibility.C1_online_deviation`、`C2_diligence_deviation` | `T_win=7200, pi_h≈0.01005` 时期望心跳 `72.36` 次，C1 最小归一化罚没约 `0.0138` | `visualization/正确图片输出/fig24_feasibility_ab.png` |
+| 图 25 联合可行域 | 在 `(pi_h,m_s)` 平面上同时满足 C1/C2 的区域 | `feasibility.joint_feasible_region` | 默认罚没参数下，大部分扫描区域同时满足 C1 与 C2 | `visualization/正确图片输出/fig25_joint_feasibility.png` |
+| 图 26 RanCk 检测 | 心跳缺失检测和心跳+连续性审计联合通过概率 | `detection.ranck_heartbeat`、`detection.ranck_combined_pass` | `M=100` 时离线 `500` blocks 检出概率 `0.993430`；`s=10`、离线 `200` blocks 联合通过概率 `8.101e-04` | `visualization/正确图片输出/fig26_ranck_detection.png` |
+| 图 27 SenCk 检测 | 惰性验证者通过勤勉检测的概率随抽样段数衰减 | `detection.senck_lazy_pass` | `rho=0.4` 时 `m_s=10` 通过概率 `6.047e-03`，`m_s=20` 通过概率 `3.656e-05` | `visualization/正确图片输出/fig27_senck_passthrough.png` |
+| 图 28 Monte Carlo 验证 | RanCk/SenCk 理论检测公式与固定随机种子仿真的吻合程度 | `monte_carlo.ranck`、`monte_carlo.senck`、`gamma_hit_sweep` | RanCk 最大理论/仿真偏差约 `0.00708`；SenCk 最大偏差约 `0.00418`，均在统计波动范围内 | `visualization/正确图片输出/fig28_monte_carlo_and_gate.png` |
+| 图 29 旁路审计开销 | opcode hook 的读写编码、哈希、Gamma 判断、快照加载和局部重放时间 | `overhead` | `L=5000` 时 Fibonacci/Poly-Chain/Sort-Large/DP-Large 的审计开销分别约 `1.869%/1.406%/1.192%/0.808%` | `visualization/正确图片输出/fig29_overhead.png` |
+| 表 10 链上开销 | RanCk/SenCk 正常路径、争议路径和 PoD baseline 的函数级 Gas | `gas.operations`、`gas.measurement_provenance` | 默认每验证者每窗口正常路径总 Gas 为 `2.705M`；`SentProve/VerSeg` 为 `1.265M` | `visualization/chapter5_experiment_data.json` |
+| 图 30 Gas 对比 | 单验证者正常路径 Gas 构成和系统月度 Gas 对比 | `gas.operations`、`gas.monthly_by_scheme` | 本方案 `pi_h=0.01` 月度 `1.623B Gas`，`pi_h=0.005` 月度 `0.880B Gas`，PoD baseline `3.924B Gas` | `visualization/正确图片输出/fig30_gas_comparison.png` |
+| 图 31 心跳权衡 | 心跳触发概率对月度 Gas 和 `ell=300` 检测概率的影响 | `gas.pi_h_sweep` | `pi_h` 从 `0.001` 到 `0.025` 时月度 Gas 低于当前 PoD baseline，检测概率随 `pi_h` 单调上升 | `visualization/正确图片输出/fig31_tradeoff.png` |
+| 表 11 综合对比 | TrueBit、Arbitrum、PoD、RanCk+SenCk 的审计能力对比 | `comparison_table_11` | RanCk+SenCk 同时覆盖在线状态审计、语义勤勉检测和不可预测审计，不依赖外部网络辅助 | `visualization/chapter5_experiment_data.json` |
+
+## RanCk 协议行为测试
+
+`go test ./...` 和 `go run ./cmd/audit-exp` 会生成 `ranck_traces`，覆盖诚实和四类偏离行为。
+
+| 行为 | 测试内容 | 当前心跳数 | 漏响应数 | 连续性审计结果 |
+| --- | --- | ---: | ---: | --- |
+| `honest_online` | 正常在线，按 `alpha_t=H(alpha_{t-1}||bh_t||PRF(seed,t)||tau_t)` 更新凭证链并响应心跳 | `68` | `0` | `passed=true, detected=false` |
+| `complete_offline` | 完全离线，不响应任何心跳 | `68` | `68` | `passed=false, detected=true` |
+| `intermittent_online` | 间歇在线，部分心跳响应缺失 | `68` | `36` | `passed=false, detected=true` |
+| `recompute_fail` | 试图补算但凭证链或抽样点无法一致 | `68` | `48` | `passed=false, detected=true` |
+| `credential_inconsistent` | 心跳存在但端点凭证/抽样凭证不一致 | `68` | `0` | `passed=false, detected=true` |
+
+这些 trace 对应论文中的 RanCk 在线跟踪和连续性审计，重点验证心跳触发、响应时限、端点凭证和抽样单步凭证是否能区分诚实与偏离行为。
+
+## SenCk 协议行为测试
+
+`senck_traces` 使用本地 instrumented EVM-style opcode interpreter，在每个 opcode 后通过 `AfterOpcodeHook` 记录 `pc/op/rw_t/val_t`、栈、memory/storage 访问，并以 `Gamma(r,tid,k,t,rw_t)` 触发哨兵事件。
+
+| 行为 | 测试内容 | 单段命中率 `rho` | SentReport 结果 |
+| --- | --- | ---: | --- |
+| `honest_online` | 正常采集 opcode hook、生成哨兵事件、计算 `dig_k`，并从快照段局部重放 | `1.0` | `passed=true, detected=false` |
+| `lazy_guess` | 惰性验证者不重放，猜测段摘要 | `1.0` | `passed=false, detected=true` |
+| `executor_polluted_comaud` | 执行方污染 `ComAud` 或提交错误审计摘要 | `1.0` | `passed=false, detected=true` |
+
+当前 `protocol_coverage` 中 10 项协议需求均为 `PASS`，包括 TrackInit、alpha 链更新、Trigger、HBRespond、ContAudit、opcode hook、Gamma、SentReport、SentDispute/SentProve 和完整流程。
+
+## 旁路审计开销细节
+
+图 29 使用四类任务的 `overhead` trace。
+
+| 任务 | 论文尺度 Gas | `L=5000` 哨兵数量 | `L=5000` 重放耗时 | 审计开销 |
+| --- | ---: | ---: | ---: | ---: |
+| Fibonacci | `1e9` | `50` | `222.00 ms` | `1.869%` |
+| Poly-Chain | `1e10` | `55` | `366.85 ms` | `1.406%` |
+| Sort-Large | `1e11` | `61` | `568.15 ms` | `1.192%` |
+| DP-Large | `1e12` | `55` | `768.50 ms` | `0.808%` |
+
+`replay_by_length` 还记录 `L=50,100,200,500,1000,2000,5000,10000` 时的快照加载和局部重放耗时，用于展示重放长度对审计成本的影响。
+
+## 链上 Gas 测试结果
+
+`forge test --gas-report` 覆盖正常路径、争议路径和 PoD baseline。
+
+| 操作 | 测试内容 | 单次 Gas | 默认次数/窗口 |
+| --- | --- | ---: | ---: |
+| `RanCk TrackInit` | 验证者初始化 `TC_0`，写入跟踪状态 | `113830` | `1` |
+| `RanCk HBRespond` | 响应心跳并更新最新凭证 commitment | `34376` | `72` |
+| `RanCk ContAudit` | 验证端点凭证和抽样单步凭证 | `46894` | `1` |
+| `SenCk SentReport` | 提交哨兵段摘要报告 | `68861` | `1` |
+| `Dispute` | 对错误哨兵报告发起争议 | `39209` | `0` |
+| `SentProve/VerSeg` | `sentProve` 提交开销加第三章 `b=1e6` 的 VerSeg 重放校准 | `1264836` | `0` |
+
+正常路径默认总量计算为：
+
+```text
+113830 + 72 * 34376 + 46894 + 68861 = 270490? 约 2.705M Gas
+```
+
+结构化 JSON 中记录的精确值为 `2704657`。图 30/31 的 PoD baseline 使用本地 PoD 证明提交 Gas、`theta=0.9`、月度 `4320` 个 epoch 和 `N=20` 验证者规模计算；不使用论文表 10 的目标值作为回退数据。
 
 ## 目录结构
 
@@ -48,18 +138,10 @@ python3 --version
 python3 -c "import matplotlib, numpy; print('python deps ok')"
 ```
 
-如果缺少 Python 包：
+安装 Python 依赖：
 
 ```bash
 python3 -m pip install matplotlib numpy
-```
-
-如果 Go 或 Matplotlib 默认缓存目录不可写：
-
-```bash
-export GOCACHE="${TMPDIR:-/tmp}/chapter5-gocache"
-export MPLCONFIGDIR="${TMPDIR:-/tmp}/mplconfig-ch5"
-mkdir -p "$GOCACHE" "$MPLCONFIGDIR"
 ```
 
 ## 运行完整实验
@@ -76,12 +158,12 @@ cd ..
 python3 visualization/chapter5_all_figures.py
 ```
 
-说明：
+每条命令的作用：
 
-- `go test ./...` 验证 RanCk/SenCk 协议实现、EVM opcode hook trace、惰性/污染偏离检测和完整审计流。
-- `forge test --gas-report` 独立运行链上 Gas benchmark。
-- `go run ./cmd/audit-exp ...` 重新生成 raw log，并在可用时解析 Foundry per-test gas。
-- `chapter5_all_figures.py` 会读取 raw log；如果 raw log 缺失或缺少当前版本必需字段，会自动运行 Go 实验入口补齐，然后生成结构化数据和图片。
+- `go test ./...`：验证 RanCk/SenCk 协议实现、EVM opcode hook trace、惰性/污染偏离检测和完整审计流。
+- `forge test --gas-report`：测量链上审计合约的函数级 Gas。
+- `go run ./cmd/audit-exp ...`：生成 RanCk/SenCk trace、Monte Carlo、可行域、旁路开销、Gas trace 和表 11 对比数据。
+- `chapter5_all_figures.py`：读取 raw log，校验协议 trace、检测参数、Monte Carlo/Gamma sweep 和 Gas 数据，生成结构化 JSON 与图 24-31。
 
 ## 只重新生成可视化
 
@@ -107,54 +189,18 @@ python3 visualization/chapter5_all_figures.py
   - `visualization/正确图片输出/fig30_gas_comparison.png`
   - `visualization/正确图片输出/fig31_tradeoff.png`
 
-## 数据链路
-
-```text
-experiment/audit/protocol.go
-  -> experiment/cmd/audit-exp/main.go
-  -> experiment/logs/raw_experiment_log.json
-  -> visualization/chapter5_all_figures.py
-  -> visualization/chapter5_experiment_data.json
-  -> visualization/正确图片输出/*.png
-```
-
-raw log 的主要来源：
-
-- `ranck_traces`：Go 实现的 `TrackInit`、`UpdateAlpha`、`Trigger`、`SimulateRanCk` 和 `ContAudit`。
-- `senck_traces`：Go 实现的 instrumented local EVM、`AfterOpcodeHook`、`Gamma`、`SentinelEvent`、`DigestEvents`、`AudRoot` 和 `SimulateSenCk`。
-- `detection_parameters`：图 26/27 使用的参数扫描范围，来自表 9 范围和 5.5 节检测公式。
-- `monte_carlo`：RanCk/SenCk Bernoulli 仿真和 Gamma 命中率 sweep，固定随机种子或确定性 EVM trace。
-- `feasibility`：C1/C2 公式扫描和联合可行域。
-- `overhead_traces`：opcode hook 开销、快照加载和局部重放模型。
-- `gas_trace`：Foundry 函数级 Gas report、本地解析状态和测量来源说明。
-
-快速检查数据：
+## 快速检查数据
 
 ```bash
 jq '.protocol_coverage[] | {requirement, source, status}' experiment/logs/raw_experiment_log.json
-jq '.senck_traces[0].trace_sample[0] | {op_name, hook_source, runtime_accesses}' experiment/logs/raw_experiment_log.json
+jq '.ranck_traces[] | {behavior, heartbeat_count, missed_heartbeats, cont_audit}' experiment/logs/raw_experiment_log.json
+jq '.senck_traces[] | {behavior, rho, sent_report}' experiment/logs/raw_experiment_log.json
 jq '.monte_carlo.gamma_hit_sweep[] | {M_c, L, theory_rho, observed_rho, segments}' experiment/logs/raw_experiment_log.json
-jq '.gas_trace | {foundry_status, foundry_parsed, measurement_provenance}' experiment/logs/raw_experiment_log.json
+jq '.gas_trace | {foundry_status, operations, monthly_by_scheme, measurement_provenance}' experiment/logs/raw_experiment_log.json
 ```
-
-## 论文图表对应关系
-
-| 论文图表 | 输出图片/数据 | 数据字段 | 生成/测量代码 |
-| --- | --- | --- | --- |
-| 表 9 参数配置 | `chapter5_experiment_data.json` | `table9_parameters`、`metadata.params` | `audit.DefaultParams`、`audit.Table9Parameters` |
-| 图 24 归一化边界 | `fig24_feasibility_ab.png` | `feasibility.C1_online_deviation`、`C2_diligence_deviation` | `feasibilityEvidence` |
-| 图 25 联合可行域 | `fig25_joint_feasibility.png` | `feasibility.joint_feasible_region` | `feasibilityEvidence` |
-| 图 26 RanCk 检测 | `fig26_ranck_detection.png` | `detection.ranck_heartbeat`、`ranck_combined_pass` | `detection_parameters`、`ranck_detect`、`ranck_combined_pass` |
-| 图 27 SenCk 检测 | `fig27_senck_passthrough.png` | `detection.senck_lazy_pass` | `detection_parameters`、`senck_pass` |
-| 图 28 效果模拟仿真 | `fig28_monte_carlo_and_gate.png` | `monte_carlo.ranck`、`senck`、`gamma_hit_sweep`、`senck_traces[].trigger_stats` | `MonteCarloRanCk`、`MonteCarloSenCk`、`GammaHitSweep`、`TriggerStats` |
-| 图 29 旁路审计开销 | `fig29_overhead.png` | `overhead` | `GenerateSegment`、`OverheadTraces` |
-| 表 10 链上开销 | `gas_trace.operations` | `gas.operations`、`gas.measurement_provenance`、`gas.foundry_parsed` | `ValidatorAudit.sol`、`ValidatorAudit.t.sol`、`GasTraceFromFoundry` |
-| 图 30 Gas 对比 | `fig30_gas_comparison.png` | `gas.operations`、`gas.monthly_by_scheme` | `GasTraceFromFoundry`、`fig30` |
-| 图 31 心跳权衡 | `fig31_tradeoff.png` | `gas.pi_h_sweep` | `GasTraceFromFoundry`、`fig31` |
-| 表 11 综合对比 | `comparison_table_11` | `comparison_table_11` | `table11` |
 
 ## 注意事项
 
 - `out/`、`cache/`、`__pycache__/`、生成 PDF 和其他可重建产物不提交。
-- Foundry per-test gas 可能包含测试 harness/setup 效应；raw log 会保存本地实测值和测量来源，图 30-31 使用本地 Foundry 实测值。
+- Foundry per-test gas 可能包含测试 harness/setup 效应；raw log 会保存本地实测值和测量来源。
 - 重新生成 raw log 后，应重新运行 `chapter5_all_figures.py`，使结构化数据和图片保持一致。

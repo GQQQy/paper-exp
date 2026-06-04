@@ -1,28 +1,77 @@
 # 第三章实验复现说明
 
-本目录对应论文第三章“基于有状态任务切片的链下计算验证”。实验覆盖论文 3.5 节与图 7-12，工程链路为：运行 CleVer 实验入口生成 raw log，再从 raw log 生成结构化数据和 PNG 图片。
+本目录对应论文第三章“基于有状态任务切片的链下计算验证”。实验覆盖论文 3.5 节与图 7-12，目标是复现 CleVer 的任务切片、争议定位、链上 Gas、超线性质押和伴随式验证时间线结果。
 
-## 实验内容
+实验链路为：
 
-- 自适应切片机制：验证段预算不越界、切片开销小于 10%、段预算 `B` 与裁决阈值 `b` 对系统开销的影响。
-- 争议定位解决效率：比较 Arbitrum Classic、TrueBit、Cartesi Dave、Arbitrum BoLD 和 CleVer 在乐观路径与争议路径下的链上 Gas。
-- 伴随式验证时效性：比较 CleVer 与事后验证方案在错误注入后的归一化端到端时间。
+```text
+experiment/cmd/clever-exp/main.go
+  -> experiment/logs/raw_experiment_log.json
+  -> visualization/generate_chapter3_data.py
+  -> visualization/chapter3_experiment_data.json
+  -> visualization/chapter3_all_figures.py
+  -> visualization/正确图片输出/*.png
+```
 
-默认参数：
+## 实验总览
 
-| 参数 | 值 |
-| --- | --- |
-| 段预算 `B` | `1e8 Gas` |
-| 裁决阈值 `b` | `1e6 Gas` |
-| 密度控制参数 `alpha` | `0.8` |
-| 最大质押轮次 `g` | `10` |
-| 累计质押曲线 | `D(r) = d0 * r^2`, `d0 = 0.5 ETH` |
+默认参数如下。
+
+| 参数 | 值 | 用途 |
+| --- | --- | --- |
+| 段预算 `B` | `1e8 Gas` | 控制每个任务切片段的最大 Gas 权重 |
+| 裁决阈值 `b` | `1e6 Gas` | 控制二次细分后单个 VerSeg 裁决单元大小 |
+| 密度控制参数 `alpha` | `0.8` | SafeCut 提前切片触发阈值 |
+| 最大质押轮次 `g` | `10` | 超线性累计质押博弈的最大轮数 |
+| 累计质押曲线 | `D(r)=d0*r^2`, `d0=0.5 ETH` | 错误方延迟退出时的递增质押成本 |
+
+本章使用四类基准任务。
+
+| 任务 | 论文尺度 Gas | 归一化执行时间 | 本地 runner 样本 |
+| --- | ---: | ---: | --- |
+| Fibonacci | `1e9` | `10 s` | `5000` steps，快照 `784 B` |
+| Poly-Chain | `1e10` | `100 s` | `4000` steps，快照 `784 B` |
+| Sort-Large | `1e11` | `1000 s` | `73536` steps，快照 `784 B` |
+| DP-Large | `1e12` | `10000 s` | `11999` steps，快照 `784 B` |
+
+本地 runner 样本用于证明任务执行、快照序列化和 commitment 生成链路可复现；论文尺度曲线通过 raw log 中的 instrumentation trace 按论文参数生成。
+
+## 测试内容与结果
+
+| 测试/图表 | 测试对象 | 数据来源 | 当前关键结果 | 输出 |
+| --- | --- | --- | --- | --- |
+| 图 7 段权重占预算百分比 | 自适应切片是否严格满足 `W(Seg_i) <= B` | `paper_evidence.budget_compliance`，16 组任务/预算 trace | 段权重占预算比例范围为 `80%` 到 `99.9%`，未超过 `100%` | `visualization/正确图片输出/fig1_budget_compliance.png` |
+| 图 8 任务切片执行开销 | SafeCut 检查、快照序列化、承诺计算引入的额外执行时间 | `paper_evidence.slicing_overhead` | 四类任务开销分别为 `2.6%`、`2.7%`、`3.5%`、`9.0%`，均小于 `10%` | `visualization/正确图片输出/fig2_overhead.png` |
+| 图 9a 段预算影响 | 固定 `b=1e6` 时，`B` 对快照数量和链下存储的影响 | `paper_evidence.parameter_sensitivity.snapshot_count/storage_mb` | `B=1e6,1e7,1e8,1e9` 时快照数为 `130000,13000,1300,130`；存储为 `6100,610,61,6.1 MB` | `visualization/正确图片输出/fig_param_sensitivity_v2.png` |
+| 图 9b 裁决阈值影响 | 固定 `B=1e8` 时，`b` 对子段数和 VerSeg Gas 的影响 | `paper_evidence.parameter_sensitivity.subsegment_count/verseg_gas_k` | `b=1e4,1e5,1e6,1e7` 时 `L=10000,1000,100,10`；VerSeg 为 `12K,120K,1200K,12000K Gas` | `visualization/正确图片输出/fig_param_sensitivity_v2.png` |
+| 图 10 链上开销对比 | Arbitrum Classic、TrueBit、Cartesi Dave、Arbitrum BoLD、CleVer 的乐观/争议路径 Gas | `comparison_protocols`，由 Foundry Gas report 派生 | CleVer 乐观路径 `313.850K Gas`；争议路径 `551.676K Gas`，较其他四种争议路径平均 `4454.843K Gas` 降低 `87.62%` | `visualization/正确图片输出/fig_gas_comparison_v2.png` |
+| 图 11 超线性质押博弈 | 失败信念 `p`、指数 `beta` 对错误方退出轮次和收益的影响 | `paper_evidence.staking_analysis` | `p` 或 `beta` 越高，错误方越早退出；二次质押曲线下坚持到最终裁决收益固定，退出收益随轮次单调下降 | `visualization/正确图片输出/fig_staking_analysis_v2.png` |
+| 图 12 伴随式验证时间 | CleVer 与事后验证方案在 `eta=0.4` 错误注入下的归一化端到端时间 | `paper_evidence.timeline` | CleVer 为 `1.044 T_exec`；BoLD、Cartesi、TrueBit、Arbitrum Classic 分别为 `2.650`、`2.730`、`2.714`、`2.690 T_exec` | `visualization/正确图片输出/fig_timeline_v3.png` |
+
+链上 Solidity 基准还会测试以下函数级 Gas。
+
+| Foundry 函数 | 测试内容 | 当前 Gas |
+| --- | --- | ---: |
+| `fibonacci` | Fibonacci 基准任务合约执行 | `16959` |
+| `polyChain` | 多项式链式计算任务 | `41088` |
+| `sortLarge` | 排序任务 | `94288` |
+| `dpLarge` | 动态规划任务 | `264957` |
+| `verSeg` | CleVer 最小裁决单元链上重放接口 | `55444` |
+| `arbitrumClassicPath` | Arbitrum Classic 争议路径模拟 | `4445493` |
+| `truebitPath` | TrueBit 争议路径模拟 | `3840098` |
+| `cartesiDavePath` | Cartesi Dave 争议路径模拟 | `5967002` |
+| `boldPath` | Arbitrum BoLD 争议路径模拟 | `3566780` |
+| `cleverPath` | CleVer 两层定位和有界裁决路径 | `551676` |
+
+Geth EVM 采样用于确认代表性 bytecode 的执行可测性，当前四个样本 Gas 为 Fibonacci `5492`、Poly-Chain `4836`、Sort-Large `7591`、DP-Large `7911`。执行时间和内存分配会随机器环境波动，不作为论文核心数值。
 
 ## 目录结构
 
 - `第三章基于有状态任务切片的链下计算验证.pdf`：第三章论文正文。
-- `experiment/cmd/clever-exp/main.go`：raw log 生成入口。
-- `experiment/src/*.sol`：Solidity 基准任务、CleVer 裁决合约和对比协议 Gas 基准。
+- `experiment/cmd/clever-exp/main.go`：实验采集入口，生成 raw log。
+- `experiment/src/BenchmarkTasks.sol`：四类链上基准任务。
+- `experiment/src/CleVerVerifier.sol`：最小裁决单元 `VerSeg` 的链上重放裁决接口。
+- `experiment/src/DisputeProtocolBenchmarks.sol`：五种协议乐观路径和争议路径 Gas 对比基准。
 - `experiment/test/Benchmarks.t.sol`：Foundry Gas 测试入口。
 - `experiment/logs/raw_experiment_log.json`：实验原始日志。
 - `visualization/generate_chapter3_data.py`：从 raw log 校验并生成结构化可视化数据。
@@ -40,26 +89,10 @@
 - Python 3.10 或兼容版本。
 - Python 包：`matplotlib`、`numpy`。
 
-进入 `chapter3` 目录后，使用当前 `python3` 安装 Python 依赖：
+如果从 `chapter3` 目录安装 Python 依赖：
 
 ```bash
-which python3
-python3 --version
 python3 -m pip install -r requirements.txt
-```
-
-如果遇到 `externally-managed-environment`，说明当前 Python 不允许直接写入系统环境，可显式允许 pip 安装到当前 Python 环境：
-
-```bash
-python3 -m pip install --break-system-packages -r requirements.txt
-```
-
-如果 Go 或 Matplotlib 缓存目录不可写：
-
-```bash
-export GOCACHE="${TMPDIR:-/tmp}/go-build-ch3"
-export MPLCONFIGDIR="${TMPDIR:-/tmp}/mplconfig-ch3"
-mkdir -p "$GOCACHE" "$MPLCONFIGDIR"
 ```
 
 检查命令：
@@ -87,13 +120,13 @@ python3 visualization/generate_chapter3_data.py
 python3 visualization/chapter3_all_figures.py
 ```
 
-说明：
+每条命令的作用：
 
-- `go test ./...` 检查 Go 实验 runner 和本地任务逻辑。
-- `forge test --gas-report` 独立检查 Solidity 基准与 Gas report。
-- `go run ./cmd/clever-exp ...` 重新生成 `raw_experiment_log.json`，内部会调用 Foundry Gas report 和 Geth `evm --bench run`。
-- `generate_chapter3_data.py` 从 raw log 读取并校验 `samples`、`geth_evm_samples`、`comparison_protocols` 和 `paper_evidence`。
-- `chapter3_all_figures.py` 只读取 `chapter3_experiment_data.json` 绘图。
+- `go test ./...`：检查 Go 实验入口和本地任务逻辑是否能编译、运行。
+- `forge test --gas-report`：测量 Solidity 基准任务、VerSeg 和五种争议协议路径的函数级 Gas。
+- `go run ./cmd/clever-exp --quick ...`：执行本地确定性任务样本、Geth EVM 采样、Foundry Gas 解析和论文尺度 instrumentation trace 生成。
+- `generate_chapter3_data.py`：校验 raw log 中的 `samples`、`geth_evm_samples`、`comparison_protocols`、`paper_evidence`，写出结构化 JSON。
+- `chapter3_all_figures.py`：读取结构化 JSON 并生成图 7-12。
 
 如需运行更大的本地样本：
 
@@ -102,7 +135,7 @@ cd experiment
 go run ./cmd/clever-exp --full --max-seconds 5 --out logs/raw_experiment_log.json
 ```
 
-`--full` 仍受 `--max-seconds` 限制；论文尺度任务通过 raw log 中的 instrumentation trace 记录和校准，避免强制跑完小时级任务。
+`--full` 仍受 `--max-seconds` 限制；论文尺度任务通过 instrumentation trace 记录和校准，避免强制跑完小时级任务。
 
 ## 只重新生成可视化
 
@@ -131,46 +164,17 @@ python3 visualization/chapter3_all_figures.py
   - `visualization/正确图片输出/fig_staking_analysis_v2.png`
   - `visualization/正确图片输出/fig_timeline_v3.png`
 
-## 数据链路
-
-```text
-experiment/cmd/clever-exp/main.go
-  -> experiment/logs/raw_experiment_log.json
-  -> visualization/generate_chapter3_data.py
-  -> visualization/chapter3_experiment_data.json
-  -> visualization/chapter3_all_figures.py
-  -> visualization/正确图片输出/*.png
-```
-
-raw log 的主要来源：
-
-- `samples`：Go 本地确定性任务执行，记录 steps、snapshot bytes 和 SHA-256 commitment。
-- `geth_evm_samples`：`evm --bench run` 对四类代表性 EVM bytecode 的 Gas、执行时间和内存分配采样。
-- `foundry_gas_runs`：`forge test --gas-report` 解析得到的 Solidity 基准 Gas。
-- `comparison_protocols`：由 Foundry Gas 结果派生的五种协议乐观路径和争议路径 Gas。
-- `paper_evidence.instrumentation_trace`：SafeCut、切片开销、参数敏感性、质押博弈和时间线 trace。
-
-快速检查 raw log：
+## 快速检查数据
 
 ```bash
 jq '.samples | length' experiment/logs/raw_experiment_log.json
 jq '.geth_evm_samples | length' experiment/logs/raw_experiment_log.json
 jq '.comparison_protocols | length' experiment/logs/raw_experiment_log.json
 jq '.paper_evidence.instrumentation_trace | {mode, budget_runs:(.budget_runs|length), overhead_runs:(.overhead_runs|length), parameter_runs:(.parameter_runs|length)}' experiment/logs/raw_experiment_log.json
+jq '.gas_comparison' visualization/chapter3_experiment_data.json
 ```
 
-期望分别看到 4 个本地任务样本、4 个 Geth EVM 样本、5 个协议对比项，以及 16 个 budget traces、4 个 overhead traces、8 个 parameter traces。
-
-## 论文图表对应关系
-
-| 论文图表 | 输出图片 | 数据字段 | 生成/测量代码 |
-| --- | --- | --- | --- |
-| 图 7 段权重占预算百分比 | `fig1_budget_compliance.png` | `budget_compliance.samples_percent`、`means_percent`、`errors_percent` | `runInstrumentedBudgetTrace`、`runSafeCutGasSegment`、`fig_budget_compliance` |
-| 图 8 任务切片执行开销 | `fig2_overhead.png` | `slicing_overhead` | `runInstrumentedOverheadTrace`、`summarizeOverhead`、`fig_overhead` |
-| 图 9 段预算与裁决阈值影响 | `fig_param_sensitivity_v2.png` | `parameter_sensitivity` | `deriveParameterSensitivity`、`plot_param_sensitivity` |
-| 图 10 链上开销对比 | `fig_gas_comparison_v2.png` | `gas_comparison` | `DisputeProtocolBenchmarks.sol`、`Benchmarks.t.sol`、`runFoundryGasReport`、`runComparisonProtocols`、`fig_gas_comparison` |
-| 图 11 超线性累计质押博弈 | `fig_staking_analysis_v2.png` | `staking_analysis` | `deriveStakingAnalysis`、`fig_staking_analysis` |
-| 图 12 伴随式验证时间对比 | `fig_timeline_v3.png` | `timeline` | `deriveTimeline`、`fig_timeline` |
+期望看到 4 个本地任务样本、4 个 Geth EVM 样本、5 个协议对比项，以及 16 个 budget traces、4 个 overhead traces、8 个 parameter traces。
 
 ## 注意事项
 
