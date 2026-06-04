@@ -31,7 +31,7 @@ experiment/circuits/*.circom
 | 单轮运营成本 `c_op` | `0.01 ETH` | 诚实验证者参与成本 |
 | 单轮激励池 `R_total` | `1 ETH` | 默认收益分析激励池 |
 | 诚实验证者质押分布 | 对数正态分布，均值 `64 ETH`，标准差 `32 ETH` | 捕获概率与 CTWR 权重计算输入 |
-| Monte Carlo | 每个 `k` 运行 `1000` 次，固定随机种子 | 女巫数量与收益仿真 |
+| 固定预算激励计算 | 固定对手总预算 `S_A`，扫描女巫身份数 `k`、注册成本 `c_reg` 与截断上限 `S_cap` | 女巫数量、收益下界与最优分裂策略 |
 
 当前结构化数据中的诚实候选样本为 `500` 个，质押均值约 `64.681 ETH`，总质押约 `32340.431 ETH`，beacon 身份数量为 `803`。
 
@@ -44,8 +44,8 @@ experiment/circuits/*.circom
 | 图 15 委员会规模影响 | 固定 `rho=0.35` 时捕获概率随委员会规模 `N` 的衰减 | `figures.fig15` | `rho_beacon=0.403860`，`rho_eff=0.349556`；CTWR 的有效对手占比低于 Uniform-WoR 的 beacon 占比 | `visualization/正确图片输出/fig15.png` |
 | 图 16 拆分身份影响 | 对手总权益固定时，拆成 `k` 个身份后各方案捕获概率变化 | `figures.fig16_17` | `rho=0.20/0.35/0.50` 下 CTWR 的最优拆分点分别为 `k*=248/535/787`，捕获概率峰值分别为 `4.338e-15/4.912e-10/7.459e-07` | `visualization/正确图片输出/fig16.png` |
 | 图 17 CTWR 有效权重 | `rho=0.35` 时 CTWR 有效权重和有效对手占比随 `k` 变化 | `figures.fig16_17["0.35"]` | 有效对手占比保持在原始 `rho=0.35` 附近或以下，截断机制限制单身份权重集中 | `visualization/正确图片输出/fig17.png` |
-| 图 18 女巫身份与收益 | 女巫身份数量对诚实验证者单位收益和对手净利润的影响 | `figures.fig18`，Monte Carlo 选举仿真与攻击机会解析概率 | CTWR 对手利润在 `k=8` 达峰；`k=14` 为 `0.015263`，`k=15` 为 `0.005871`，`k=16` 首次转负 | `visualization/正确图片输出/fig18.png` |
-| 图 19 最优女巫策略 | 注册成本、截断上限对最优女巫身份数和诚实收益下界的影响 | `figures.fig19`，整数拆分扫描 | 注册成本越高，最优拆分身份数越低；收益热力图用于观察 `c_reg` 与 `S_cap` 的联合影响 | `visualization/正确图片输出/fig19.png` |
+| 图 18 女巫身份与收益 | 女巫身份数量对诚实验证者单位收益和对手净利润的影响 | `figures.fig18`，固定对手预算下的 CTWR 收益函数逐点计算 | `S_A/S_cap=8`；`c_reg=2.0` 时 CTWR 对手利润在 `k=8` 达峰，盈亏平衡点约 `k=14` | `visualization/正确图片输出/fig18.png` |
+| 图 19 最优女巫策略 | 注册成本、截断上限对最优女巫身份数和诚实收益下界的影响 | `figures.fig19`，固定预算整数拆分扫描 | 注册成本越高，最优拆分身份数越低；收益下界呈整数 `k*` 引起的阶梯跳变 | `visualization/正确图片输出/fig19.png` |
 | 图 20 诚实验证者期望收益 | 激励池 `R_total`、运营成本 `c_op` 对诚实验证者净收益的影响 | `figures.fig20` | 当 `R_total=5,10,15,20,30` 且 `c_op=0.005` 时收益均为正；当 `R_total=10` 且 `c_op>=0.02` 时收益转负 | `visualization/正确图片输出/fig20.png` |
 | 图 21 非比例权重规则对比 | CTWR 与 Sqrt-WoR 的捕获概率、有效占比、诚实收益对比 | `figures.fig21` | Sqrt-WoR 能削弱大额质押线性优势，但捕获概率和有效对手占比整体高于 CTWR | `visualization/正确图片输出/fig21.png` |
 | 图 22 匿名质押开销 | AnoSt 匿名注册、匿名质押、凭证展示、CTWR 选举的链上 Gas 与电路约束 | `foundry_gas_runs`、`zk_circuits`、`figures.fig22` | 单次 Gas：AnonyReg `196706`、AnonyStake `152449`、PresentCred `212746`、ElectCTWR `622254`；`N=100` 时匿名周期总 Gas 为 `56190.1K`，非匿名最小基线为 `8225.4K` | `visualization/正确图片输出/fig22.png` |
@@ -162,7 +162,7 @@ python3 visualization/chapter4_all_figures.py
 
 - `node scripts/verify_circuits.js`：生成 witness，执行 `snarkjs wtns check`，校验三类匿名质押电路的公开输出。
 - `forge test --gas-report`：测量公开注册/质押/声明、匿名注册/质押/凭证展示和 CTWR 选举 Gas。
-- `chapter4_all_figures.py`：重新执行 Foundry Gas、检查/编译电路、运行 witness 检查、读取 R1CS 约束数、计算 CTWR 公式曲线、执行 Monte Carlo 仿真并生成图 14-22。
+- `chapter4_all_figures.py`：重新执行 Foundry Gas、检查/编译电路、运行 witness 检查、读取 R1CS 约束数、计算 CTWR 捕获概率与固定预算激励曲线，并生成图 14-22。
 
 ## 可选 Groth16 Smoke Test
 
@@ -209,7 +209,7 @@ python3 visualization/chapter4_all_figures.py
 jq '.zk_circuits[] | {name, constraint_count, witness_status}' visualization/chapter4_experiment_data.json
 jq '.foundry_gas_runs[] | {function, gas}' visualization/chapter4_experiment_data.json
 jq '.figures.fig14.trace_rho_035' visualization/chapter4_experiment_data.json
-jq '.figures.fig18 | {method, runs_per_k, seed_base, k_star_profit}' visualization/chapter4_experiment_data.json
+jq '.figures.fig18 | {method, k_threshold_s_adv_over_s_cap, k_star_profit, k_break_even}' visualization/chapter4_experiment_data.json
 jq '.figures.fig22.single_call' visualization/chapter4_experiment_data.json
 ```
 

@@ -3,8 +3,8 @@
 
 The script builds the visualization data from local experiment artifacts:
 Foundry gas benchmarks, snarkjs R1CS/witness checks, the thesis lognormal
-stake experiment, Monte Carlo election simulation, and CTWR formulas
-evaluated from those inputs.
+stake experiment, fixed-budget CTWR incentive calculations, and CTWR
+formulas evaluated from those inputs.
 It deliberately avoids pre-baked plot arrays and paper-profile fallbacks.
 """
 
@@ -13,7 +13,6 @@ from __future__ import annotations
 import json
 import math
 import os
-import random
 import re
 import shutil
 import subprocess
@@ -57,10 +56,10 @@ PARAMS = {
     "stake_seed": 153456,
     "honest_count_capture": 500,
     "honest_count_incentive": 500,
-    "monte_carlo_runs": 1000,
-    "simulation_seed": 2026,
-    "attack_opportunity_value": 4.1,
-    "sybil_identity_cost": 0.07,
+    "incentive_adversary_ratio_to_honest": 0.4,
+    "incentive_reward_per_honest_stake": 0.1,
+    "incentive_default_s_cap_units": 50.0,
+    "incentive_c_reg_units": 2.0,
 }
 
 COLORS = {
@@ -263,119 +262,129 @@ def fig16_17(ctx: ElectionContext) -> dict:
     return {f"{rho:.2f}": split_case(ctx, rho) for rho in [0.20, 0.35, 0.50]}
 
 
-def simulate_group_round(honest_count: int, honest_weight: float, adversary_count: int, adversary_weight: float, rng: random.Random, reward: float, c_op: float) -> tuple[float, float, bool]:
-    """Monte Carlo weighted sampling without replacement for two equal-weight groups."""
-    h_left = honest_count
-    a_left = adversary_count
-    h_selected = 0
-    a_selected = 0
-    for _ in range(min(PARAMS["committee_size"], h_left + a_left)):
-        h_total = h_left * honest_weight
-        a_total = a_left * adversary_weight
-        if h_total + a_total <= 0:
-            break
-        if rng.random() * (h_total + a_total) < a_total:
-            a_selected += 1
-            a_left -= 1
-        else:
-            h_selected += 1
-            h_left -= 1
-    selected_weight = h_selected * honest_weight + a_selected * adversary_weight
-    honest_reward = reward * h_selected * honest_weight / selected_weight if selected_weight else 0.0
-    adversary_reward = reward * a_selected * adversary_weight / selected_weight if selected_weight else 0.0
-    honest_net_per_validator = honest_reward / honest_count - c_op
-    return honest_net_per_validator, adversary_reward, a_selected > 0
-
-
-def attack_opportunity_probability(honest_count: int, honest_weight: float, adversary_count: int, adversary_weight: float) -> float:
-    h_total = honest_count * honest_weight
-    a_total = adversary_count * adversary_weight
-    if a_total <= 0:
-        return 0.0
-    return 1 - (h_total / (h_total + a_total)) ** PARAMS["committee_size"]
-
-
-def fig18() -> dict:
-    honest_count = PARAMS["honest_count_incentive"]
-    ks = list(range(0, 101))
-    utility = {"ctwr": [], "no_cap": [], "uniform": []}
-    adversary_profit = {"ctwr": [], "no_cap": []}
-    runs = PARAMS["monte_carlo_runs"]
-    reward = 10.0
-    for k in ks:
-        rng = random.Random(PARAMS["simulation_seed"] + k)
-        totals = {"ctwr": 0.0, "no_cap": 0.0, "uniform": 0.0}
-        profits = {"ctwr": 0.0, "no_cap": 0.0}
-        for _ in range(runs):
-            u, ar, hit = simulate_group_round(honest_count, 64.0, k, PARAMS["d_min_eth"], rng, reward, PARAMS["c_op_eth"])
-            totals["ctwr"] += u
-            profits["ctwr"] += ar
-            u, ar, hit = simulate_group_round(honest_count, 64.0, k, PARAMS["s_cap_eth"], rng, reward, PARAMS["c_op_eth"])
-            totals["no_cap"] += u
-            profits["no_cap"] += ar
-            u, _, _ = simulate_group_round(honest_count, 1.0, k, 1.0, rng, reward, PARAMS["c_op_eth"])
-            totals["uniform"] += u
-        for key in totals:
-            utility[key].append(totals[key] / runs)
-        ctwr_attack_prob = attack_opportunity_probability(honest_count, 64.0, k, PARAMS["d_min_eth"])
-        no_cap_attack_prob = attack_opportunity_probability(honest_count, 64.0, k, PARAMS["s_cap_eth"])
-        adversary_profit["ctwr"].append(PARAMS["attack_opportunity_value"] * ctwr_attack_prob - k * PARAMS["sybil_identity_cost"])
-        adversary_profit["no_cap"].append(PARAMS["attack_opportunity_value"] * no_cap_attack_prob - k * PARAMS["sybil_identity_cost"])
-    k_star = int(max(range(len(ks)), key=lambda i: adversary_profit["ctwr"][i]))
+def incentive_context() -> dict:
+    """Figure 18/19 use the paper's fixed adversary-budget incentive model."""
+    unit_eth = PARAMS["d_min_eth"]
+    s_hon = PARAMS["honest_count_incentive"] * 64.0 / unit_eth
+    s_adv = PARAMS["incentive_adversary_ratio_to_honest"] * s_hon
+    reward = PARAMS["incentive_reward_per_honest_stake"] * s_hon
     return {
-        "k": ks,
-        "utility": utility,
-        "adversary_profit": adversary_profit,
-        "k_star_profit": k_star,
-        "method": "Monte Carlo CTWR election simulation",
-        "runs_per_k": runs,
-        "seed_base": PARAMS["simulation_seed"],
-        "honest_count": honest_count,
+        "unit_eth": unit_eth,
+        "honest_count": PARAMS["honest_count_incentive"],
         "honest_stake_eth": 64.0,
-        "reward_eth": reward,
-        "adversary_profit_model": "attack_opportunity_value * analytic Pr[adversary obtains at least one seat] - sybil_identity_cost * k",
-        "attack_opportunity_value": PARAMS["attack_opportunity_value"],
-        "sybil_identity_cost": PARAMS["sybil_identity_cost"],
+        "s_hon_units": s_hon,
+        "s_adv_units": s_adv,
+        "s_adv_eth": s_adv * unit_eth,
+        "reward_units": reward,
+        "ideal_unit_revenue": reward / s_hon,
+        "no_cap_unit_revenue": reward / (s_hon + s_adv),
     }
 
 
-def best_integer_split(s_adv: float, s_hon: float, s_cap: float, c_reg: float, reward: float) -> tuple[int, float, float]:
-    max_k = max(1, int(s_adv / (PARAMS["d_min_eth"] + c_reg)) + 1)
-    best_k, best_profit, best_honest_revenue = 0, -1e18, reward / s_hon
+def capped_adversary_weight(k: int, s_adv: float, s_cap: float) -> float:
+    if k <= 0:
+        return 0.0
+    return min(s_adv, k * s_cap)
+
+
+def honest_unit_revenue(s_hon: float, adversary_effective_weight: float, reward: float) -> float:
+    return reward / (s_hon + adversary_effective_weight)
+
+
+def adversary_gross_revenue(s_hon: float, adversary_effective_weight: float, reward: float) -> float:
+    if adversary_effective_weight <= 0:
+        return 0.0
+    return reward * adversary_effective_weight / (s_hon + adversary_effective_weight)
+
+
+def adversary_profit_for_split(k: int, s_hon: float, s_adv: float, s_cap: float, c_reg: float, reward: float) -> tuple[float, float, float]:
+    w_adv_eff = capped_adversary_weight(k, s_adv, s_cap)
+    gross = adversary_gross_revenue(s_hon, w_adv_eff, reward)
+    honest_revenue = honest_unit_revenue(s_hon, w_adv_eff, reward)
+    return gross - k * c_reg, honest_revenue, w_adv_eff
+
+
+def best_fixed_budget_split(s_adv: float, s_hon: float, s_cap: float, c_reg: float, reward: float) -> tuple[int, float, float, float]:
+    max_k = max(1, math.ceil(s_adv / s_cap) + 1)
+    best_k, best_profit = 0, 0.0
+    best_revenue, best_eff = reward / s_hon, 0.0
     for k in range(1, max_k + 1):
-        available = s_adv - k * c_reg
-        if available < k * PARAMS["d_min_eth"]:
-            break
-        w_adv = k * min(available / k, s_cap)
-        profit = reward * w_adv / (s_hon + w_adv) - k * c_reg
-        honest_revenue = reward / (s_hon + w_adv)
-        if profit > best_profit:
-            best_k, best_profit, best_honest_revenue = k, profit, honest_revenue
-    return best_k, best_profit, best_honest_revenue
+        profit, revenue, eff = adversary_profit_for_split(k, s_hon, s_adv, s_cap, c_reg, reward)
+        if profit > best_profit + 1e-12 or (abs(profit - best_profit) <= 1e-12 and eff > best_eff):
+            best_k, best_profit = k, profit
+            best_revenue, best_eff = revenue, eff
+    return best_k, best_profit, best_revenue, best_eff
+
+
+def first_profit_crossing(ks: list[int], profits: list[float]) -> float | None:
+    for i in range(1, len(ks)):
+        y0, y1 = profits[i - 1], profits[i]
+        if y0 >= 0 and y1 <= 0 and y0 != y1:
+            x0, x1 = ks[i - 1], ks[i]
+            return x0 + (0 - y0) * (x1 - x0) / (y1 - y0)
+    return None
+
+
+def fig18() -> dict:
+    ctx = incentive_context()
+    s_hon = ctx["s_hon_units"]
+    s_adv = ctx["s_adv_units"]
+    s_cap = PARAMS["incentive_default_s_cap_units"]
+    c_reg = PARAMS["incentive_c_reg_units"]
+    reward = ctx["reward_units"]
+    ks = list(range(1, 101))
+    unit_revenue = {"ctwr": [], "no_cap": [], "adversary_ctwr": []}
+    adversary_profit = {"ctwr": [], "no_cap": []}
+    effective_weight = []
+    for k in ks:
+        w_ctwr = capped_adversary_weight(k, s_adv, s_cap)
+        effective_weight.append(w_ctwr)
+        unit_revenue["ctwr"].append(honest_unit_revenue(s_hon, w_ctwr, reward))
+        unit_revenue["no_cap"].append(ctx["no_cap_unit_revenue"])
+        unit_revenue["adversary_ctwr"].append(adversary_gross_revenue(s_hon, w_ctwr, reward) / s_adv)
+        adversary_profit["ctwr"].append(adversary_gross_revenue(s_hon, w_ctwr, reward) - k * c_reg)
+        adversary_profit["no_cap"].append(adversary_gross_revenue(s_hon, s_adv, reward) - k * c_reg)
+    k_star = int(max(range(len(ks)), key=lambda i: adversary_profit["ctwr"][i]))
+    threshold = s_adv / s_cap
+    crossing = first_profit_crossing(ks, adversary_profit["ctwr"])
+    return {
+        "k": ks,
+        "unit_revenue": unit_revenue,
+        "adversary_profit": adversary_profit,
+        "effective_weight": effective_weight,
+        "k_threshold_s_adv_over_s_cap": threshold,
+        "k_star_profit": ks[k_star],
+        "k_star_profit_value": adversary_profit["ctwr"][k_star],
+        "k_break_even": crossing,
+        "method": "Fixed adversary-budget CTWR incentive calculation",
+        "params": {
+            **ctx,
+            "s_cap_units": s_cap,
+            "c_reg_units": c_reg,
+        },
+    }
 
 
 def fig19(ctx: ElectionContext) -> dict:
+    incentive = incentive_context()
     c_regs = np.linspace(0.1, 12, 260).tolist()
-    s_hon = ctx.honest_capped
-    s_adv = s_adv_from_rho(0.35, ctx.honest_total)
-    reward = 10.0
+    s_hon = incentive["s_hon_units"]
+    s_adv = incentive["s_adv_units"]
+    reward = incentive["reward_units"]
     k_by_s_cap = {}
     revenue_by_s_cap = {}
     for s_cap in [20, 50, 100, 200]:
-        k_by_s_cap[str(s_cap)] = [best_integer_split(s_adv, s_hon, s_cap, c, reward)[0] for c in c_regs]
+        k_by_s_cap[str(s_cap)] = [best_fixed_budget_split(s_adv, s_hon, s_cap, c, reward)[0] for c in c_regs]
     for s_cap in [20, 50, 100]:
-        revenue_by_s_cap[str(s_cap)] = [best_integer_split(s_adv, s_hon, s_cap, c, reward)[2] for c in c_regs]
+        revenue_by_s_cap[str(s_cap)] = [best_fixed_budget_split(s_adv, s_hon, s_cap, c, reward)[2] for c in c_regs]
     c_grid = np.linspace(0.3, 10, 80).tolist()
     s_grid = np.linspace(10, 200, 80).tolist()
     heat = []
     for s_cap in s_grid:
-        heat.append([best_integer_split(s_adv, s_hon, s_cap, c, reward)[2] for c in c_grid])
+        heat.append([best_fixed_budget_split(s_adv, s_hon, s_cap, c, reward)[2] for c in c_grid])
     return {
         "c_reg": c_regs,
-        "rho_fixed": 0.35,
-        "s_adv_eth": s_adv,
-        "s_hon_eth": s_hon,
-        "reward_eth": reward,
+        "params": incentive,
         "k_by_s_cap": k_by_s_cap,
         "revenue_by_s_cap": revenue_by_s_cap,
         "heatmap": {"c_reg": c_grid, "s_cap": s_grid, "revenue": heat},
@@ -659,7 +668,7 @@ def build_experiment_data() -> dict:
     data = {
         "metadata": {
             "chapter": "第四章 面向链下计算的验证者安全选举",
-            "source": "PDF Section 4.5 experiment design: lognormal stake analytic CTWR calculation, Monte Carlo incentive simulation, Foundry gas benchmark, and snarkjs R1CS/witness verification",
+            "source": "PDF Section 4.5 experiment design: lognormal stake analytic CTWR calculation, fixed-budget incentive calculation, Foundry gas benchmark, and snarkjs R1CS/witness verification",
             "params": PARAMS,
             "tooling": {
                 "local_snarkjs_available": snarkjs_path().exists(),
@@ -694,7 +703,10 @@ def validate_experiment_data(data: dict) -> None:
     p = data["metadata"]["params"]
     assert p["candidate_count"] == 1000 and p["d_min_eth"] == 32.0 and p["s_cap_eth"] == 256.0
     assert p["committee_size"] == 20 and p["capture_budget"] == 1e-6 and p["c_reg_eth"] == 0.5
-    assert p["honest_count_capture"] == 500 and p["monte_carlo_runs"] == 1000
+    assert p["honest_count_capture"] == 500 and p["honest_count_incentive"] == 500
+    assert p["incentive_adversary_ratio_to_honest"] == 0.4
+    assert p["incentive_reward_per_honest_stake"] == 0.1
+    assert p["incentive_default_s_cap_units"] == 50.0 and p["incentive_c_reg_units"] == 2.0
     assert not data["protocol_trace"]["duplicate_credential_accepted"]
     assert len(data["zk_circuits"]) == 3
     f15 = data["figures"]["fig15"]
@@ -702,6 +714,19 @@ def validate_experiment_data(data: dict) -> None:
     assert 0.34 <= f15["rho_eff"] <= 0.36
     idx40 = f15["N"].index(40)
     assert f15["capture_vs_N"]["uniform_wor"][idx40] / f15["capture_vs_N"]["ctwr"][idx40] > 100
+    f18 = data["figures"]["fig18"]
+    assert f18["method"] == "Fixed adversary-budget CTWR incentive calculation"
+    assert abs(f18["k_threshold_s_adv_over_s_cap"] - 8.0) < 1e-12
+    assert f18["k_star_profit"] == 8
+    assert 12.4 <= f18["k_star_profit_value"] <= 12.7
+    assert 14.0 <= f18["k_break_even"] <= 14.5
+    assert abs(f18["params"]["ideal_unit_revenue"] - 0.1) < 1e-12
+    assert abs(f18["params"]["no_cap_unit_revenue"] - (1 / 14)) < 1e-12
+    f19 = data["figures"]["fig19"]
+    assert f19["k_by_s_cap"]["20"][0] == 20
+    assert f19["k_by_s_cap"]["50"][0] == 8
+    assert f19["k_by_s_cap"]["100"][0] == 4
+    assert f19["k_by_s_cap"]["200"][0] == 2
 
 
 def configure_matplotlib() -> None:
@@ -832,51 +857,84 @@ def render_fig17(data: dict) -> None:
 def render_fig18(data: dict) -> None:
     f = data["figures"]["fig18"]
     k = f["k"]
-    fig, axes = plt.subplots(1, 2, figsize=(10, 4))
-    axes[0].plot(k, f["utility"]["no_cap"], color=COLORS["orange"], label="No cap")
-    axes[0].plot(k, f["utility"]["ctwr"], color=COLORS["dark_blue"], label="CTWR")
-    axes[0].plot(k, f["utility"]["uniform"], color=COLORS["gold"], label="Uniform-WoR")
-    axes[0].axhline(0, color=COLORS["gray"], lw=1)
-    axes[0].set_xlabel("女巫身份数量 k")
-    axes[0].set_ylabel("诚实验证者期望净收益")
+    params = f["params"]
+    threshold = f["k_threshold_s_adv_over_s_cap"]
+    break_even = f["k_break_even"]
+    fig, axes = plt.subplots(1, 2, figsize=(13.5, 5.0))
+
+    no_cap = np.array(f["unit_revenue"]["no_cap"])
+    ctwr = np.array(f["unit_revenue"]["ctwr"])
+    adv_unit = np.array(f["unit_revenue"]["adversary_ctwr"])
+    axes[0].fill_between(k, no_cap, ctwr, where=ctwr >= no_cap, color=COLORS["light_blue"], alpha=0.18, label="CTWR 收益提升区间")
+    axes[0].plot(k, no_cap, "s--", color="#D62728", markevery=11, lw=1.7, ms=4.0, label="诚实方（无限制）")
+    axes[0].plot(k, ctwr, "o-", color=COLORS["cyan"], markevery=11, lw=2.4, ms=4.2, label="诚实方（CTWR）")
+    axes[0].plot(k, adv_unit, "^--", color=COLORS["dark_orange"], markevery=11, lw=1.8, ms=4.0, label="对手单位收益（CTWR）")
+    axes[0].axhline(params["ideal_unit_revenue"], color="#50BFA5", ls=":", lw=1.7)
+    axes[0].axvline(threshold, color=COLORS["gray"], ls=":", lw=1.4)
+    axes[0].annotate("理想情况（无对手）", xy=(66, params["ideal_unit_revenue"]), xytext=(66, params["ideal_unit_revenue"] + 0.0012), color="#2E9E89")
+    axes[0].annotate(rf"$k=S_A/S_{{cap}}={threshold:.0f}$", xy=(threshold, params["no_cap_unit_revenue"]), xytext=(13, params["no_cap_unit_revenue"] - 0.0085), arrowprops={"arrowstyle": "->", "color": COLORS["gray"], "lw": 1.0}, color="#555555")
+    axes[0].set_xlim(1, 100)
+    axes[0].set_ylim(0.055, 0.105)
+    axes[0].set_xlabel(r"女巫身份数量 $k$")
+    axes[0].set_ylabel("单位权益期望收益")
     axes[0].set_title("(a) 收益 vs 女巫分割")
-    axes[0].legend()
-    axes[1].plot(k, f["adversary_profit"]["no_cap"], color=COLORS["orange"], label="No cap")
-    axes[1].plot(k, f["adversary_profit"]["ctwr"], color=COLORS["dark_blue"], label="CTWR")
-    axes[1].axhline(0, color=COLORS["gray"], lw=1)
-    axes[1].axvline(f["k_star_profit"], color=COLORS["navy"], ls=":", label=f"k*={f['k_star_profit']}")
-    axes[1].set_xlabel("女巫身份数量 k")
-    axes[1].set_ylabel("对手净利润")
-    axes[1].set_title("(b) 对手净利润")
-    axes[1].legend()
+    handles, labels = axes[0].get_legend_handles_labels()
+    order = [1, 2, 3, 0]
+    axes[0].legend([handles[i] for i in order], [labels[i] for i in order], loc="center right")
+
+    no_cap_profit = np.array(f["adversary_profit"]["no_cap"])
+    ctwr_profit = np.array(f["adversary_profit"]["ctwr"])
+    axes[1].fill_between(k, 0, ctwr_profit, where=ctwr_profit >= 0, color=COLORS["light_blue"], alpha=0.22, label="CTWR 盈利区间")
+    axes[1].plot(k, no_cap_profit, "s--", color="#D62728", markevery=11, lw=1.8, ms=4.0, label="无限制")
+    axes[1].plot(k, ctwr_profit, "o-", color=COLORS["cyan"], markevery=11, lw=2.4, ms=4.2, label="CTWR")
+    axes[1].axhline(0, color=COLORS["gray"], lw=1.0)
+    axes[1].axvline(f["k_star_profit"], color="#6EC7E5", ls=":", lw=1.4)
+    if break_even is not None:
+        axes[1].annotate(rf"盈亏平衡点 $k \approx {break_even:.0f}$", xy=(break_even, 0), xytext=(12, -6), color=COLORS["cyan"])
+    axes[1].scatter([f["k_star_profit"]], [f["k_star_profit_value"]], s=58, color=COLORS["navy"], zorder=4)
+    axes[1].annotate(rf"$k^* \approx {f['k_star_profit']}$，利润={f['k_star_profit_value']:.1f}", xy=(f["k_star_profit"], f["k_star_profit_value"]), xytext=(21, f["k_star_profit_value"] + 5), arrowprops={"arrowstyle": "->", "color": COLORS["navy"], "lw": 1.0}, color=COLORS["navy"])
+    axes[1].set_xlim(1, 100)
+    axes[1].set_ylim(-180, 30)
+    axes[1].set_xlabel(r"女巫身份数量 $k$")
+    axes[1].set_ylabel("对手净利润（每轮）")
+    axes[1].set_title(rf"(b) 净利润（$c_{{reg}}={params['c_reg_units']:.1f}$）")
+    axes[1].legend(loc="upper right")
     fig.tight_layout()
     save_png(fig, "fig18")
 
 
 def render_fig19(data: dict) -> None:
     f = data["figures"]["fig19"]
-    fig, axes = plt.subplots(1, 3, figsize=(13, 4))
-    for key, color in zip(["20", "50", "100", "200"], [COLORS["light_blue"], COLORS["orange"], COLORS["cyan"], COLORS["dark_orange"]]):
-        axes[0].plot(f["c_reg"], f["k_by_s_cap"][key], color=color, label=f"S_cap={key}")
+    fig, axes = plt.subplots(1, 3, figsize=(13.5, 4.1))
+    cap_colors = {"20": COLORS["light_blue"], "50": COLORS["gold"], "100": COLORS["cyan"], "200": COLORS["dark_orange"]}
+    for key in ["20", "50", "100", "200"]:
+        axes[0].step(f["c_reg"], f["k_by_s_cap"][key], where="post", color=cap_colors[key], lw=1.7, label=rf"$S_{{cap}}={key}$")
     axes[0].set_xlabel("注册成本 c_reg")
-    axes[0].set_ylabel("最优女巫数量 k*")
-    axes[0].set_title("(a) k* vs c_reg")
+    axes[0].set_ylabel(r"最优女巫数量 $k^*$")
+    axes[0].set_ylim(0, 50)
+    axes[0].set_title(r"(a) $k^*$ vs $c_{reg}$")
     axes[0].legend()
-    for key, color in zip(["20", "50", "100"], [COLORS["light_blue"], COLORS["orange"], COLORS["dark_orange"]]):
-        axes[1].plot(f["c_reg"], f["revenue_by_s_cap"][key], color=color, label=f"S_cap={key}")
+    for key in ["20", "50", "100"]:
+        axes[1].step(f["c_reg"], f["revenue_by_s_cap"][key], where="post", color=cap_colors[key], lw=1.8, label=rf"$S_{{cap}}={key}$")
+    axes[1].axhline(f["params"]["ideal_unit_revenue"], color="#50BFA5", ls=":", lw=1.4)
+    axes[1].axhline(f["params"]["no_cap_unit_revenue"], color="#FF6B6B", ls="--", lw=1.2)
+    axes[1].annotate("理想情况（无对手）", xy=(8.1, f["params"]["ideal_unit_revenue"]), xytext=(8.1, f["params"]["ideal_unit_revenue"] + 0.001), color="#208A60")
     axes[1].set_xlabel("注册成本 c_reg")
-    axes[1].set_ylabel("单位收益下界")
-    axes[1].set_title("(b) 收益下界")
+    axes[1].set_ylabel("诚实方单位收益")
+    axes[1].set_ylim(0.070, 0.101)
+    axes[1].set_title(r"(b) 收益下界 vs $c_{reg}$")
     axes[1].legend()
     hm = f["heatmap"]
     axes[2].grid(False)
-    im = axes[2].imshow(hm["revenue"], origin="lower", aspect="auto", extent=[hm["c_reg"][0], hm["c_reg"][-1], hm["s_cap"][0], hm["s_cap"][-1]], cmap="RdYlGn")
+    im = axes[2].imshow(hm["revenue"], origin="lower", aspect="auto", extent=[hm["c_reg"][0], hm["c_reg"][-1], hm["s_cap"][0], hm["s_cap"][-1]], cmap="RdYlGn", vmin=0.055, vmax=0.10)
+    c_reg_grid, s_cap_grid = np.meshgrid(hm["c_reg"], hm["s_cap"])
+    axes[2].contour(c_reg_grid, s_cap_grid, hm["revenue"], levels=[0.08, 0.09, 0.095], colors="#456B3E", linewidths=0.7)
     axes[2].set_xlabel("注册成本 c_reg")
-    axes[2].set_ylabel("截断限制 S_cap")
+    axes[2].set_ylabel(r"截断限制 $S_{cap}$")
     axes[2].set_title("(c) 参数热力图")
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", message="Auto-removal of grids by pcolor.*", category=matplotlib.MatplotlibDeprecationWarning)
-        fig.colorbar(im, ax=axes[2], shrink=0.8)
+        fig.colorbar(im, ax=axes[2], shrink=0.86, label="单位收益")
     fig.tight_layout()
     save_png(fig, "fig19")
 
