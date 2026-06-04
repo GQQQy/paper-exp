@@ -40,20 +40,18 @@
 - Python 3.10 或兼容版本。
 - Python 包：`matplotlib`、`numpy`。
 
-检查命令：
+进入 `chapter3` 目录后，使用当前 `python3` 安装 Python 依赖：
 
 ```bash
-go version
-forge --version
-evm --help
+which python3
 python3 --version
-python3 -c "import matplotlib, numpy; print('python deps ok')"
+python3 -m pip install -r requirements.txt
 ```
 
-如果缺少 Python 包：
+如果遇到 `externally-managed-environment`，说明当前 Python 不允许直接写入系统环境，可显式允许 pip 安装到当前 Python 环境：
 
 ```bash
-python3 -m pip install matplotlib numpy
+python3 -m pip install --break-system-packages -r requirements.txt
 ```
 
 如果 Go 或 Matplotlib 缓存目录不可写：
@@ -64,19 +62,29 @@ export MPLCONFIGDIR="${TMPDIR:-/tmp}/mplconfig-ch3"
 mkdir -p "$GOCACHE" "$MPLCONFIGDIR"
 ```
 
-## 运行完整实验
-
-从仓库根目录运行：
+检查命令：
 
 ```bash
-cd chapter3/experiment
+go version
+forge --version
+evm --help
+python3 --version
+python3 -c "import matplotlib, numpy; print('python deps ok')"
+```
+
+## 运行完整实验
+
+从 `chapter3` 目录运行：
+
+```bash
+cd experiment
 go test ./...
 forge test --gas-report
 go run ./cmd/clever-exp --quick --out logs/raw_experiment_log.json
 
-cd ../..
-python3 chapter3/visualization/generate_chapter3_data.py
-python3 chapter3/visualization/chapter3_all_figures.py
+cd ..
+python3 visualization/generate_chapter3_data.py
+python3 visualization/chapter3_all_figures.py
 ```
 
 说明：
@@ -90,7 +98,7 @@ python3 chapter3/visualization/chapter3_all_figures.py
 如需运行更大的本地样本：
 
 ```bash
-cd chapter3/experiment
+cd experiment
 go run ./cmd/clever-exp --full --max-seconds 5 --out logs/raw_experiment_log.json
 ```
 
@@ -101,27 +109,27 @@ go run ./cmd/clever-exp --full --max-seconds 5 --out logs/raw_experiment_log.jso
 如果 `experiment/logs/raw_experiment_log.json` 已存在：
 
 ```bash
-python3 chapter3/visualization/generate_chapter3_data.py
-python3 chapter3/visualization/chapter3_all_figures.py
+python3 visualization/generate_chapter3_data.py
+python3 visualization/chapter3_all_figures.py
 ```
 
 如果只改了绘图样式，且不需要刷新 JSON：
 
 ```bash
-python3 chapter3/visualization/chapter3_all_figures.py
+python3 visualization/chapter3_all_figures.py
 ```
 
 ## 输出文件
 
-- Raw log：`chapter3/experiment/logs/raw_experiment_log.json`
-- 结构化数据：`chapter3/visualization/chapter3_experiment_data.json`
+- Raw log：`experiment/logs/raw_experiment_log.json`
+- 结构化数据：`visualization/chapter3_experiment_data.json`
 - 生成图片：
-  - `chapter3/visualization/正确图片输出/fig1_budget_compliance.png`
-  - `chapter3/visualization/正确图片输出/fig2_overhead.png`
-  - `chapter3/visualization/正确图片输出/fig_param_sensitivity_v2.png`
-  - `chapter3/visualization/正确图片输出/fig_gas_comparison_v2.png`
-  - `chapter3/visualization/正确图片输出/fig_staking_analysis_v2.png`
-  - `chapter3/visualization/正确图片输出/fig_timeline_v3.png`
+  - `visualization/正确图片输出/fig1_budget_compliance.png`
+  - `visualization/正确图片输出/fig2_overhead.png`
+  - `visualization/正确图片输出/fig_param_sensitivity_v2.png`
+  - `visualization/正确图片输出/fig_gas_comparison_v2.png`
+  - `visualization/正确图片输出/fig_staking_analysis_v2.png`
+  - `visualization/正确图片输出/fig_timeline_v3.png`
 
 ## 数据链路
 
@@ -145,10 +153,10 @@ raw log 的主要来源：
 快速检查 raw log：
 
 ```bash
-jq '.samples | length' chapter3/experiment/logs/raw_experiment_log.json
-jq '.geth_evm_samples | length' chapter3/experiment/logs/raw_experiment_log.json
-jq '.comparison_protocols | length' chapter3/experiment/logs/raw_experiment_log.json
-jq '.paper_evidence.instrumentation_trace | {mode, budget_runs:(.budget_runs|length), overhead_runs:(.overhead_runs|length), parameter_runs:(.parameter_runs|length)}' chapter3/experiment/logs/raw_experiment_log.json
+jq '.samples | length' experiment/logs/raw_experiment_log.json
+jq '.geth_evm_samples | length' experiment/logs/raw_experiment_log.json
+jq '.comparison_protocols | length' experiment/logs/raw_experiment_log.json
+jq '.paper_evidence.instrumentation_trace | {mode, budget_runs:(.budget_runs|length), overhead_runs:(.overhead_runs|length), parameter_runs:(.parameter_runs|length)}' experiment/logs/raw_experiment_log.json
 ```
 
 期望分别看到 4 个本地任务样本、4 个 Geth EVM 样本、5 个协议对比项，以及 16 个 budget traces、4 个 overhead traces、8 个 parameter traces。

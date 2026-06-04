@@ -32,7 +32,9 @@ python3 -c "import matplotlib, numpy; print('python deps ok')"
 如果缺少 Python 包：
 
 ```bash
-python3 -m pip install matplotlib numpy
+cd ..
+python3 -m pip install -r requirements.txt
+cd experiment
 ```
 
 ## 运行实验
@@ -85,17 +87,18 @@ jq '[.paper_evidence.instrumentation_trace.parameter_runs[] | select((.value==10
 
 ## 生成可视化
 
-回到仓库根目录运行：
+回到 `chapter3` 目录运行：
 
 ```bash
-python3 chapter3/visualization/generate_chapter3_data.py
-python3 chapter3/visualization/chapter3_all_figures.py
+cd ..
+python3 visualization/generate_chapter3_data.py
+python3 visualization/chapter3_all_figures.py
 ```
 
 输出：
 
-- `chapter3/visualization/chapter3_experiment_data.json`
-- `chapter3/visualization/正确图片输出/*.png`
+- `visualization/chapter3_experiment_data.json`
+- `visualization/正确图片输出/*.png`
 
 ## 注意事项
 

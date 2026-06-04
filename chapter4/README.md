@@ -59,25 +59,26 @@ python3 --version
 python3 -c "import matplotlib, numpy, PIL; print('python deps ok')"
 ```
 
-如果没有全局 `circom`，可把 Circom 2.1.8 二进制放到 `chapter4/experiment/tools/bin/circom`，或设置环境变量：
+如果没有全局 `circom`，可把 Circom 2.1.8 二进制放到 `experiment/tools/bin/circom`，或设置环境变量：
 
 ```bash
 export CIRCOM=/path/to/circom
 $CIRCOM --version
 ```
 
-`chapter4/visualization/chapter4_all_figures.py` 会按以下顺序寻找编译器：
+`visualization/chapter4_all_figures.py` 会按以下顺序寻找编译器：
 
 1. `$CIRCOM`
 2. 全局 `circom`
-3. `chapter4/experiment/tools/bin/circom`
+3. `experiment/tools/bin/circom`
 
 安装 Node/snarkjs/circomlib 依赖：
 
 ```bash
-cd chapter4/experiment
+cd experiment
 npm install
 node -e "console.log(require('./node_modules/snarkjs/package.json').version)"
+cd ..
 ```
 
 安装 Python 依赖：
@@ -91,7 +92,7 @@ python3 -m pip install matplotlib numpy Pillow
 主脚本会自动检查并编译缺失或过期的电路产物。也可以手动编译：
 
 ```bash
-cd chapter4/experiment
+cd experiment
 mkdir -p build/circuits
 CIRCOM_BIN="${CIRCOM:-circom}"
 if ! command -v "$CIRCOM_BIN" >/dev/null 2>&1 && [ -x ./tools/bin/circom ]; then
@@ -104,10 +105,10 @@ fi
 
 ## 运行完整实验
 
-从仓库根目录运行：
+从 `chapter4` 目录运行：
 
 ```bash
-cd chapter4/experiment
+cd experiment
 mkdir -p build/circuits
 CIRCOM_BIN="${CIRCOM:-circom}"
 if ! command -v "$CIRCOM_BIN" >/dev/null 2>&1 && [ -x ./tools/bin/circom ]; then
@@ -119,8 +120,8 @@ fi
 node scripts/verify_circuits.js
 forge test --gas-report
 
-cd ../..
-python3 chapter4/visualization/chapter4_all_figures.py
+cd ..
+python3 visualization/chapter4_all_figures.py
 ```
 
 说明：
@@ -135,7 +136,7 @@ python3 chapter4/visualization/chapter4_all_figures.py
 ```bash
 export MPLCONFIGDIR="${TMPDIR:-/tmp}/mplconfig-ch4"
 mkdir -p "$MPLCONFIGDIR"
-python3 chapter4/visualization/chapter4_all_figures.py
+python3 visualization/chapter4_all_figures.py
 ```
 
 ## 可选 Groth16 Smoke Test
@@ -143,7 +144,7 @@ python3 chapter4/visualization/chapter4_all_figures.py
 Groth16 smoke test 用于确认本地 proving/verifying 流程可跑通，不是生产可信设置，也不是图 14-22 的必需输入。
 
 ```bash
-cd chapter4/experiment
+cd experiment
 mkdir -p build/zk
 npx snarkjs powersoftau new bn128 13 build/zk/pot13_0000.ptau -v
 npx snarkjs powersoftau contribute build/zk/pot13_0000.ptau build/zk/pot13_0001.ptau --name="chapter4-local-smoke" -e="chapter4 deterministic local smoke entropy"
@@ -151,32 +152,32 @@ npx snarkjs powersoftau prepare phase2 build/zk/pot13_0001.ptau build/zk/pot13_f
 node scripts/groth16_smoke.js
 ```
 
-输出位于 `chapter4/experiment/build/zk/`。
+输出位于 `experiment/build/zk/`。
 
 ## 只重新生成可视化
 
 如果依赖已安装，且想从当前实验源码和 ignored 构建产物刷新全部图表：
 
 ```bash
-python3 chapter4/visualization/chapter4_all_figures.py
+python3 visualization/chapter4_all_figures.py
 ```
 
 该命令仍会重新采集 Foundry Gas、重新运行 witness 检查和 R1CS info，并重新计算公式/仿真数据。
 
 ## 输出文件
 
-- Raw log：`chapter4/experiment/logs/raw_experiment_log.json`
-- 结构化数据：`chapter4/visualization/chapter4_experiment_data.json`
+- Raw log：`experiment/logs/raw_experiment_log.json`
+- 结构化数据：`visualization/chapter4_experiment_data.json`
 - 生成图片：
-  - `chapter4/visualization/正确图片输出/fig14.png`
-  - `chapter4/visualization/正确图片输出/fig15.png`
-  - `chapter4/visualization/正确图片输出/fig16.png`
-  - `chapter4/visualization/正确图片输出/fig17.png`
-  - `chapter4/visualization/正确图片输出/fig18.png`
-  - `chapter4/visualization/正确图片输出/fig19.png`
-  - `chapter4/visualization/正确图片输出/fig20.png`
-  - `chapter4/visualization/正确图片输出/fig21.png`
-  - `chapter4/visualization/正确图片输出/fig22.png`
+  - `visualization/正确图片输出/fig14.png`
+  - `visualization/正确图片输出/fig15.png`
+  - `visualization/正确图片输出/fig16.png`
+  - `visualization/正确图片输出/fig17.png`
+  - `visualization/正确图片输出/fig18.png`
+  - `visualization/正确图片输出/fig19.png`
+  - `visualization/正确图片输出/fig20.png`
+  - `visualization/正确图片输出/fig21.png`
+  - `visualization/正确图片输出/fig22.png`
 
 ## 数据链路
 
@@ -203,10 +204,10 @@ experiment/circuits/*.circom
 快速检查数据：
 
 ```bash
-jq '.zk_circuits[] | {name, constraint_count, witness_status}' chapter4/visualization/chapter4_experiment_data.json
-jq '.foundry_gas_runs[] | {function, gas}' chapter4/visualization/chapter4_experiment_data.json
-jq '.figures.fig18 | {method, runs_per_k, seed_base, k_star_profit}' chapter4/visualization/chapter4_experiment_data.json
-jq '.metadata.tooling.compiled_circuits' chapter4/visualization/chapter4_experiment_data.json
+jq '.zk_circuits[] | {name, constraint_count, witness_status}' visualization/chapter4_experiment_data.json
+jq '.foundry_gas_runs[] | {function, gas}' visualization/chapter4_experiment_data.json
+jq '.figures.fig18 | {method, runs_per_k, seed_base, k_star_profit}' visualization/chapter4_experiment_data.json
+jq '.metadata.tooling.compiled_circuits' visualization/chapter4_experiment_data.json
 ```
 
 ## 论文图表对应关系
@@ -227,5 +228,5 @@ jq '.metadata.tooling.compiled_circuits' chapter4/visualization/chapter4_experim
 
 - `chapter4_all_figures.py` 会删除并重建 `visualization/正确图片输出/` 下的 PNG 文件。
 - `build/`、`node_modules/`、`out/`、`cache/` 和本地 `tools/bin/circom` 都是可重建产物，不提交到 git。
-- 如果缺少 `snarkjs`，在 `chapter4/experiment` 下运行 `npm install`。
+- 如果缺少 `snarkjs`，在 `experiment` 下运行 `npm install`。
 - 如果 `forge test --gas-report` 输出格式变化，脚本可能解析不到 per-test Gas 行，需要同步更新 `run_foundry_gas()` 的解析逻辑。

@@ -54,23 +54,24 @@ go run ./cmd/audit-exp --out logs/raw_experiment_log.json
 
 ## 生成可视化
 
-回到仓库根目录运行：
+回到 `chapter5` 目录运行：
 
 ```bash
-python3 chapter5/visualization/chapter5_all_figures.py
+cd ..
+python3 visualization/chapter5_all_figures.py
 ```
 
 输出：
 
-- `chapter5/visualization/chapter5_experiment_data.json`
-- `chapter5/visualization/正确图片输出/fig24_feasibility_ab.png`
-- `chapter5/visualization/正确图片输出/fig25_joint_feasibility.png`
-- `chapter5/visualization/正确图片输出/fig26_ranck_detection.png`
-- `chapter5/visualization/正确图片输出/fig27_senck_passthrough.png`
-- `chapter5/visualization/正确图片输出/fig28_monte_carlo_and_gate.png`
-- `chapter5/visualization/正确图片输出/fig29_overhead.png`
-- `chapter5/visualization/正确图片输出/fig30_gas_comparison.png`
-- `chapter5/visualization/正确图片输出/fig31_tradeoff.png`
+- `visualization/chapter5_experiment_data.json`
+- `visualization/正确图片输出/fig24_feasibility_ab.png`
+- `visualization/正确图片输出/fig25_joint_feasibility.png`
+- `visualization/正确图片输出/fig26_ranck_detection.png`
+- `visualization/正确图片输出/fig27_senck_passthrough.png`
+- `visualization/正确图片输出/fig28_monte_carlo_and_gate.png`
+- `visualization/正确图片输出/fig29_overhead.png`
+- `visualization/正确图片输出/fig30_gas_comparison.png`
+- `visualization/正确图片输出/fig31_tradeoff.png`
 
 ## 注意事项
 

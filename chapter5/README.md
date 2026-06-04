@@ -64,16 +64,16 @@ mkdir -p "$GOCACHE" "$MPLCONFIGDIR"
 
 ## 运行完整实验
 
-从仓库根目录运行：
+从 `chapter5` 目录运行：
 
 ```bash
-cd chapter5/experiment
+cd experiment
 go test ./...
 forge test --gas-report
 go run ./cmd/audit-exp --out logs/raw_experiment_log.json
 
-cd ../..
-python3 chapter5/visualization/chapter5_all_figures.py
+cd ..
+python3 visualization/chapter5_all_figures.py
 ```
 
 说明：
@@ -88,24 +88,24 @@ python3 chapter5/visualization/chapter5_all_figures.py
 如果 `experiment/logs/raw_experiment_log.json` 已经存在：
 
 ```bash
-python3 chapter5/visualization/chapter5_all_figures.py
+python3 visualization/chapter5_all_figures.py
 ```
 
 该脚本仍会校验 raw log 中的协议 trace、检测参数、Monte Carlo/Gamma sweep 和 Gas 数据。若 raw log 版本过旧，会自动重新运行 `go run ./cmd/audit-exp`。
 
 ## 输出文件
 
-- Raw log：`chapter5/experiment/logs/raw_experiment_log.json`
-- 结构化数据：`chapter5/visualization/chapter5_experiment_data.json`
+- Raw log：`experiment/logs/raw_experiment_log.json`
+- 结构化数据：`visualization/chapter5_experiment_data.json`
 - 生成图片：
-  - `chapter5/visualization/正确图片输出/fig24_feasibility_ab.png`
-  - `chapter5/visualization/正确图片输出/fig25_joint_feasibility.png`
-  - `chapter5/visualization/正确图片输出/fig26_ranck_detection.png`
-  - `chapter5/visualization/正确图片输出/fig27_senck_passthrough.png`
-  - `chapter5/visualization/正确图片输出/fig28_monte_carlo_and_gate.png`
-  - `chapter5/visualization/正确图片输出/fig29_overhead.png`
-  - `chapter5/visualization/正确图片输出/fig30_gas_comparison.png`
-  - `chapter5/visualization/正确图片输出/fig31_tradeoff.png`
+  - `visualization/正确图片输出/fig24_feasibility_ab.png`
+  - `visualization/正确图片输出/fig25_joint_feasibility.png`
+  - `visualization/正确图片输出/fig26_ranck_detection.png`
+  - `visualization/正确图片输出/fig27_senck_passthrough.png`
+  - `visualization/正确图片输出/fig28_monte_carlo_and_gate.png`
+  - `visualization/正确图片输出/fig29_overhead.png`
+  - `visualization/正确图片输出/fig30_gas_comparison.png`
+  - `visualization/正确图片输出/fig31_tradeoff.png`
 
 ## 数据链路
 
@@ -131,10 +131,10 @@ raw log 的主要来源：
 快速检查数据：
 
 ```bash
-jq '.protocol_coverage[] | {requirement, source, status}' chapter5/experiment/logs/raw_experiment_log.json
-jq '.senck_traces[0].trace_sample[0] | {op_name, hook_source, runtime_accesses}' chapter5/experiment/logs/raw_experiment_log.json
-jq '.monte_carlo.gamma_hit_sweep[] | {M_c, L, theory_rho, observed_rho, segments}' chapter5/experiment/logs/raw_experiment_log.json
-jq '.gas_trace | {foundry_status, foundry_parsed, measurement_provenance}' chapter5/experiment/logs/raw_experiment_log.json
+jq '.protocol_coverage[] | {requirement, source, status}' experiment/logs/raw_experiment_log.json
+jq '.senck_traces[0].trace_sample[0] | {op_name, hook_source, runtime_accesses}' experiment/logs/raw_experiment_log.json
+jq '.monte_carlo.gamma_hit_sweep[] | {M_c, L, theory_rho, observed_rho, segments}' experiment/logs/raw_experiment_log.json
+jq '.gas_trace | {foundry_status, foundry_parsed, measurement_provenance}' experiment/logs/raw_experiment_log.json
 ```
 
 ## 论文图表对应关系

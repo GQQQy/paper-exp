@@ -40,7 +40,6 @@ python3 -c "import matplotlib, numpy, PIL; print('python deps ok')"
 安装 Node 依赖：
 
 ```bash
-cd chapter4/experiment
 npm install
 node -e "console.log(require('./node_modules/snarkjs/package.json').version)"
 ```
@@ -51,11 +50,11 @@ node -e "console.log(require('./node_modules/snarkjs/package.json').version)"
 python3 -m pip install matplotlib numpy Pillow
 ```
 
-如果本机没有全局 `circom`，也可以把 `circom` 二进制放到 `chapter4/experiment/tools/bin/circom`，或设置 `CIRCOM=/path/to/circom`。
+如果本机没有全局 `circom`，也可以把 `circom` 二进制放到 `tools/bin/circom`，或设置 `CIRCOM=/path/to/circom`。
 
 ## 编译和验证电路
 
-在 `chapter4/experiment` 目录下运行：
+在当前 `experiment` 目录下运行：
 
 ```bash
 mkdir -p build/circuits
@@ -91,25 +90,26 @@ testElectCTWR()
 
 ## 生成可视化
 
-回到仓库根目录运行：
+回到 `chapter4` 目录运行：
 
 ```bash
-python3 chapter4/visualization/chapter4_all_figures.py
+cd ..
+python3 visualization/chapter4_all_figures.py
 ```
 
 该脚本会自动执行：
 
 - `forge test --gas-report`
-- `node chapter4/experiment/scripts/verify_circuits.js`
+- `node experiment/scripts/verify_circuits.js`
 - `snarkjs r1cs info`
 - CTWR 解析计算和 Monte Carlo 选举仿真
 - 图 14-22 绘制
 
 输出：
 
-- `chapter4/experiment/logs/raw_experiment_log.json`
-- `chapter4/visualization/chapter4_experiment_data.json`
-- `chapter4/visualization/正确图片输出/fig14.png` 到 `fig22.png`
+- `experiment/logs/raw_experiment_log.json`
+- `visualization/chapter4_experiment_data.json`
+- `visualization/正确图片输出/fig14.png` 到 `fig22.png`
 
 ## 可选 Groth16 Smoke Test
 
