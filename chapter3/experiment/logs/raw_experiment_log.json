@@ -1,8 +1,8 @@
 {
   "metadata": {
     "chapter": "第三章 基于有状态任务切片的链下计算验证",
-    "created_at": "2026-06-04T10:08:57+08:00",
-    "elapsed_sec": 5.463647523,
+    "created_at": "2026-06-04T14:59:20+08:00",
+    "elapsed_sec": 5.557001185,
     "quick_mode": true,
     "source": "Go physical task runner: execution, snapshot serialization, commitment"
   },
@@ -20,7 +20,7 @@
       "steps": 5000,
       "snapshot_bytes": 784,
       "commitment": "cd1f6b79ec69606fca1fd7213a10bbb1bd25c4f435afbb9f7d054c7167ac421a",
-      "elapsed_seconds": 0.000396151,
+      "elapsed_seconds": 0.000511173,
       "reached_time_limit": false
     },
     {
@@ -29,7 +29,7 @@
       "steps": 4000,
       "snapshot_bytes": 784,
       "commitment": "e3c589e80bf20a1acba60f98c6e082c389bc6815d44993977d626bd0a2fdc9e6",
-      "elapsed_seconds": 0.000311964,
+      "elapsed_seconds": 0.000399506,
       "reached_time_limit": false
     },
     {
@@ -38,7 +38,7 @@
       "steps": 73536,
       "snapshot_bytes": 784,
       "commitment": "4bdd60407d7c826f7ef88e050dd6bd798f528516dbb5efb510807b3a3174fb75",
-      "elapsed_seconds": 0.000095377,
+      "elapsed_seconds": 0.00012051,
       "reached_time_limit": false
     },
     {
@@ -47,7 +47,7 @@
       "steps": 11999,
       "snapshot_bytes": 784,
       "commitment": "c666df2c345e0a1c34e38dcc8115706736908b1826a0e92bc4df3427d8584fbc",
-      "elapsed_seconds": 0.00094347,
+      "elapsed_seconds": 0.001221213,
       "reached_time_limit": false
     }
   ],
@@ -56,37 +56,37 @@
       "task": "Fibonacci",
       "bytecode_bytes": 160,
       "gas_used": 5492,
-      "execution_time": "11.866µs",
+      "execution_time": "12.634µs",
       "allocations": 34,
-      "allocated_bytes": 3510,
-      "raw_bench_output": "EVM gas used:    5492\nexecution time:  11.866µs\nallocations:     34\nallocated bytes: 3510\n0x\n"
+      "allocated_bytes": 3648,
+      "raw_bench_output": "EVM gas used:    5492\nexecution time:  12.634µs\nallocations:     34\nallocated bytes: 3648\n0x\n"
     },
     {
       "task": "Poly-Chain",
       "bytecode_bytes": 192,
       "gas_used": 4836,
-      "execution_time": "10.272µs",
+      "execution_time": "10.767µs",
       "allocations": 34,
-      "allocated_bytes": 3630,
-      "raw_bench_output": "EVM gas used:    4836\nexecution time:  10.272µs\nallocations:     34\nallocated bytes: 3630\n0x\n"
+      "allocated_bytes": 3404,
+      "raw_bench_output": "EVM gas used:    4836\nexecution time:  10.767µs\nallocations:     34\nallocated bytes: 3404\n0x\n"
     },
     {
       "task": "Sort-Large",
       "bytecode_bytes": 208,
       "gas_used": 7591,
-      "execution_time": "11.676µs",
+      "execution_time": "12.516µs",
       "allocations": 38,
-      "allocated_bytes": 3648,
-      "raw_bench_output": "EVM gas used:    7591\nexecution time:  11.676µs\nallocations:     38\nallocated bytes: 3648\n0x\n"
+      "allocated_bytes": 3871,
+      "raw_bench_output": "EVM gas used:    7591\nexecution time:  12.516µs\nallocations:     38\nallocated bytes: 3871\n0x\n"
     },
     {
       "task": "DP-Large",
       "bytecode_bytes": 624,
       "gas_used": 7911,
-      "execution_time": "19.088µs",
+      "execution_time": "18.88µs",
       "allocations": 35,
-      "allocated_bytes": 3431,
-      "raw_bench_output": "EVM gas used:    7911\nexecution time:  19.088µs\nallocations:     35\nallocated bytes: 3431\n0x\n"
+      "allocated_bytes": 3495,
+      "raw_bench_output": "EVM gas used:    7911\nexecution time:  18.88µs\nallocations:     35\nallocated bytes: 3495\n0x\n"
     }
   ],
   "foundry_gas_runs": [

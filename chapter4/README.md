@@ -50,6 +50,24 @@ experiment/circuits/*.circom
 | 图 21 非比例权重规则对比 | CTWR 与 Sqrt-WoR 的捕获概率、有效占比、诚实收益对比 | `figures.fig21` | Sqrt-WoR 能削弱大额质押线性优势，但捕获概率和有效对手占比整体高于 CTWR | `visualization/正确图片输出/fig21.png` |
 | 图 22 匿名质押开销 | AnoSt 匿名注册、匿名质押、凭证展示、CTWR 选举的链上 Gas 与电路约束 | `foundry_gas_runs`、`zk_circuits`、`figures.fig22` | 单次 Gas：AnonyReg `196706`、AnonyStake `152449`、PresentCred `212746`、ElectCTWR `622254`；`N=100` 时匿名周期总 Gas 为 `56190.1K`，非匿名最小基线为 `8225.4K` | `visualization/正确图片输出/fig22.png` |
 
+## 代码与论文结果定位
+
+论文第四章 4.5 节的表 5、表 6 和图 14-22 可按下表定位到具体代码。第四章的主入口是 `visualization/chapter4_all_figures.py`：它会重新采集 Foundry Gas、检查/编译 Circom 电路、运行 witness 检查、生成 `experiment/logs/raw_experiment_log.json` 和 `visualization/chapter4_experiment_data.json`，再渲染所有 PNG。
+
+| 论文结果 | 负责生成或测量的代码 | JSON 数据字段 | 最终输出 |
+| --- | --- | --- | --- |
+| 表 5 默认参数 | `chapter4_all_figures.py` 中的 `PARAMS`、`lognormal_stakes()`、`make_context()` | `metadata.params`、`context_summary` | README 默认参数表；`visualization/chapter4_experiment_data.json` |
+| 表 6 加权选举方案对比 | `fig14()` 中的 `linear_wr`、`linear_wor`、`uniform_wor`、`ctwr_single`、`ctwr_opt` 五组曲线；`capture_uniform_wor()`、`capture_weighted_wor()`、`optimal_ctwr_split()` 给出对应机制 | `figures.fig14.series` | README 图 14 说明；`visualization/正确图片输出/fig14.png` |
+| 图 14 CTWR 捕获概率 | `fig14()` 扫描 `rho` 与注册成本 `c_reg`；`render_fig14()` 出图 | `figures.fig14` | `visualization/正确图片输出/fig14.png` |
+| 图 15 委员会规模影响 | `fig15()` 固定 `rho=0.35` 计算 `rho_beacon`、`rho_eff` 与 `N=10..60` 的捕获概率；`render_fig15()` 出图 | `figures.fig15` | `visualization/正确图片输出/fig15.png` |
+| 图 16 拆分身份影响 | `split_case()` 计算给定 `rho` 下不同 `k` 的 Linear-WR、Uniform-WoR、CTWR 捕获概率；`fig16_17()` 生成 `rho=0.20/0.35/0.50` 三组；`render_fig16()` 出图 | `figures.fig16_17` | `visualization/正确图片输出/fig16.png` |
+| 图 17 CTWR 有效权重 | `fig16_17()` 复用 `rho=0.35` 的 `rho_eff` 和 `w_adv_eff` trace；`render_fig17()` 出图 | `figures.fig16_17["0.35"]` | `visualization/正确图片输出/fig17.png` |
+| 图 18 女巫身份与收益 | `incentive_context()` 固定诚实方/对手预算；`fig18()` 计算 CTWR 单位收益、对手净利润、`k*` 与盈亏平衡点；`render_fig18()` 出图 | `figures.fig18` | `visualization/正确图片输出/fig18.png` |
+| 图 19 最优女巫策略 | `best_fixed_budget_split()` 扫描注册成本和截断上限；`fig19()` 生成 `k_by_s_cap`、`revenue_by_s_cap` 和热力图；`render_fig19()` 出图 | `figures.fig19` | `visualization/正确图片输出/fig19.png` |
+| 图 20 诚实验证者期望收益 | `honest_revenue()`、`fig20()` 扫描女巫身份数、激励池 `R_total` 和运营成本 `c_op`；`render_fig20()` 出图 | `figures.fig20` | `visualization/正确图片输出/fig20.png` |
+| 图 21 非比例权重规则对比 | `rho_eff_rule()`、`fig21()` 对比 Sqrt-WoR 与 CTWR 的有效占比、捕获概率和收益；`render_fig21()` 出图 | `figures.fig21` | `visualization/正确图片输出/fig21.png` |
+| 图 22 匿名质押开销 | `experiment/test/AnoStBenchmarks.t.sol` 触发 7 个 Gas 测试；`run_foundry_gas()` 解析测试 Gas；`experiment/circuits/*.circom`、`scripts/verify_circuits.js`、`circuit_stats()` 给出电路约束和 witness 状态；`fig22()`、`render_fig22()` 出图 | `foundry_gas_runs`、`zk_circuits`、`figures.fig22` | `visualization/正确图片输出/fig22.png` |
+
 ## 电路验证结果
 
 `node scripts/verify_circuits.js` 会为三个电路生成样例输入、witness，并运行 `snarkjs wtns check`。当前结果如下。
@@ -60,7 +78,7 @@ experiment/circuits/*.circom
 | `anost_stake.circom` | `AnonyStake` | 检查存款承诺、质押承诺、找零承诺、余额约束和质押 nullifier | `1328` | `PASS` |
 | `anost_credential.circom` | `PresentCred` | 检查注册 Merkle 路径、凭证 nullifier 和质押承诺 | `5817` | `PASS` |
 
-`experiment/scripts/groth16_smoke.js` 是可选证明/验证流程 smoke test，不是图 14-22 的必要输入。
+`experiment/scripts/groth16_smoke.js` 是可选 Groth16 本地证明/验证流程。
 
 ## 链上 Gas 测试结果
 
@@ -83,7 +101,7 @@ experiment/circuits/*.circom
 - `第四章面向链下计算的验证者安全选举.pdf`：第四章论文正文。
 - `experiment/circuits/`：AnoSt 的三个 Circom 电路。
 - `experiment/scripts/verify_circuits.js`：生成样例输入和 witness，运行 `snarkjs wtns check`，校验公开输出。
-- `experiment/scripts/groth16_smoke.js`：可选 Groth16 本地证明/验证 smoke test。
+- `experiment/scripts/groth16_smoke.js`：可选 Groth16 本地证明/验证流程。
 - `experiment/src/AnoStBenchmarks.sol`：公开准入、匿名准入和 CTWR 选举的 Solidity Gas 基准。
 - `experiment/test/AnoStBenchmarks.t.sol`：Foundry Gas 测试入口。
 - `experiment/logs/raw_experiment_log.json`：实验原始日志，由主可视化脚本生成。
@@ -166,7 +184,7 @@ python3 visualization/chapter4_all_figures.py
 
 ## 可选 Groth16 Smoke Test
 
-该步骤用于确认本地 proving/verifying 流程可跑通，不是生产可信设置，也不是图 14-22 的必需输入。
+该步骤用于确认本地 proving/verifying 流程可跑通。
 
 ```bash
 cd experiment

@@ -47,6 +47,30 @@ experiment/audit/protocol.go
 | 图 31 心跳权衡 | 心跳触发概率对月度 Gas 和 `ell=300` 检测概率的影响 | `gas.pi_h_sweep` | `pi_h` 从 `0.001` 到 `0.025` 时月度 Gas 低于当前 PoD baseline，检测概率随 `pi_h` 单调上升 | `visualization/正确图片输出/fig31_tradeoff.png` |
 | 表 11 综合对比 | TrueBit、Arbitrum、PoD、RanCk+SenCk 的审计能力对比 | `comparison_table_11` | RanCk+SenCk 同时覆盖在线状态审计、语义勤勉检测和不可预测审计，不依赖外部网络辅助 | `visualization/chapter5_experiment_data.json` |
 
+## 代码与论文结果定位
+
+论文第五章 5.5 节的表 9-11 和图 24-31 可按下表定位到具体代码。整体流程是先由 `experiment/cmd/audit-exp/main.go` 调用 `experiment/audit/protocol.go` 生成 raw log，再由 `visualization/chapter5_all_figures.py` 校验 raw log、导出结构化 JSON 并渲染图片。
+
+| 论文结果 | 负责生成或测量的代码 | JSON 数据字段 | 最终输出 |
+| --- | --- | --- | --- |
+| 表 9 参数配置 | `audit.DefaultParams()` 和 `audit.Table9Parameters()` 定义默认值与参数范围；`cmd/audit-exp/main.go` 写入 raw log | `params`、`table9_parameters`、`metadata.params` | README 默认参数表；`visualization/chapter5_experiment_data.json` |
+| RanCk 行为 trace | `audit.SimulateRanCk()`、`TrackInit()`、`UpdateAlpha()`、`Trigger()`、`ContAudit()` 生成诚实、离线、间歇在线、补算失败和凭证不一致行为；`protocol_test.go` 覆盖行为测试 | `ranck_traces` | README “RanCk 协议行为测试”；`experiment/logs/raw_experiment_log.json` |
+| SenCk 行为 trace | `audit.SimulateSenCk()`、`GenerateSegment()`、`InstrumentedEVM.ExecuteStep()`、`AfterOpcodeHook()`、`Gamma()`、`SentinelEvent()`、`DigestEvents()` 生成哨兵摘要和局部重放 trace；`protocol_test.go` 覆盖惰性/污染检测 | `senck_traces`、`protocol_coverage` | README “SenCk 协议行为测试”；`experiment/logs/raw_experiment_log.json` |
+| 图 24 C1/C2 边界 | `feasibilityEvidence()` 扫描 C1/C2 罚没边界；`fig24()` 绘制归一化边界 | `feasibility.C1_online_deviation`、`feasibility.C2_diligence_deviation` | `visualization/正确图片输出/fig24_feasibility_ab.png` |
+| 图 25 联合可行域 | `feasibilityEvidence()` 生成 `(pi_h,m_s)` 网格；`fig25()` 绘制 C1/C2 联合可行域 | `feasibility.joint_feasible_region` | `visualization/正确图片输出/fig25_joint_feasibility.png` |
+| 图 26 RanCk 检测概率 | `detectionParameters()` 给出扫描范围；`ranck_detect()` 和 `ranck_combined_pass()` 由公式生成心跳检出与联合通过概率；`fig26()` 出图 | `detection_parameters`、`detection.ranck_heartbeat`、`detection.ranck_combined_pass` | `visualization/正确图片输出/fig26_ranck_detection.png` |
+| 图 27 SenCk 检测概率 | `senck_pass()` 计算惰性策略通过概率 `(1-rho)^m_s`；`fig27()` 出图 | `detection.senck_lazy_pass` | `visualization/正确图片输出/fig27_senck_passthrough.png` |
+| 图 28 Monte Carlo 与 Gamma | `monteCarloEvidence()` 调用 `audit.MonteCarloRanCk()`、`audit.MonteCarloSenCk()`；`audit.GammaHitSweep()` 生成门控命中率；`fig28()` 出图 | `monte_carlo.ranck`、`monte_carlo.senck`、`monte_carlo.gamma_hit_sweep`、`senck_traces[0].trigger_stats` | `visualization/正确图片输出/fig28_monte_carlo_and_gate.png` |
+| 图 29 旁路审计开销 | `audit.Workloads()` 给出四类任务模型；`audit.OverheadTraces()` 生成 opcode hook、哈希、Gamma、快照加载和重放时间；`fig29()` 出图 | `overhead_traces` -> `overhead` | `visualization/正确图片输出/fig29_overhead.png` |
+| 表 10 链上开销 | `experiment/test/ValidatorAudit.t.sol` 触发链上审计 Gas 测试；`cmd/audit-exp/main.go` 的 `runFoundryGas()` 解析 gas-report 函数平均值；`audit.GasTraceFromFoundry()` 生成默认窗口、月度和 sweep 数据 | `gas_trace.operations`、`gas_trace.measurement_provenance` -> `gas.operations` | README “链上 Gas 测试结果”；`visualization/chapter5_experiment_data.json` |
+| 图 30 Gas 对比 | `audit.GasTraceFromFoundry()` 计算正常路径构成和月度对比；`fig30()` 出图 | `gas.operations`、`gas.monthly_by_scheme` | `visualization/正确图片输出/fig30_gas_comparison.png` |
+| 图 31 心跳权衡 | `audit.GasTraceFromFoundry()` 生成 `pi_h_sweep`；`fig31()` 同时绘制月度 Gas 与 `ell=300` 检测概率 | `gas.pi_h_sweep`、`gas.monthly_by_scheme` | `visualization/正确图片输出/fig31_tradeoff.png` |
+| 表 11 综合对比 | `table11()` 写入 TrueBit、Arbitrum、PoD、RanCk+SenCk 对比项 | `comparison_table_11` | `visualization/chapter5_experiment_data.json` |
+
+## 复现边界
+
+当前工程可以从本地 Go 协议实现、Solidity benchmark 和 Python 可视化脚本重建第五章表 9-11 与图 24-31。需要注意的是，SenCk 的 opcode hook 是 `experiment/audit/protocol.go` 中的本地 instrumented EVM-style interpreter，不是修改后的 Geth 源码树；表 10/图 30/31 的正常路径 Gas 使用本地 Foundry gas-report 的函数平均值，脚本明确记录 `no_paper_table_fallback=true`；`SentProve/VerSeg` 行还叠加了第三章 `b=1e6` 的 VerSeg 重放校准 `1.2*b`，因为该行表示复用裁决接口的完整争议路径而不只是 `sentProve` 包装函数。
+
 ## RanCk 协议行为测试
 
 `go test ./...` 和 `go run ./cmd/audit-exp` 会生成 `ranck_traces`，覆盖诚实和四类偏离行为。

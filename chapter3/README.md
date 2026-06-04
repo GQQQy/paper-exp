@@ -48,6 +48,21 @@ experiment/cmd/clever-exp/main.go
 | 图 11 超线性质押博弈 | 失败信念 `p`、指数 `beta` 对错误方退出轮次和收益的影响 | `paper_evidence.staking_analysis` | `p` 或 `beta` 越高，错误方越早退出；二次质押曲线下坚持到最终裁决收益固定，退出收益随轮次单调下降 | `visualization/正确图片输出/fig_staking_analysis_v2.png` |
 | 图 12 伴随式验证时间 | CleVer 与事后验证方案在 `eta=0.4` 错误注入下的归一化端到端时间 | `paper_evidence.timeline` | CleVer 为 `1.044 T_exec`；BoLD、Cartesi、TrueBit、Arbitrum Classic 分别为 `2.650`、`2.730`、`2.714`、`2.690 T_exec` | `visualization/正确图片输出/fig_timeline_v3.png` |
 
+## 代码与论文结果定位
+
+论文第三章 3.5 节的表 3、表 4 和图 7-12 可按下表定位到具体代码。整体流程是先由 Go/Foundry 生成 `experiment/logs/raw_experiment_log.json`，再由 `visualization/generate_chapter3_data.py` 校验并导出 `visualization/chapter3_experiment_data.json`，最后由 `visualization/chapter3_all_figures.py` 出图。
+
+| 论文结果 | 负责生成或测量的代码 | JSON 数据字段 | 最终输出 |
+| --- | --- | --- | --- |
+| 表 3 测试基准任务 | `experiment/cmd/clever-exp/main.go` 中的 `runPaperEvidence()` 定义论文尺度任务；`runPhysicalSamples()` 和 `executeTaskSample()` 跑本地确定性样本；`experiment/src/BenchmarkTasks.sol` 是 Solidity 任务基准 | `paper_evidence.workloads`、`samples`、`foundry_gas_runs` | README 中的“本章使用四类基准任务”和 Foundry 函数级 Gas 表 |
+| 表 4 典型方案对比 | `experiment/src/DisputeProtocolBenchmarks.sol` 定义五种协议路径；`experiment/cmd/clever-exp/main.go` 中的 `runComparisonProtocols()` 记录机制、轮次和 Gas | `comparison_protocols` | README 中的方案说明；图 10 使用同一组方案顺序 |
+| 图 7 段权重占预算百分比 | `runPaperEvidence()` 调度 4 类任务和 4 个 `B`；`runInstrumentedBudgetTrace()` 与 `runSafeCutGasSegment()` 生成 SafeCut 段权重 trace；`fig_budget_compliance()` 绘制箱线图 | `paper_evidence.budget_compliance` -> `budget_compliance.samples_percent` | `visualization/正确图片输出/fig1_budget_compliance.png` |
+| 图 8 任务切片执行开销 | `runInstrumentedOverheadTrace()` 生成无切片/切片时间、SafeCut、快照序列化、承诺计算占比；`summarizeOverhead()` 汇总；`fig_overhead()` 绘图 | `paper_evidence.slicing_overhead` -> `slicing_overhead` | `visualization/正确图片输出/fig2_overhead.png` |
+| 图 9 段预算与裁决阈值影响 | `deriveParameterSensitivity()` 扫描 `B={1e6,1e7,1e8,1e9}` 与 `b={1e4,1e5,1e6,1e7}`；`plot_param_sensitivity()` 绘图 | `paper_evidence.parameter_sensitivity` -> `parameter_sensitivity` | `visualization/正确图片输出/fig_param_sensitivity_v2.png` |
+| 图 10 链上开销对比 | `experiment/test/Benchmarks.t.sol` 触发 Foundry gas report；`DisputeProtocolBenchmarks.sol` 与 `CleVerVerifier.sol` 提供被测函数；`runFoundryGasReport()`、`parseFoundryGasReport()`、`runComparisonProtocols()` 写入对比数据；`fig_gas_comparison()` 绘图 | `foundry_gas_runs`、`comparison_protocols` -> `gas_comparison` | `visualization/正确图片输出/fig_gas_comparison_v2.png` |
+| 图 11 超线性质押博弈 | `deriveStakingAnalysis()` 计算 `p`、`beta`、退出轮次、退出收益和坚持收益；`fig_staking_analysis()` 绘图 | `paper_evidence.staking_analysis` -> `staking_analysis` | `visualization/正确图片输出/fig_staking_analysis_v2.png` |
+| 图 12 伴随式验证时间 | `deriveTimeline()` 固定 `eta=0.4`、`t_seg=0.02`、`t_slot=0.008` 并计算各方案归一化端到端时间；`fig_timeline()` 绘图 | `paper_evidence.timeline` -> `timeline` | `visualization/正确图片输出/fig_timeline_v3.png` |
+
 链上 Solidity 基准还会测试以下函数级 Gas。
 
 | Foundry 函数 | 测试内容 | 当前 Gas |
@@ -63,7 +78,7 @@ experiment/cmd/clever-exp/main.go
 | `boldPath` | Arbitrum BoLD 争议路径模拟 | `3566780` |
 | `cleverPath` | CleVer 两层定位和有界裁决路径 | `551676` |
 
-Geth EVM 采样用于确认代表性 bytecode 的执行可测性，当前四个样本 Gas 为 Fibonacci `5492`、Poly-Chain `4836`、Sort-Large `7591`、DP-Large `7911`。执行时间和内存分配会随机器环境波动，不作为论文核心数值。
+Geth EVM 采样用于确认代表性 bytecode 的执行可测性，当前四个样本 Gas 为 Fibonacci `5492`、Poly-Chain `4836`、Sort-Large `7591`、DP-Large `7911`。
 
 ## 目录结构
 
