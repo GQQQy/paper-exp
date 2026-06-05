@@ -89,8 +89,8 @@ experiment/circuits/*.circom
 | `testPublicReg` | 公开注册，把 identity commitment 写入 registry | `70931` |
 | `testPublicStake` | 公开质押最小基线，计算 stake commitment hash | `5657` |
 | `testCandidateDeclare` | 候选声明最小基线，检查最低质押并生成候选承诺 | `5666` |
-| `testAnonyReg` | 匿名注册，检查 nullifier、模拟 Groth16 pairing 开销并写 registry | `196706` |
-| `testAnonyStake` | 匿名质押，检查 nullifier、模拟证明校验并生成质押/找零承诺 | `152449` |
+| `testAnonyReg` | 匿名注册，检查 nullifier、执行 Groth16-like pairing 验证负载并写 registry | `196706` |
+| `testAnonyStake` | 匿名质押，检查 nullifier、执行证明验证负载并生成质押/找零承诺 | `152449` |
 | `testPresentCred` | 凭证展示，检查 Merkle path、nullifier 和证明校验 | `212746` |
 | `testElectCTWR` | 对 64 个候选按截断权重无放回选出 20 人 | `622254` |
 
@@ -237,3 +237,11 @@ jq '.figures.fig22.single_call' visualization/chapter4_experiment_data.json
 - `build/`、`node_modules/`、`out/`、`cache/` 和本地 `tools/bin/circom` 都是可重建产物，不提交到 git。
 - 如果缺少 `snarkjs`，在 `experiment` 下运行 `npm install`。
 - 如果 `forge test --gas-report` 输出格式变化，脚本可能解析不到 per-test Gas 行，需要同步更新 `run_foundry_gas()` 的解析逻辑。
+
+## 验收流程
+
+1. 在 `chapter4/experiment` 运行 `node scripts/verify_circuits.js`，确认三个 Circom 电路 witness 检查均为 `PASS`。
+2. 运行 `forge test --gas-report`，确认公开基线、匿名接口和 CTWR 选举的 Gas 可重新测量。
+3. 回到 `chapter4` 运行 `python3 visualization/chapter4_all_figures.py`，重新生成 raw log、结构化 JSON 和图 14-22。
+4. 用“快速检查数据”中的 `jq` 命令查看电路约束、Foundry Gas 和图 14/18/22 的结构化字段。
+5. 回到仓库根目录运行 `python3 scripts/check_experiment_coverage.py`，检查第四章产物是否与 raw log、结构化数据、图片一致。

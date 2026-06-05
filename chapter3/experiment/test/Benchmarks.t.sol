@@ -57,22 +57,22 @@ contract BenchmarksTest {
     }
 
     function testArbitrumClassicDisputePathGas() public {
-        disputes.arbitrumClassicPath(8700);
+        disputes.arbitrumClassicPath(8001);
     }
 
     function testTrueBitDisputePathGas() public {
-        disputes.truebitPath(5633);
+        disputes.truebitPath(4992);
     }
 
     function testCartesiDaveDisputePathGas() public {
-        disputes.cartesiDavePath(5640, 725);
+        disputes.cartesiDavePath(4927, 633);
     }
 
     function testBoLDDisputePathGas() public {
-        disputes.boldPath(2077, 3);
+        disputes.boldPath(1896, 3);
     }
 
     function testCleVerDisputePathGas() public {
-        disputes.cleverPath(1497, 260);
+        disputes.cleverPath(1135, 197);
     }
 }

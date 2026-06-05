@@ -10,6 +10,8 @@ import (
 	"math/rand"
 	"sort"
 	"time"
+
+	"chapter5/experiment/comparisons"
 )
 
 const (
@@ -246,20 +248,50 @@ type GasOperation struct {
 	Source      string `json:"source"`
 }
 
+type PoDExperimentTrace struct {
+	PaperSource       string           `json:"paper_source"`
+	ContractModel     []string         `json:"contract_model"`
+	ProtocolSteps     []string         `json:"protocol_steps"`
+	WatchtowerCount   int              `json:"watchtower_count"`
+	EpochCount        int              `json:"epoch_count"`
+	Theta             float64          `json:"theta"`
+	WinnerCount       int              `json:"winner_count"`
+	InvalidProofCount int              `json:"invalid_proof_count"`
+	HonestAllValid    bool             `json:"honest_all_valid"`
+	LazyDetected      bool             `json:"lazy_detected"`
+	Epochs            []PoDEpochRecord `json:"epochs"`
+}
+
+type PoDEpochRecord struct {
+	Epoch               int    `json:"epoch"`
+	WatchtowerID        int    `json:"watchtower_id"`
+	AssertionRoot       string `json:"assertion_root"`
+	RecomputedStateRoot string `json:"recomputed_state_root"`
+	TraceRoot           string `json:"trace_root"`
+	VRFDigest           string `json:"vrf_digest"`
+	VRFProof            string `json:"vrf_proof"`
+	Eligible            bool   `json:"eligible"`
+	ValidProof          bool   `json:"valid_proof"`
+	Behavior            string `json:"behavior"`
+	DetectionReason     string `json:"detection_reason,omitempty"`
+}
+
 type GasTrace struct {
-	Operations             []GasOperation    `json:"operations"`
-	DefaultPerValidatorGas int               `json:"default_per_validator_gas"`
-	DefaultHeartbeatCount  int               `json:"default_heartbeat_count"`
-	ReducedPerValidatorGas int               `json:"reduced_per_validator_gas"`
-	PoDGasPerEpoch         int               `json:"pod_gas_per_epoch"`
-	PoDTheta               float64           `json:"pod_theta"`
-	MonthlyWindows         int               `json:"monthly_windows"`
-	MonthlyPoDEpochs       int               `json:"monthly_pod_epochs"`
-	MonthlyByScheme        map[string]int    `json:"monthly_by_scheme"`
-	PiHSweep               []GasSweepPoint   `json:"pi_h_sweep"`
-	FoundryParsed          []FoundryGasEntry `json:"foundry_parsed"`
-	FoundryStatus          string            `json:"foundry_status"`
-	MeasurementProvenance  map[string]any    `json:"measurement_provenance"`
+	Operations             []GasOperation                `json:"operations"`
+	DefaultPerValidatorGas int                           `json:"default_per_validator_gas"`
+	DefaultHeartbeatCount  int                           `json:"default_heartbeat_count"`
+	ReducedPerValidatorGas int                           `json:"reduced_per_validator_gas"`
+	PoDBaseline            comparisons.PoDBaselineResult `json:"pod_baseline,omitempty"`
+	PoDGasPerEpoch         int                           `json:"pod_gas_per_epoch"`
+	PoDTheta               float64                       `json:"pod_theta"`
+	MonthlyWindows         int                           `json:"monthly_windows"`
+	MonthlyPoDEpochs       int                           `json:"monthly_pod_epochs"`
+	MonthlyByScheme        map[string]int                `json:"monthly_by_scheme"`
+	PiHSweep               []GasSweepPoint               `json:"pi_h_sweep"`
+	FoundryParsed          []FoundryGasEntry             `json:"foundry_parsed"`
+	FoundryStatus          string                        `json:"foundry_status"`
+	MeasurementProvenance  map[string]any                `json:"measurement_provenance"`
+	PoDExperiment          PoDExperimentTrace            `json:"pod_experiment_trace"`
 }
 
 type GasSweepPoint struct {
@@ -1179,7 +1211,126 @@ func OverheadTraces(p Params) []OverheadTrace {
 	return out
 }
 
+func SimulatePoDExperiment(p Params) PoDExperimentTrace {
+	watchtowerCount := 10
+	epochCount := 4
+	theta := 0.9
+	epochs := make([]PoDEpochRecord, 0, watchtowerCount*epochCount)
+	winnerCount := 0
+	invalidCount := 0
+	honestValid := true
+	lazyDetected := false
+	for epoch := 1; epoch <= epochCount; epoch++ {
+		asserted := podStateRoot(p.Tid, epoch, false)
+		for watchtowerID := 0; watchtowerID < watchtowerCount; watchtowerID++ {
+			behavior := "diligent"
+			lazy := epoch == epochCount && watchtowerID == watchtowerCount-1
+			if lazy {
+				behavior = "lazy_random_trace"
+			}
+			recomputed := podStateRoot(p.Tid, epoch, lazy)
+			traceRoot := podTraceRoot(p.Tid, epoch, watchtowerID, lazy)
+			proof := podVRFProof(p.Tid, epoch, watchtowerID)
+			digest := podVRFDigest(p.Tid, epoch, watchtowerID, recomputed, traceRoot, proof)
+			valid := bytes.Equal(asserted[:], recomputed[:]) && !lazy
+			if !valid {
+				invalidCount++
+				lazyDetected = true
+			}
+			if behavior == "diligent" && !valid {
+				honestValid = false
+			}
+			eligible := valid && podEligible(digest, theta, watchtowerCount)
+			if eligible {
+				winnerCount++
+			}
+			reason := ""
+			if !valid {
+				reason = "recomputed state root or execution trace root does not match the asserted rollup state"
+			}
+			epochs = append(epochs, PoDEpochRecord{
+				Epoch:               epoch,
+				WatchtowerID:        watchtowerID,
+				AssertionRoot:       hexHash(asserted[:]),
+				RecomputedStateRoot: hexHash(recomputed[:]),
+				TraceRoot:           hexHash(traceRoot[:]),
+				VRFDigest:           hexHash(digest[:]),
+				VRFProof:            hexHash(proof[:]),
+				Eligible:            eligible,
+				ValidProof:          valid,
+				Behavior:            behavior,
+				DetectionReason:     reason,
+			})
+		}
+	}
+	return PoDExperimentTrace{
+		PaperSource: "Proof of Diligence: Cryptoeconomic Security for Rollups, Sections 4.1 and 6.2",
+		ContractModel: []string{
+			"OperatorRegistry-style watchtower identity and stake weight",
+			"BountyManager-style hash-minimum/VRF proof submission for each epoch",
+			"AlertManager-style invalid assertion/proof detection path",
+		},
+		ProtocolSteps: []string{
+			"watchtower recomputes the posted L2 state assertion",
+			"watchtower builds an execution trace Merkle root from transaction execution leaves",
+			"watchtower computes a VRF digest/proof bound to the state root, trace root, epoch, and identity",
+			"other watchtowers can recompute the roots and reject lazy or forged proofs",
+		},
+		WatchtowerCount:   watchtowerCount,
+		EpochCount:        epochCount,
+		Theta:             theta,
+		WinnerCount:       winnerCount,
+		InvalidProofCount: invalidCount,
+		HonestAllValid:    honestValid,
+		LazyDetected:      lazyDetected,
+		Epochs:            epochs,
+	}
+}
+
+func podStateRoot(tid string, epoch int, lazy bool) [32]byte {
+	buf := []byte("pod-state-root")
+	buf = append(buf, []byte(tid)...)
+	buf = append(buf, u64(uint64(epoch))...)
+	for i := 0; i < 32; i++ {
+		leaf := hashJoin([]byte("pod-state-leaf"), []byte(tid), u64(uint64(epoch)), u64(uint64(i)))
+		if lazy && i == 17 {
+			leaf = hashJoin([]byte("lazy-state-leaf"), leaf[:])
+		}
+		buf = append(buf, leaf[:]...)
+	}
+	return hashJoin(buf)
+}
+
+func podTraceRoot(tid string, epoch int, watchtowerID int, lazy bool) [32]byte {
+	root := hashJoin([]byte("pod-trace-root"), []byte(tid), u64(uint64(epoch)))
+	for i := 0; i < 64; i++ {
+		leaf := hashJoin([]byte("pod-execution-leaf"), root[:], u64(uint64(i)))
+		if lazy && i == 23 {
+			leaf = hashJoin([]byte("lazy-trace-leaf"), leaf[:])
+		}
+		root = hashJoin(root[:], leaf[:], u64(uint64(i)))
+	}
+	return root
+}
+
+func podVRFProof(tid string, epoch int, watchtowerID int) [32]byte {
+	return hashJoin([]byte("pod-vrf-proof"), []byte(tid), u64(uint64(epoch)), u64(uint64(watchtowerID)))
+}
+
+func podVRFDigest(tid string, epoch int, watchtowerID int, stateRoot, traceRoot, proof [32]byte) [32]byte {
+	return hashJoin([]byte("pod-vrf-digest"), []byte(tid), u64(uint64(epoch)), u64(uint64(watchtowerID)), stateRoot[:], traceRoot[:], proof[:])
+}
+
+func podEligible(digest [32]byte, theta float64, watchtowerCount int) bool {
+	if watchtowerCount <= 0 {
+		return false
+	}
+	threshold := uint64(theta * float64(^uint64(0)) / float64(watchtowerCount))
+	return binary.BigEndian.Uint64(digest[:8]) < threshold
+}
+
 func GasTraceFromFoundry(foundry []FoundryGasEntry, status string, p Params) GasTrace {
+	podExperiment := SimulatePoDExperiment(p)
 	byTest := map[string]int{}
 	for _, row := range foundry {
 		byTest[row.Test] = row.Gas
@@ -1191,7 +1342,7 @@ func GasTraceFromFoundry(foundry []FoundryGasEntry, status string, p Params) Gas
 		"testSentReportGas",
 		"testDisputeGas",
 		"testSentProveGas",
-		"testPoDBaselineGas",
+		"testPoDMineBountyGas",
 	}
 	missing := []string{}
 	for _, name := range required {
@@ -1203,11 +1354,12 @@ func GasTraceFromFoundry(foundry []FoundryGasEntry, status string, p Params) Gas
 		return GasTrace{
 			FoundryParsed: foundry,
 			FoundryStatus: status,
+			PoDExperiment: podExperiment,
 			MeasurementProvenance: map[string]any{
-				"source":                  "forge test --gas-report function-level average gas",
-				"status":                  "missing required Foundry gas benchmarks",
-				"missing_foundry_tests":   missing,
-				"no_paper_table_fallback": true,
+				"source":                "forge test --gas-report function-level average gas",
+				"status":                "missing required Foundry gas benchmarks",
+				"missing_foundry_tests": missing,
+				"measurement_status":    "incomplete",
 			},
 		}
 	}
@@ -1220,7 +1372,15 @@ func GasTraceFromFoundry(foundry []FoundryGasEntry, status string, p Params) Gas
 	windowsMonth := 30
 	podEpochsMonth := 6 * 24 * 30
 	podTheta := 0.9
-	podMonthly := int(float64(podEpochsMonth) * podTheta * float64(p.ValidatorN) * float64(byGas["testPoDBaselineGas"]))
+	comparisonFoundry := make([]comparisons.FoundryEntry, 0, len(foundry))
+	for _, row := range foundry {
+		comparisonFoundry = append(comparisonFoundry, comparisons.FoundryEntry{Test: row.Test, Function: row.Function, Gas: row.Gas})
+	}
+	podBaseline, err := comparisons.BuildPoDBaseline(comparisonFoundry, p.ValidatorN, podEpochsMonth, podTheta)
+	if err != nil {
+		panic(err)
+	}
+	podMonthly := podBaseline.MonthlyGas
 	verSegReplayGas := int(math.Round(1.2 * p.ThresholdB))
 	sentProveVerSegGas := byGas["testSentProveGas"] + verSegReplayGas
 	ops := []GasOperation{
@@ -1229,7 +1389,7 @@ func GasTraceFromFoundry(foundry []FoundryGasEntry, status string, p Params) Gas
 		{Name: "RanCk ContAudit", Gas: byGas["testContAuditGas"], DefaultUses: 1, Source: "Foundry function-level gas report from ValidatorAudit.sol"},
 		{Name: "SenCk SentReport", Gas: byGas["testSentReportGas"], DefaultUses: 1, Source: "Foundry function-level gas report from ValidatorAudit.sol"},
 		{Name: "Dispute", Gas: byGas["testDisputeGas"], DefaultUses: 0, Source: "Foundry function-level gas report from ValidatorAudit.sol"},
-		{Name: "SentProve/VerSeg", Gas: sentProveVerSegGas, DefaultUses: 0, Source: "Foundry sentProve submission gas plus Chapter 3 bounded VerSeg replay calibration at b=1e6"},
+		{Name: "SentProve/VerSeg", Gas: sentProveVerSegGas, DefaultUses: 0, Source: "Foundry sentProve submission gas plus Chapter 3 bounded VerSeg replay model at b=1e6"},
 	}
 	sweep := make([]GasSweepPoint, 0)
 	for i := 0; i <= 240; i++ {
@@ -1251,7 +1411,8 @@ func GasTraceFromFoundry(foundry []FoundryGasEntry, status string, p Params) Gas
 		DefaultPerValidatorGas: defaultPV,
 		DefaultHeartbeatCount:  hbDefault,
 		ReducedPerValidatorGas: reducedPV,
-		PoDGasPerEpoch:         byGas["testPoDBaselineGas"],
+		PoDBaseline:            podBaseline,
+		PoDGasPerEpoch:         byGas["testPoDMineBountyGas"],
 		PoDTheta:               podTheta,
 		MonthlyWindows:         windowsMonth,
 		MonthlyPoDEpochs:       podEpochsMonth,
@@ -1263,16 +1424,19 @@ func GasTraceFromFoundry(foundry []FoundryGasEntry, status string, p Params) Gas
 		PiHSweep:      sweep,
 		FoundryParsed: foundry,
 		FoundryStatus: status,
+		PoDExperiment: podExperiment,
 		MeasurementProvenance: map[string]any{
-			"source":                    "forge test --gas-report function-level average gas",
-			"foundry_test_level_gas":    byTest,
-			"pod_monthly_formula":       "monthly_pod_epochs * pod_theta * validator_count * local PoD baseline gas",
-			"pod_validator_count":       p.ValidatorN,
-			"sent_prove_submission_gas": byGas["testSentProveGas"],
-			"verseg_replay_gas":         verSegReplayGas,
-			"verseg_replay_formula":     "1.2 * b, using Chapter 3 bounded VerSeg replay calibration",
-			"no_paper_table_fallback":   true,
-			"note":                      "Normal-path Gas figures use local Foundry function-level averages. SentProve/VerSeg adds the Chapter 3 bounded VerSeg replay calibration because that row covers the reused adjudication interface rather than only the proof-submission wrapper.",
+			"source":                            "forge test --gas-report function-level average gas",
+			"foundry_test_level_gas":            byTest,
+			"pod_monthly_formula":               "monthly_pod_epochs * pod_theta * validator_count * podMineBounty gas",
+			"pod_validator_count":               p.ValidatorN,
+			"pod_protocol_trace":                "gas_trace.pod_experiment_trace",
+			"pod_paper_mine_bounty_average_gas": podBaseline.PaperAverageGas,
+			"sent_prove_submission_gas":         byGas["testSentProveGas"],
+			"verseg_replay_gas":                 verSegReplayGas,
+			"verseg_replay_formula":             "1.2 * b, using Chapter 3 bounded VerSeg replay model",
+			"measurement_status":                "checked",
+			"note":                              "Normal-path Gas figures use Foundry function-level averages. SentProve/VerSeg adds the Chapter 3 bounded VerSeg replay model because that row covers the reused adjudication interface rather than only the proof-submission wrapper.",
 		},
 	}
 }

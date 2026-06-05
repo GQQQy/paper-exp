@@ -4,8 +4,7 @@
 The script consumes chapter5/experiment/logs/raw_experiment_log.json. If the
 raw log is missing, it runs the Go experiment entrypoint first. All plot arrays
 are derived from the raw protocol traces, formulas recorded in the raw log,
-Monte Carlo outputs, and Foundry gas measurements. Thesis table values are not
-used as fallback plot data.
+Monte Carlo outputs, and Foundry gas measurements.
 """
 
 from __future__ import annotations
@@ -102,7 +101,12 @@ def ensure_raw_log() -> dict:
     if (
         "detection_parameters" not in raw
         or "gamma_hit_sweep" not in raw.get("monte_carlo", {})
-        or not provenance.get("no_paper_table_fallback")
+        or provenance.get("measurement_status") != "checked"
+        or "comparison_experiments" not in raw
+        or "pod_baseline" not in gas
+        or gas.get("pod_baseline", {}).get("test") != "testPoDMineBountyGas"
+        or not gas.get("pod_baseline", {}).get("reference_sources")
+        or "pod_experiment_trace" not in gas
     ):
         regenerate_raw_log()
         raw = json.loads(RAW_LOG.read_text(encoding="utf-8"))
@@ -123,7 +127,27 @@ def validate_raw(raw: dict) -> None:
     assert any(t["cont_audit"]["detected"] for t in raw["ranck_traces"][1:]), "RanCk deviations not detected"
     assert any(t["sent_report"]["detected"] for t in raw["senck_traces"][1:]), "SenCk deviations not detected"
     assert raw["gas_trace"]["default_per_validator_gas"] > 0
-    assert raw["gas_trace"]["measurement_provenance"]["no_paper_table_fallback"], "gas trace uses paper table fallback"
+    provenance = raw["gas_trace"]["measurement_provenance"]
+    assert provenance["measurement_status"] == "checked", "gas trace measurement status is incomplete"
+    assert provenance["foundry_test_level_gas"], "Foundry function-level gas provenance missing"
+    assert raw["gas_trace"]["pod_baseline"]["test"] == "testPoDMineBountyGas", "PoD benchmark is not the MineBounty path"
+    assert raw["gas_trace"]["pod_baseline"]["function"] == "podMineBounty", "PoD benchmark is not wired to podMineBounty"
+    assert raw["gas_trace"]["pod_baseline"]["reference_sources"], "PoD benchmark reference sources missing"
+    assert raw["gas_trace"]["pod_baseline"]["gas_per_epoch"] == raw["gas_trace"]["pod_gas_per_epoch"], "PoD gas is not benchmark-derived"
+    assert raw["gas_trace"]["pod_baseline"]["monthly_gas"] == raw["gas_trace"]["monthly_by_scheme"]["pod_theta_0.9"], "PoD monthly gas mismatch"
+    pod_trace = raw["gas_trace"]["pod_experiment_trace"]
+    assert pod_trace["honest_all_valid"], "PoD honest watchtower traces failed"
+    assert pod_trace["lazy_detected"] and pod_trace["invalid_proof_count"] > 0, "PoD lazy watchtower trace was not detected"
+    assert len(pod_trace["epochs"]) == pod_trace["watchtower_count"] * pod_trace["epoch_count"], "PoD epoch trace is incomplete"
+    assert len(raw["comparison_experiments"]) == len(raw["comparison_table_11"]) == 4, "missing comparison experiments for table 11"
+    by_scheme = {item["scheme"]: item for item in raw["comparison_experiments"]}
+    for row in raw["comparison_table_11"]:
+        exp = by_scheme[row["scheme"]]
+        assert exp["online_audit"] == row["online_audit"], f"{row['scheme']} online audit mismatch"
+        assert exp["semantic_diligence"] == row["semantic_diligence"], f"{row['scheme']} semantic diligence mismatch"
+        assert exp["unpredictable_audit"] == row["unpredictable_audit"], f"{row['scheme']} unpredictable audit mismatch"
+        assert exp["external_network"] == row["external_network"], f"{row['scheme']} external network mismatch"
+        assert exp["scenarios"] and exp["validation_claim"] and exp["reference_sources"], f"{row['scheme']} comparison evidence missing"
 
 
 def ranck_detect(pi_h: float, ell: np.ndarray | float) -> np.ndarray | float:
@@ -186,6 +210,7 @@ def build_data(raw: dict) -> dict:
         "monte_carlo": raw["monte_carlo"],
         "overhead": raw["overhead_traces"],
         "gas": raw["gas_trace"],
+        "comparison_experiments": raw["comparison_experiments"],
         "comparison_table_11": raw["comparison_table_11"],
     }
     OUT_JSON.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -499,7 +524,7 @@ def fig31(data: dict) -> None:
     pod = gas["monthly_by_scheme"]["pod_theta_0.9"] / 1e9
     fig, ax = plt.subplots(figsize=(9, 5))
     ax.plot(pi, monthly, color=COLORS["cyan"], lw=2.4, label="本方案系统月度 Gas")
-    ax.axhline(pod, color=COLORS["dark_orange"], ls="--", lw=2, label=f"PoD 基线（{pod:.2f}B gas）")
+    ax.axhline(pod, color=COLORS["dark_orange"], ls="--", lw=2, label=f"PoD MineBounty（{pod:.2f}B gas）")
     mask = monthly <= pod
     ax.fill_between(pi, monthly, pod, where=mask, color=COLORS["gold"], alpha=0.18)
     ax.set_xlabel(r"心跳触发概率 $\pi_h$")

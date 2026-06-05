@@ -36519,58 +36519,100 @@
     "operations": [
       {
         "name": "RanCk TrackInit",
-        "gas": 113830,
+        "gas": 49359,
         "default_uses": 1,
         "source": "Foundry function-level gas report from ValidatorAudit.sol"
       },
       {
         "name": "RanCk HBRespond",
-        "gas": 34376,
+        "gas": 34781,
         "default_uses": 72,
         "source": "Foundry function-level gas report from ValidatorAudit.sol"
       },
       {
         "name": "RanCk ContAudit",
-        "gas": 46894,
+        "gas": 89918,
         "default_uses": 1,
         "source": "Foundry function-level gas report from ValidatorAudit.sol"
       },
       {
         "name": "SenCk SentReport",
-        "gas": 68861,
+        "gas": 54915,
         "default_uses": 1,
         "source": "Foundry function-level gas report from ValidatorAudit.sol"
       },
       {
         "name": "Dispute",
-        "gas": 39209,
+        "gas": 79892,
         "default_uses": 0,
         "source": "Foundry function-level gas report from ValidatorAudit.sol"
       },
       {
         "name": "SentProve/VerSeg",
-        "gas": 1264836,
+        "gas": 1269429,
         "default_uses": 0,
-        "source": "Foundry sentProve submission gas plus Chapter 3 bounded VerSeg replay calibration at b=1e6"
+        "source": "Foundry sentProve submission gas plus Chapter 3 bounded VerSeg replay model at b=1e6"
       }
     ],
-    "default_per_validator_gas": 2704657,
+    "default_per_validator_gas": 2698424,
     "default_heartbeat_count": 72,
-    "reduced_per_validator_gas": 1467121,
-    "pod_gas_per_epoch": 50465,
+    "reduced_per_validator_gas": 1446308,
+    "pod_baseline": {
+      "scheme": "PoD",
+      "test": "testPoDMineBountyGas",
+      "function": "podMineBounty",
+      "gas_per_epoch": 382010,
+      "theta": 0.9,
+      "validator_count": 20,
+      "epochs_per_month": 4320,
+      "monthly_gas": 29705097600,
+      "formula": "epochs_per_month * theta * validator_count * PoD podMineBounty gas",
+      "paper_mine_bounty_average_gas": 380000,
+      "paper_source": "Proof of Diligence: Cryptoeconomic Security for Rollups, Section 6.2: MineBounty consumes about 380K gas on average",
+      "protocol_steps": [
+        "watchtower recomputes the asserted L2 state root",
+        "watchtower builds the execution trace Merkle root",
+        "watchtower computes a VRF proof bound to the trace root and its public key",
+        "BountyManager-style podMineBounty stores and verifies the proof for reward allocation"
+      ],
+      "reference_sources": [
+        {
+          "project": "witnesschain-com/diligencewatchtower-contracts",
+          "url": "https://github.com/witnesschain-com/diligencewatchtower-contracts",
+          "evidence": "Witness Chain contracts used to define the diligence watchtower and bounty-submission shape",
+          "used_for": "reference boundary for the local PoD watchtower and MineBounty benchmark context"
+        },
+        {
+          "project": "witnesschain-com/diligencewatchtower-client",
+          "url": "https://github.com/witnesschain-com/diligencewatchtower-client",
+          "evidence": "Witness Chain watchtower client used to confirm the recomputation workflow",
+          "used_for": "reference boundary for the local watchtower epoch trace"
+        },
+        {
+          "project": "Proof of Diligence paper",
+          "url": "https://eprint.iacr.org/2024/736",
+          "evidence": "Proof of Diligence: Cryptoeconomic Security for Rollups",
+          "used_for": "MineBounty normal-path gas baseline and watchtower incentive workflow"
+        }
+      ],
+      "source_kind": "solidity_pod_mine_bounty_benchmark_plus_paper_protocol_trace",
+      "reproduce": "forge test --gas-report; parse testPoDMineBountyGas from test/ValidatorAudit.t.sol",
+      "validation_claim": "PoD monthly gas plotted in figures 30/31 is derived from the podMineBounty Foundry benchmark; deterministic Go traces separately verify the watchtower recomputation/VRF workflow"
+    },
+    "pod_gas_per_epoch": 382010,
     "pod_theta": 0.9,
     "monthly_windows": 30,
     "monthly_pod_epochs": 4320,
     "monthly_by_scheme": {
-      "ours_pi_h_0.005": 880272600,
-      "ours_pi_h_0.01": 1622794200,
-      "pod_theta_0.9": 3924158400
+      "ours_pi_h_0.005": 867784800,
+      "ours_pi_h_0.01": 1619054400,
+      "pod_theta_0.9": 29705097600
     },
     "pi_h_sweep": [
       {
         "pi_h": 0.001,
         "M": 1000,
-        "monthly_gas": 286255320,
+        "monthly_gas": 266769120,
         "detection_at_300_blocks": 0.25929296784389877,
         "below_pod": true,
         "expected_heartbeats": 7.2
@@ -36578,7 +36620,7 @@
       {
         "pi_h": 0.0011,
         "M": 909.090909090909,
-        "monthly_gas": 301105752,
+        "monthly_gas": 281794512,
         "detection_at_300_blocks": 0.281206835135298,
         "below_pod": true,
         "expected_heartbeats": 7.920000000000001
@@ -36586,7 +36628,7 @@
       {
         "pi_h": 0.0012000000000000001,
         "M": 833.3333333333333,
-        "monthly_gas": 315956184,
+        "monthly_gas": 296819904,
         "detection_at_300_blocks": 0.3024744763821803,
         "below_pod": true,
         "expected_heartbeats": 8.64
@@ -36594,7 +36636,7 @@
       {
         "pi_h": 0.0013,
         "M": 769.2307692307693,
-        "monthly_gas": 330806616,
+        "monthly_gas": 311845296,
         "detection_at_300_blocks": 0.3231148865235718,
         "below_pod": true,
         "expected_heartbeats": 9.36
@@ -36602,7 +36644,7 @@
       {
         "pi_h": 0.0014,
         "M": 714.2857142857143,
-        "monthly_gas": 345657048,
+        "monthly_gas": 326870688,
         "detection_at_300_blocks": 0.34314650398658786,
         "below_pod": true,
         "expected_heartbeats": 10.08
@@ -36610,7 +36652,7 @@
       {
         "pi_h": 0.0015,
         "M": 666.6666666666666,
-        "monthly_gas": 360507480,
+        "monthly_gas": 341896080,
         "detection_at_300_blocks": 0.36258722693771417,
         "below_pod": true,
         "expected_heartbeats": 10.8
@@ -36618,7 +36660,7 @@
       {
         "pi_h": 0.0016,
         "M": 625,
-        "monthly_gas": 375357912,
+        "monthly_gas": 356921472,
         "detection_at_300_blocks": 0.38145442906123206,
         "below_pod": true,
         "expected_heartbeats": 11.520000000000001
@@ -36626,7 +36668,7 @@
       {
         "pi_h": 0.0017000000000000001,
         "M": 588.2352941176471,
-        "monthly_gas": 390208344,
+        "monthly_gas": 371946863,
         "detection_at_300_blocks": 0.3997649748781147,
         "below_pod": true,
         "expected_heartbeats": 12.24
@@ -36634,7 +36676,7 @@
       {
         "pi_h": 0.0018,
         "M": 555.5555555555555,
-        "monthly_gas": 405058776,
+        "monthly_gas": 386972256,
         "detection_at_300_blocks": 0.41753523461921516,
         "below_pod": true,
         "expected_heartbeats": 12.959999999999999
@@ -36642,7 +36684,7 @@
       {
         "pi_h": 0.0019,
         "M": 526.3157894736842,
-        "monthly_gas": 419909207,
+        "monthly_gas": 401997648,
         "detection_at_300_blocks": 0.43478109866523085,
         "below_pod": true,
         "expected_heartbeats": 13.68
@@ -36650,7 +36692,7 @@
       {
         "pi_h": 0.002,
         "M": 500,
-        "monthly_gas": 434759640,
+        "monthly_gas": 417023040,
         "detection_at_300_blocks": 0.45151799156630457,
         "below_pod": true,
         "expected_heartbeats": 14.4
@@ -36658,7 +36700,7 @@
       {
         "pi_h": 0.0021000000000000003,
         "M": 476.19047619047615,
-        "monthly_gas": 449610072,
+        "monthly_gas": 432048432,
         "detection_at_300_blocks": 0.4677608856533084,
         "below_pod": true,
         "expected_heartbeats": 15.120000000000003
@@ -36666,7 +36708,7 @@
       {
         "pi_h": 0.0022,
         "M": 454.5454545454545,
-        "monthly_gas": 464460504,
+        "monthly_gas": 447073824,
         "detection_at_300_blocks": 0.48352431425273845,
         "below_pod": true,
         "expected_heartbeats": 15.840000000000002
@@ -36674,7 +36716,7 @@
       {
         "pi_h": 0.0023,
         "M": 434.7826086956522,
-        "monthly_gas": 479310936,
+        "monthly_gas": 462099216,
         "detection_at_300_blocks": 0.4988223845167491,
         "below_pod": true,
         "expected_heartbeats": 16.56
@@ -36682,7 +36724,7 @@
       {
         "pi_h": 0.0024000000000000002,
         "M": 416.66666666666663,
-        "monthly_gas": 494161368,
+        "monthly_gas": 477124608,
         "detection_at_300_blocks": 0.5136687898793888,
         "below_pod": true,
         "expected_heartbeats": 17.28
@@ -36690,7 +36732,7 @@
       {
         "pi_h": 0.0025,
         "M": 400,
-        "monthly_gas": 509011800,
+        "monthly_gas": 492150000,
         "detection_at_300_blocks": 0.5280768221499721,
         "below_pod": true,
         "expected_heartbeats": 18
@@ -36698,7 +36740,7 @@
       {
         "pi_h": 0.0026,
         "M": 384.61538461538464,
-        "monthly_gas": 523862231,
+        "monthly_gas": 507175391,
         "detection_at_300_blocks": 0.5420593832541876,
         "below_pod": true,
         "expected_heartbeats": 18.72
@@ -36706,7 +36748,7 @@
       {
         "pi_h": 0.0027,
         "M": 370.3703703703703,
-        "monthly_gas": 538712664,
+        "monthly_gas": 522200784,
         "detection_at_300_blocks": 0.5556289966329286,
         "below_pod": true,
         "expected_heartbeats": 19.44
@@ -36714,7 +36756,7 @@
       {
         "pi_h": 0.0028,
         "M": 357.14285714285717,
-        "monthly_gas": 553563096,
+        "monthly_gas": 537226176,
         "detection_at_300_blocks": 0.5687978183091631,
         "below_pod": true,
         "expected_heartbeats": 20.16
@@ -36722,7 +36764,7 @@
       {
         "pi_h": 0.0029,
         "M": 344.82758620689657,
-        "monthly_gas": 568413528,
+        "monthly_gas": 552251567,
         "detection_at_300_blocks": 0.5815776476320975,
         "below_pod": true,
         "expected_heartbeats": 20.88
@@ -36730,7 +36772,7 @@
       {
         "pi_h": 0.003,
         "M": 333.3333333333333,
-        "monthly_gas": 583263960,
+        "monthly_gas": 567276960,
         "detection_at_300_blocks": 0.593979937708271,
         "below_pod": true,
         "expected_heartbeats": 21.6
@@ -36738,7 +36780,7 @@
       {
         "pi_h": 0.0031,
         "M": 322.5806451612903,
-        "monthly_gas": 598114392,
+        "monthly_gas": 582302352,
         "detection_at_300_blocks": 0.6060158055285816,
         "below_pod": true,
         "expected_heartbeats": 22.32
@@ -36746,7 +36788,7 @@
       {
         "pi_h": 0.0032,
         "M": 312.5,
-        "monthly_gas": 612964824,
+        "monthly_gas": 597327744,
         "detection_at_300_blocks": 0.617696041800034,
         "below_pod": true,
         "expected_heartbeats": 23.040000000000003
@@ -36754,7 +36796,7 @@
       {
         "pi_h": 0.0033000000000000004,
         "M": 303.030303030303,
-        "monthly_gas": 627815256,
+        "monthly_gas": 612353136,
         "detection_at_300_blocks": 0.6290311204909332,
         "below_pod": true,
         "expected_heartbeats": 23.76
@@ -36762,7 +36804,7 @@
       {
         "pi_h": 0.0034000000000000002,
         "M": 294.11764705882354,
-        "monthly_gas": 642665688,
+        "monthly_gas": 627378528,
         "detection_at_300_blocks": 0.6400312080976492,
         "below_pod": true,
         "expected_heartbeats": 24.48
@@ -36770,7 +36812,7 @@
       {
         "pi_h": 0.0035,
         "M": 285.7142857142857,
-        "monthly_gas": 657516120,
+        "monthly_gas": 642403920,
         "detection_at_300_blocks": 0.6507061726412491,
         "below_pod": true,
         "expected_heartbeats": 25.2
@@ -36778,7 +36820,7 @@
       {
         "pi_h": 0.0036,
         "M": 277.77777777777777,
-        "monthly_gas": 672366552,
+        "monthly_gas": 657429312,
         "detection_at_300_blocks": 0.6610655924017079,
         "below_pod": true,
         "expected_heartbeats": 25.919999999999998
@@ -36786,7 +36828,7 @@
       {
         "pi_h": 0.0037,
         "M": 270.27027027027026,
-        "monthly_gas": 687216984,
+        "monthly_gas": 672454703,
         "detection_at_300_blocks": 0.6711187643973109,
         "below_pod": true,
         "expected_heartbeats": 26.64
@@ -36794,7 +36836,7 @@
       {
         "pi_h": 0.0038,
         "M": 263.1578947368421,
-        "monthly_gas": 702067415,
+        "monthly_gas": 687480096,
         "detection_at_300_blocks": 0.6808747126168749,
         "below_pod": true,
         "expected_heartbeats": 27.36
@@ -36802,7 +36844,7 @@
       {
         "pi_h": 0.0039000000000000003,
         "M": 256.4102564102564,
-        "monthly_gas": 716917848,
+        "monthly_gas": 702505488,
         "detection_at_300_blocks": 0.6903421960116497,
         "below_pod": true,
         "expected_heartbeats": 28.080000000000002
@@ -36810,7 +36852,7 @@
       {
         "pi_h": 0.004,
         "M": 250,
-        "monthly_gas": 731768280,
+        "monthly_gas": 717530880,
         "detection_at_300_blocks": 0.6995297162541505,
         "below_pod": true,
         "expected_heartbeats": 28.8
@@ -36818,7 +36860,7 @@
       {
         "pi_h": 0.0040999999999999995,
         "M": 243.90243902439028,
-        "monthly_gas": 746618712,
+        "monthly_gas": 732556272,
         "detection_at_300_blocks": 0.7084455252705433,
         "below_pod": true,
         "expected_heartbeats": 29.519999999999996
@@ -36826,7 +36868,7 @@
       {
         "pi_h": 0.004200000000000001,
         "M": 238.09523809523807,
-        "monthly_gas": 761469144,
+        "monthly_gas": 747581664,
         "detection_at_300_blocks": 0.7170976325532632,
         "below_pod": true,
         "expected_heartbeats": 30.240000000000006
@@ -36834,7 +36876,7 @@
       {
         "pi_h": 0.0043,
         "M": 232.5581395348837,
-        "monthly_gas": 776319576,
+        "monthly_gas": 762607056,
         "detection_at_300_blocks": 0.7254938122602292,
         "below_pod": true,
         "expected_heartbeats": 30.96
@@ -36842,7 +36884,7 @@
       {
         "pi_h": 0.0044,
         "M": 227.27272727272725,
-        "monthly_gas": 791170008,
+        "monthly_gas": 777632448,
         "detection_at_300_blocks": 0.7336416101067866,
         "below_pod": true,
         "expected_heartbeats": 31.680000000000003
@@ -36850,7 +36892,7 @@
       {
         "pi_h": 0.0045000000000000005,
         "M": 222.2222222222222,
-        "monthly_gas": 806020440,
+        "monthly_gas": 792657840,
         "detection_at_300_blocks": 0.7415483500565789,
         "below_pod": true,
         "expected_heartbeats": 32.400000000000006
@@ -36858,7 +36900,7 @@
       {
         "pi_h": 0.0046,
         "M": 217.3913043478261,
-        "monthly_gas": 820870872,
+        "monthly_gas": 807683232,
         "detection_at_300_blocks": 0.7492211408170044,
         "below_pod": true,
         "expected_heartbeats": 33.12
@@ -36866,7 +36908,7 @@
       {
         "pi_h": 0.0047,
         "M": 212.7659574468085,
-        "monthly_gas": 835721304,
+        "monthly_gas": 822708624,
         "detection_at_300_blocks": 0.7566668821450413,
         "below_pod": true,
         "expected_heartbeats": 33.84
@@ -36874,7 +36916,7 @@
       {
         "pi_h": 0.0048000000000000004,
         "M": 208.33333333333331,
-        "monthly_gas": 850571736,
+        "monthly_gas": 837734016,
         "detection_at_300_blocks": 0.7638922709690472,
         "below_pod": true,
         "expected_heartbeats": 34.56
@@ -36882,7 +36924,7 @@
       {
         "pi_h": 0.0049,
         "M": 204.08163265306123,
-        "monthly_gas": 865422168,
+        "monthly_gas": 852759407,
         "detection_at_300_blocks": 0.7709038073316656,
         "below_pod": true,
         "expected_heartbeats": 35.28
@@ -36890,7 +36932,7 @@
       {
         "pi_h": 0.005,
         "M": 200,
-        "monthly_gas": 880272600,
+        "monthly_gas": 867784800,
         "detection_at_300_blocks": 0.7777078001592522,
         "below_pod": true,
         "expected_heartbeats": 36
@@ -36898,7 +36940,7 @@
       {
         "pi_h": 0.0051,
         "M": 196.078431372549,
-        "monthly_gas": 895123032,
+        "monthly_gas": 882810192,
         "detection_at_300_blocks": 0.7843103728627754,
         "below_pod": true,
         "expected_heartbeats": 36.720000000000006
@@ -36906,7 +36948,7 @@
       {
         "pi_h": 0.0052,
         "M": 192.30769230769232,
-        "monthly_gas": 909973463,
+        "monthly_gas": 897835583,
         "detection_at_300_blocks": 0.7907174687750974,
         "below_pod": true,
         "expected_heartbeats": 37.44
@@ -36914,7 +36956,7 @@
       {
         "pi_h": 0.0053,
         "M": 188.67924528301887,
-        "monthly_gas": 924823896,
+        "monthly_gas": 912860976,
         "detection_at_300_blocks": 0.7969348564294361,
         "below_pod": true,
         "expected_heartbeats": 38.160000000000004
@@ -36922,7 +36964,7 @@
       {
         "pi_h": 0.0054,
         "M": 185.18518518518516,
-        "monthly_gas": 939674328,
+        "monthly_gas": 927886368,
         "detection_at_300_blocks": 0.8029681346836101,
         "below_pod": true,
         "expected_heartbeats": 38.88
@@ -36930,7 +36972,7 @@
       {
         "pi_h": 0.0055000000000000005,
         "M": 181.8181818181818,
-        "monthly_gas": 954524760,
+        "monthly_gas": 942911760,
         "detection_at_300_blocks": 0.8088227376945374,
         "below_pod": true,
         "expected_heartbeats": 39.6
@@ -36938,7 +36980,7 @@
       {
         "pi_h": 0.005600000000000001,
         "M": 178.57142857142856,
-        "monthly_gas": 969375192,
+        "monthly_gas": 957937152,
         "detection_at_300_blocks": 0.8145039397474132,
         "below_pod": true,
         "expected_heartbeats": 40.32000000000001
@@ -36946,7 +36988,7 @@
       {
         "pi_h": 0.0057,
         "M": 175.43859649122805,
-        "monthly_gas": 984225624,
+        "monthly_gas": 972962544,
         "detection_at_300_blocks": 0.8200168599436942,
         "below_pod": true,
         "expected_heartbeats": 41.04
@@ -36954,7 +36996,7 @@
       {
         "pi_h": 0.0058000000000000005,
         "M": 172.41379310344826,
-        "monthly_gas": 999076056,
+        "monthly_gas": 987987936,
         "detection_at_300_blocks": 0.825366466752144,
         "below_pod": true,
         "expected_heartbeats": 41.760000000000005
@@ -36962,7 +37004,7 @@
       {
         "pi_h": 0.0059,
         "M": 169.49152542372883,
-        "monthly_gas": 1013926488,
+        "monthly_gas": 1003013327,
         "detection_at_300_blocks": 0.8305575824267672,
         "below_pod": true,
         "expected_heartbeats": 42.48
@@ -36970,7 +37012,7 @@
       {
         "pi_h": 0.006,
         "M": 166.66666666666666,
-        "monthly_gas": 1028776920,
+        "monthly_gas": 1018038720,
         "detection_at_300_blocks": 0.8355948872956749,
         "below_pod": true,
         "expected_heartbeats": 43.2
@@ -36978,7 +37020,7 @@
       {
         "pi_h": 0.0060999999999999995,
         "M": 163.9344262295082,
-        "monthly_gas": 1043627352,
+        "monthly_gas": 1033064112,
         "detection_at_300_blocks": 0.8404829239244809,
         "below_pod": true,
         "expected_heartbeats": 43.919999999999995
@@ -36986,7 +37028,7 @@
       {
         "pi_h": 0.0062,
         "M": 161.29032258064515,
-        "monthly_gas": 1058477784,
+        "monthly_gas": 1048089504,
         "detection_at_300_blocks": 0.845226101158022,
         "below_pod": true,
         "expected_heartbeats": 44.64
@@ -36994,7 +37036,7 @@
       {
         "pi_h": 0.0063,
         "M": 158.73015873015873,
-        "monthly_gas": 1073328215,
+        "monthly_gas": 1063114895,
         "detection_at_300_blocks": 0.8498286980438611,
         "below_pod": true,
         "expected_heartbeats": 45.36
@@ -37002,7 +37044,7 @@
       {
         "pi_h": 0.0064,
         "M": 156.25,
-        "monthly_gas": 1088178648,
+        "monthly_gas": 1078140288,
         "detection_at_300_blocks": 0.8542948676410695,
         "below_pod": true,
         "expected_heartbeats": 46.080000000000005
@@ -37010,7 +37052,7 @@
       {
         "pi_h": 0.006500000000000001,
         "M": 153.84615384615384,
-        "monthly_gas": 1103029080,
+        "monthly_gas": 1093165680,
         "detection_at_300_blocks": 0.8586286407175849,
         "below_pod": true,
         "expected_heartbeats": 46.800000000000004
@@ -37018,7 +37060,7 @@
       {
         "pi_h": 0.0066,
         "M": 151.51515151515153,
-        "monthly_gas": 1117879512,
+        "monthly_gas": 1108191072,
         "detection_at_300_blocks": 0.8628339293394433,
         "below_pod": true,
         "expected_heartbeats": 47.52
@@ -37026,7 +37068,7 @@
       {
         "pi_h": 0.0067,
         "M": 149.2537313432836,
-        "monthly_gas": 1132729944,
+        "monthly_gas": 1123216464,
         "detection_at_300_blocks": 0.8669145303549866,
         "below_pod": true,
         "expected_heartbeats": 48.24
@@ -37034,7 +37076,7 @@
       {
         "pi_h": 0.0068000000000000005,
         "M": 147.05882352941177,
-        "monthly_gas": 1147580376,
+        "monthly_gas": 1138241856,
         "detection_at_300_blocks": 0.8708741287771704,
         "below_pod": true,
         "expected_heartbeats": 48.96
@@ -37042,7 +37084,7 @@
       {
         "pi_h": 0.0069,
         "M": 144.92753623188406,
-        "monthly_gas": 1162430808,
+        "monthly_gas": 1153267248,
         "detection_at_300_blocks": 0.8747163010668773,
         "below_pod": true,
         "expected_heartbeats": 49.68
@@ -37050,7 +37092,7 @@
       {
         "pi_h": 0.007,
         "M": 142.85714285714286,
-        "monthly_gas": 1177281240,
+        "monthly_gas": 1168292640,
         "detection_at_300_blocks": 0.8784445183201655,
         "below_pod": true,
         "expected_heartbeats": 50.4
@@ -37058,7 +37100,7 @@
       {
         "pi_h": 0.0070999999999999995,
         "M": 140.84507042253523,
-        "monthly_gas": 1192131672,
+        "monthly_gas": 1183318032,
         "detection_at_300_blocks": 0.8820621493622364,
         "below_pod": true,
         "expected_heartbeats": 51.12
@@ -37066,7 +37108,7 @@
       {
         "pi_h": 0.0072,
         "M": 138.88888888888889,
-        "monthly_gas": 1206982104,
+        "monthly_gas": 1198343424,
         "detection_at_300_blocks": 0.8855724637508569,
         "below_pod": true,
         "expected_heartbeats": 51.839999999999996
@@ -37074,7 +37116,7 @@
       {
         "pi_h": 0.0073,
         "M": 136.986301369863,
-        "monthly_gas": 1221832536,
+        "monthly_gas": 1213368816,
         "detection_at_300_blocks": 0.8889786346918626,
         "below_pod": true,
         "expected_heartbeats": 52.56
@@ -37082,7 +37124,7 @@
       {
         "pi_h": 0.0074,
         "M": 135.13513513513513,
-        "monthly_gas": 1236682968,
+        "monthly_gas": 1228394208,
         "detection_at_300_blocks": 0.8922837418693045,
         "below_pod": true,
         "expected_heartbeats": 53.28
@@ -37090,7 +37132,7 @@
       {
         "pi_h": 0.007500000000000001,
         "M": 133.33333333333331,
-        "monthly_gas": 1251533400,
+        "monthly_gas": 1243419600,
         "detection_at_300_blocks": 0.8954907741927621,
         "below_pod": true,
         "expected_heartbeats": 54.00000000000001
@@ -37098,7 +37140,7 @@
       {
         "pi_h": 0.0076,
         "M": 131.57894736842104,
-        "monthly_gas": 1266383831,
+        "monthly_gas": 1258444992,
         "detection_at_300_blocks": 0.8986026324641887,
         "below_pod": true,
         "expected_heartbeats": 54.72
@@ -37106,7 +37148,7 @@
       {
         "pi_h": 0.0077,
         "M": 129.87012987012986,
-        "monthly_gas": 1281234264,
+        "monthly_gas": 1273470384,
         "detection_at_300_blocks": 0.9016221319666753,
         "below_pod": true,
         "expected_heartbeats": 55.440000000000005
@@ -37114,7 +37156,7 @@
       {
         "pi_h": 0.0078000000000000005,
         "M": 128.2051282051282,
-        "monthly_gas": 1296084696,
+        "monthly_gas": 1288495776,
         "detection_at_300_blocks": 0.9045520049774167,
         "below_pod": true,
         "expected_heartbeats": 56.160000000000004
@@ -37122,7 +37164,7 @@
       {
         "pi_h": 0.0079,
         "M": 126.58227848101265,
-        "monthly_gas": 1310935127,
+        "monthly_gas": 1303521168,
         "detection_at_300_blocks": 0.9073949032070476,
         "below_pod": true,
         "expected_heartbeats": 56.88
@@ -37130,7 +37172,7 @@
       {
         "pi_h": 0.008,
         "M": 125,
-        "monthly_gas": 1325785560,
+        "monthly_gas": 1318546560,
         "detection_at_300_blocks": 0.9101534001675532,
         "below_pod": true,
         "expected_heartbeats": 57.6
@@ -37138,7 +37180,7 @@
       {
         "pi_h": 0.0081,
         "M": 123.4567901234568,
-        "monthly_gas": 1340635992,
+        "monthly_gas": 1333571952,
         "detection_at_300_blocks": 0.9128299934707956,
         "below_pod": true,
         "expected_heartbeats": 58.32
@@ -37146,7 +37188,7 @@
       {
         "pi_h": 0.008199999999999999,
         "M": 121.95121951219514,
-        "monthly_gas": 1355486424,
+        "monthly_gas": 1348597344,
         "detection_at_300_blocks": 0.915427107059715,
         "below_pod": true,
         "expected_heartbeats": 59.03999999999999
@@ -37154,7 +37196,7 @@
       {
         "pi_h": 0.0083,
         "M": 120.48192771084337,
-        "monthly_gas": 1370336855,
+        "monthly_gas": 1363622735,
         "detection_at_300_blocks": 0.9179470933741386,
         "below_pod": true,
         "expected_heartbeats": 59.76
@@ -37162,7 +37204,7 @@
       {
         "pi_h": 0.008400000000000001,
         "M": 119.04761904761904,
-        "monthly_gas": 1385187288,
+        "monthly_gas": 1378648128,
         "detection_at_300_blocks": 0.920392235453144,
         "below_pod": true,
         "expected_heartbeats": 60.48000000000001
@@ -37170,7 +37212,7 @@
       {
         "pi_h": 0.0085,
         "M": 117.6470588235294,
-        "monthly_gas": 1400037720,
+        "monthly_gas": 1393673520,
         "detection_at_300_blocks": 0.9227647489757999,
         "below_pod": true,
         "expected_heartbeats": 61.2
@@ -37178,7 +37220,7 @@
       {
         "pi_h": 0.0086,
         "M": 116.27906976744185,
-        "monthly_gas": 1414888152,
+        "monthly_gas": 1408698912,
         "detection_at_300_blocks": 0.9250667842420967,
         "below_pod": true,
         "expected_heartbeats": 61.92
@@ -37186,7 +37228,7 @@
       {
         "pi_h": 0.0087,
         "M": 114.9425287356322,
-        "monthly_gas": 1429738584,
+        "monthly_gas": 1423724304,
         "detection_at_300_blocks": 0.9273004280958109,
         "below_pod": true,
         "expected_heartbeats": 62.63999999999999
@@ -37194,7 +37236,7 @@
       {
         "pi_h": 0.0088,
         "M": 113.63636363636363,
-        "monthly_gas": 1444589016,
+        "monthly_gas": 1438749696,
         "detection_at_300_blocks": 0.9294677057910083,
         "below_pod": true,
         "expected_heartbeats": 63.36000000000001
@@ -37202,7 +37244,7 @@
       {
         "pi_h": 0.008900000000000002,
         "M": 112.35955056179773,
-        "monthly_gas": 1459439448,
+        "monthly_gas": 1453775088,
         "detection_at_300_blocks": 0.9315705828038229,
         "below_pod": true,
         "expected_heartbeats": 64.08000000000001
@@ -37210,7 +37252,7 @@
       {
         "pi_h": 0.009000000000000001,
         "M": 111.1111111111111,
-        "monthly_gas": 1474289880,
+        "monthly_gas": 1468800480,
         "detection_at_300_blocks": 0.9336109665911079,
         "below_pod": true,
         "expected_heartbeats": 64.80000000000001
@@ -37218,7 +37260,7 @@
       {
         "pi_h": 0.0091,
         "M": 109.89010989010988,
-        "monthly_gas": 1489140312,
+        "monthly_gas": 1483825872,
         "detection_at_300_blocks": 0.9355907082975252,
         "below_pod": true,
         "expected_heartbeats": 65.52000000000001
@@ -37226,7 +37268,7 @@
       {
         "pi_h": 0.0092,
         "M": 108.69565217391305,
-        "monthly_gas": 1503990744,
+        "monthly_gas": 1498851264,
         "detection_at_300_blocks": 0.9375116044125669,
         "below_pod": true,
         "expected_heartbeats": 66.24
@@ -37234,7 +37276,7 @@
       {
         "pi_h": 0.0093,
         "M": 107.52688172043011,
-        "monthly_gas": 1518841176,
+        "monthly_gas": 1513876655,
         "detection_at_300_blocks": 0.939375398378979,
         "below_pod": true,
         "expected_heartbeats": 66.96
@@ -37242,7 +37284,7 @@
       {
         "pi_h": 0.009399999999999999,
         "M": 106.38297872340426,
-        "monthly_gas": 1533691607,
+        "monthly_gas": 1528902047,
         "detection_at_300_blocks": 0.9411837821540133,
         "below_pod": true,
         "expected_heartbeats": 67.67999999999999
@@ -37250,7 +37292,7 @@
       {
         "pi_h": 0.009500000000000001,
         "M": 105.26315789473682,
-        "monthly_gas": 1548542040,
+        "monthly_gas": 1543927440,
         "detection_at_300_blocks": 0.9429383977248664,
         "below_pod": true,
         "expected_heartbeats": 68.4
@@ -37258,7 +37300,7 @@
       {
         "pi_h": 0.009600000000000001,
         "M": 104.16666666666666,
-        "monthly_gas": 1563392472,
+        "monthly_gas": 1558952832,
         "detection_at_300_blocks": 0.9446408385796716,
         "below_pod": true,
         "expected_heartbeats": 69.12
@@ -37266,7 +37308,7 @@
       {
         "pi_h": 0.0097,
         "M": 103.09278350515464,
-        "monthly_gas": 1578242904,
+        "monthly_gas": 1573978224,
         "detection_at_300_blocks": 0.9462926511353211,
         "below_pod": true,
         "expected_heartbeats": 69.84
@@ -37274,7 +37316,7 @@
       {
         "pi_h": 0.0098,
         "M": 102.04081632653062,
-        "monthly_gas": 1593093336,
+        "monthly_gas": 1589003615,
         "detection_at_300_blocks": 0.9478953361234034,
         "below_pod": true,
         "expected_heartbeats": 70.56
@@ -37282,7 +37324,7 @@
       {
         "pi_h": 0.009899999999999999,
         "M": 101.01010101010102,
-        "monthly_gas": 1607943767,
+        "monthly_gas": 1604029007,
         "detection_at_300_blocks": 0.9494503499354492,
         "below_pod": true,
         "expected_heartbeats": 71.27999999999999
@@ -37290,7 +37332,7 @@
       {
         "pi_h": 0.010000000000000002,
         "M": 99.99999999999999,
-        "monthly_gas": 1622794200,
+        "monthly_gas": 1619054400,
         "detection_at_300_blocks": 0.9509591059287144,
         "below_pod": true,
         "expected_heartbeats": 72.00000000000001
@@ -37298,7 +37340,7 @@
       {
         "pi_h": 0.010100000000000001,
         "M": 99.009900990099,
-        "monthly_gas": 1637644632,
+        "monthly_gas": 1634079792,
         "detection_at_300_blocks": 0.9524229756936201,
         "below_pod": true,
         "expected_heartbeats": 72.72000000000001
@@ -37306,7 +37348,7 @@
       {
         "pi_h": 0.0102,
         "M": 98.0392156862745,
-        "monthly_gas": 1652495064,
+        "monthly_gas": 1649105184,
         "detection_at_300_blocks": 0.9538432902839956,
         "below_pod": true,
         "expected_heartbeats": 73.44000000000001
@@ -37314,7 +37356,7 @@
       {
         "pi_h": 0.0103,
         "M": 97.08737864077669,
-        "monthly_gas": 1667345495,
+        "monthly_gas": 1664130576,
         "detection_at_300_blocks": 0.9552213414111984,
         "below_pod": true,
         "expected_heartbeats": 74.16
@@ -37322,7 +37364,7 @@
       {
         "pi_h": 0.0104,
         "M": 96.15384615384616,
-        "monthly_gas": 1682195927,
+        "monthly_gas": 1679155967,
         "detection_at_300_blocks": 0.9565583826031745,
         "below_pod": true,
         "expected_heartbeats": 74.88
@@ -37330,7 +37372,7 @@
       {
         "pi_h": 0.010500000000000002,
         "M": 95.23809523809521,
-        "monthly_gas": 1697046360,
+        "monthly_gas": 1694181360,
         "detection_at_300_blocks": 0.957855630329489,
         "below_pod": true,
         "expected_heartbeats": 75.60000000000002
@@ -37338,7 +37380,7 @@
       {
         "pi_h": 0.010600000000000002,
         "M": 94.33962264150942,
-        "monthly_gas": 1711896792,
+        "monthly_gas": 1709206752,
         "detection_at_300_blocks": 0.9591142650933072,
         "below_pod": true,
         "expected_heartbeats": 76.32000000000001
@@ -37346,7 +37388,7 @@
       {
         "pi_h": 0.010699999999999998,
         "M": 93.45794392523366,
-        "monthly_gas": 1726747223,
+        "monthly_gas": 1724232143,
         "detection_at_300_blocks": 0.9603354324913119,
         "below_pod": true,
         "expected_heartbeats": 77.03999999999998
@@ -37354,7 +37396,7 @@
       {
         "pi_h": 0.0108,
         "M": 92.59259259259258,
-        "monthly_gas": 1741597656,
+        "monthly_gas": 1739257536,
         "detection_at_300_blocks": 0.9615202442424882,
         "below_pod": true,
         "expected_heartbeats": 77.76
@@ -37362,7 +37404,7 @@
       {
         "pi_h": 0.0109,
         "M": 91.74311926605505,
-        "monthly_gas": 1756448088,
+        "monthly_gas": 1754282928,
         "detection_at_300_blocks": 0.9626697791866837,
         "below_pod": true,
         "expected_heartbeats": 78.48
@@ -37370,7 +37412,7 @@
       {
         "pi_h": 0.011,
         "M": 90.90909090909092,
-        "monthly_gas": 1771298519,
+        "monthly_gas": 1769308319,
         "detection_at_300_blocks": 0.9637850842538326,
         "below_pod": true,
         "expected_heartbeats": 79.19999999999999
@@ -37378,7 +37420,7 @@
       {
         "pi_h": 0.011099999999999999,
         "M": 90.0900900900901,
-        "monthly_gas": 1786148951,
+        "monthly_gas": 1784333711,
         "detection_at_300_blocks": 0.9648671754047025,
         "below_pod": true,
         "expected_heartbeats": 79.91999999999999
@@ -37386,7 +37428,7 @@
       {
         "pi_h": 0.011199999999999998,
         "M": 89.2857142857143,
-        "monthly_gas": 1800999384,
+        "monthly_gas": 1799359103,
         "detection_at_300_blocks": 0.965917038543998,
         "below_pod": true,
         "expected_heartbeats": 80.63999999999999
@@ -37394,7 +37436,7 @@
       {
         "pi_h": 0.011300000000000001,
         "M": 88.49557522123894,
-        "monthly_gas": 1815849816,
+        "monthly_gas": 1814384496,
         "detection_at_300_blocks": 0.9669356304066319,
         "below_pod": true,
         "expected_heartbeats": 81.36000000000001
@@ -37402,7 +37444,7 @@
       {
         "pi_h": 0.0114,
         "M": 87.71929824561403,
-        "monthly_gas": 1830700248,
+        "monthly_gas": 1829409888,
         "detection_at_300_blocks": 0.9679238794179444,
         "below_pod": true,
         "expected_heartbeats": 82.08
@@ -37410,7 +37452,7 @@
       {
         "pi_h": 0.0115,
         "M": 86.95652173913044,
-        "monthly_gas": 1845550680,
+        "monthly_gas": 1844435280,
         "detection_at_300_blocks": 0.9688826865286422,
         "below_pod": true,
         "expected_heartbeats": 82.8
@@ -37418,7 +37460,7 @@
       {
         "pi_h": 0.0116,
         "M": 86.20689655172414,
-        "monthly_gas": 1860401112,
+        "monthly_gas": 1859460671,
         "detection_at_300_blocks": 0.9698129260251901,
         "below_pod": true,
         "expected_heartbeats": 83.52
@@ -37426,7 +37468,7 @@
       {
         "pi_h": 0.011699999999999999,
         "M": 85.47008547008548,
-        "monthly_gas": 1875251544,
+        "monthly_gas": 1874486064,
         "detection_at_300_blocks": 0.970715446316377,
         "below_pod": true,
         "expected_heartbeats": 84.24
@@ -37434,7 +37476,7 @@
       {
         "pi_h": 0.011800000000000001,
         "M": 84.7457627118644,
-        "monthly_gas": 1890101976,
+        "monthly_gas": 1889511456,
         "detection_at_300_blocks": 0.9715910706967614,
         "below_pod": true,
         "expected_heartbeats": 84.96000000000001
@@ -37442,7 +37484,7 @@
       {
         "pi_h": 0.0119,
         "M": 84.03361344537815,
-        "monthly_gas": 1904952408,
+        "monthly_gas": 1904536848,
         "detection_at_300_blocks": 0.972440598087658,
         "below_pod": true,
         "expected_heartbeats": 85.68
@@ -37450,7 +37492,7 @@
       {
         "pi_h": 0.012,
         "M": 83.33333333333333,
-        "monthly_gas": 1919802840,
+        "monthly_gas": 1919562240,
         "detection_at_300_blocks": 0.9732648037563412,
         "below_pod": true,
         "expected_heartbeats": 86.4
@@ -37458,7 +37500,7 @@
       {
         "pi_h": 0.0121,
         "M": 82.64462809917356,
-        "monthly_gas": 1934653272,
+        "monthly_gas": 1934587632,
         "detection_at_300_blocks": 0.9740644400140929,
         "below_pod": true,
         "expected_heartbeats": 87.12
@@ -37466,7 +37508,7 @@
       {
         "pi_h": 0.012199999999999999,
         "M": 81.9672131147541,
-        "monthly_gas": 1949503704,
+        "monthly_gas": 1949613023,
         "detection_at_300_blocks": 0.974840236893717,
         "below_pod": true,
         "expected_heartbeats": 87.83999999999999
@@ -37474,7 +37516,7 @@
       {
         "pi_h": 0.012300000000000002,
         "M": 81.30081300813006,
-        "monthly_gas": 1964354136,
+        "monthly_gas": 1964638416,
         "detection_at_300_blocks": 0.9755929028071256,
         "below_pod": true,
         "expected_heartbeats": 88.56000000000002
@@ -37482,7 +37524,7 @@
       {
         "pi_h": 0.012400000000000001,
         "M": 80.64516129032258,
-        "monthly_gas": 1979204568,
+        "monthly_gas": 1979663808,
         "detection_at_300_blocks": 0.9763231251835787,
         "below_pod": true,
         "expected_heartbeats": 89.28000000000002
@@ -37490,7 +37532,7 @@
       {
         "pi_h": 0.0125,
         "M": 80,
-        "monthly_gas": 1994055000,
+        "monthly_gas": 1994689200,
         "detection_at_300_blocks": 0.9770315710891436,
         "below_pod": true,
         "expected_heartbeats": 90
@@ -37498,7 +37540,7 @@
       {
         "pi_h": 0.0126,
         "M": 79.36507936507937,
-        "monthly_gas": 2008905431,
+        "monthly_gas": 2009714592,
         "detection_at_300_blocks": 0.9777188878279274,
         "below_pod": true,
         "expected_heartbeats": 90.72
@@ -37506,7 +37548,7 @@
       {
         "pi_h": 0.0127,
         "M": 78.74015748031496,
-        "monthly_gas": 2023755864,
+        "monthly_gas": 2024739984,
         "detection_at_300_blocks": 0.9783857035256189,
         "below_pod": true,
         "expected_heartbeats": 91.44
@@ -37514,7 +37556,7 @@
       {
         "pi_h": 0.012799999999999999,
         "M": 78.125,
-        "monthly_gas": 2038606295,
+        "monthly_gas": 2039765376,
         "detection_at_300_blocks": 0.9790326276958462,
         "below_pod": true,
         "expected_heartbeats": 92.16
@@ -37522,7 +37564,7 @@
       {
         "pi_h": 0.012899999999999998,
         "M": 77.51937984496125,
-        "monthly_gas": 2053456727,
+        "monthly_gas": 2054790767,
         "detection_at_300_blocks": 0.9796602517898789,
         "below_pod": true,
         "expected_heartbeats": 92.87999999999998
@@ -37530,7 +37572,7 @@
       {
         "pi_h": 0.013000000000000001,
         "M": 76.92307692307692,
-        "monthly_gas": 2068307160,
+        "monthly_gas": 2069816160,
         "detection_at_300_blocks": 0.9802691497301347,
         "below_pod": true,
         "expected_heartbeats": 93.60000000000001
@@ -37538,7 +37580,7 @@
       {
         "pi_h": 0.0131,
         "M": 76.33587786259541,
-        "monthly_gas": 2083157592,
+        "monthly_gas": 2084841552,
         "detection_at_300_blocks": 0.9808598784279868,
         "below_pod": true,
         "expected_heartbeats": 94.32000000000001
@@ -37546,7 +37588,7 @@
       {
         "pi_h": 0.0132,
         "M": 75.75757575757576,
-        "monthly_gas": 2098008024,
+        "monthly_gas": 2099866944,
         "detection_at_300_blocks": 0.981432978286323,
         "below_pod": true,
         "expected_heartbeats": 95.04
@@ -37554,7 +37596,7 @@
       {
         "pi_h": 0.0133,
         "M": 75.18796992481204,
-        "monthly_gas": 2112858455,
+        "monthly_gas": 2114892335,
         "detection_at_300_blocks": 0.9819889736873074,
         "below_pod": true,
         "expected_heartbeats": 95.75999999999999
@@ -37562,7 +37604,7 @@
       {
         "pi_h": 0.013399999999999999,
         "M": 74.6268656716418,
-        "monthly_gas": 2127708887,
+        "monthly_gas": 2129917727,
         "detection_at_300_blocks": 0.9825283734657762,
         "below_pod": true,
         "expected_heartbeats": 96.47999999999999
@@ -37570,7 +37612,7 @@
       {
         "pi_h": 0.013500000000000002,
         "M": 74.07407407407406,
-        "monthly_gas": 2142559320,
+        "monthly_gas": 2144943120,
         "detection_at_300_blocks": 0.9830516713686919,
         "below_pod": true,
         "expected_heartbeats": 97.20000000000002
@@ -37578,7 +37620,7 @@
       {
         "pi_h": 0.013600000000000001,
         "M": 73.52941176470588,
-        "monthly_gas": 2157409752,
+        "monthly_gas": 2159968512,
         "detection_at_300_blocks": 0.983559346501067,
         "below_pod": true,
         "expected_heartbeats": 97.92
@@ -37586,7 +37628,7 @@
       {
         "pi_h": 0.0137,
         "M": 72.99270072992701,
-        "monthly_gas": 2172260184,
+        "monthly_gas": 2174993904,
         "detection_at_300_blocks": 0.9840518637587441,
         "below_pod": true,
         "expected_heartbeats": 98.64
@@ -37594,7 +37636,7 @@
       {
         "pi_h": 0.0138,
         "M": 72.46376811594203,
-        "monthly_gas": 2187110616,
+        "monthly_gas": 2190019296,
         "detection_at_300_blocks": 0.9845296742484351,
         "below_pod": true,
         "expected_heartbeats": 99.36
@@ -37602,7 +37644,7 @@
       {
         "pi_h": 0.0139,
         "M": 71.94244604316548,
-        "monthly_gas": 2201961048,
+        "monthly_gas": 2205044688,
         "detection_at_300_blocks": 0.9849932156953785,
         "below_pod": true,
         "expected_heartbeats": 100.08
@@ -37610,7 +37652,7 @@
       {
         "pi_h": 0.014000000000000002,
         "M": 71.42857142857142,
-        "monthly_gas": 2216811480,
+        "monthly_gas": 2220070080,
         "detection_at_300_blocks": 0.9854429128389867,
         "below_pod": true,
         "expected_heartbeats": 100.80000000000001
@@ -37618,7 +37660,7 @@
       {
         "pi_h": 0.014100000000000001,
         "M": 70.92198581560282,
-        "monthly_gas": 2231661912,
+        "monthly_gas": 2235095472,
         "detection_at_300_blocks": 0.9858791778168302,
         "below_pod": true,
         "expected_heartbeats": 101.52000000000001
@@ -37626,7 +37668,7 @@
       {
         "pi_h": 0.0142,
         "M": 70.4225352112676,
-        "monthly_gas": 2246512344,
+        "monthly_gas": 2250120864,
         "detection_at_300_blocks": 0.9863024105373108,
         "below_pod": true,
         "expected_heartbeats": 102.24000000000001
@@ -37634,7 +37676,7 @@
       {
         "pi_h": 0.0143,
         "M": 69.93006993006993,
-        "monthly_gas": 2261362776,
+        "monthly_gas": 2265146256,
         "detection_at_300_blocks": 0.9867129990413449,
         "below_pod": true,
         "expected_heartbeats": 102.96000000000001
@@ -37642,7 +37684,7 @@
       {
         "pi_h": 0.0144,
         "M": 69.44444444444444,
-        "monthly_gas": 2276213208,
+        "monthly_gas": 2280171648,
         "detection_at_300_blocks": 0.9871113198533865,
         "below_pod": true,
         "expected_heartbeats": 103.67999999999999
@@ -37650,7 +37692,7 @@
       {
         "pi_h": 0.014500000000000002,
         "M": 68.9655172413793,
-        "monthly_gas": 2291063640,
+        "monthly_gas": 2295197040,
         "detection_at_300_blocks": 0.9874977383221017,
         "below_pod": true,
         "expected_heartbeats": 104.40000000000002
@@ -37658,7 +37700,7 @@
       {
         "pi_h": 0.014600000000000002,
         "M": 68.49315068493149,
-        "monthly_gas": 2305914072,
+        "monthly_gas": 2310222432,
         "detection_at_300_blocks": 0.9878726089509984,
         "below_pod": true,
         "expected_heartbeats": 105.12000000000002
@@ -37666,7 +37708,7 @@
       {
         "pi_h": 0.014700000000000001,
         "M": 68.02721088435374,
-        "monthly_gas": 2320764504,
+        "monthly_gas": 2325247824,
         "detection_at_300_blocks": 0.9882362757193078,
         "below_pod": true,
         "expected_heartbeats": 105.84
@@ -37674,7 +37716,7 @@
       {
         "pi_h": 0.0148,
         "M": 67.56756756756756,
-        "monthly_gas": 2335614936,
+        "monthly_gas": 2340273216,
         "detection_at_300_blocks": 0.9885890723933988,
         "below_pod": true,
         "expected_heartbeats": 106.56
@@ -37682,7 +37724,7 @@
       {
         "pi_h": 0.0149,
         "M": 67.11409395973155,
-        "monthly_gas": 2350465368,
+        "monthly_gas": 2355298608,
         "detection_at_300_blocks": 0.9889313228290135,
         "below_pod": true,
         "expected_heartbeats": 107.28
@@ -37690,7 +37732,7 @@
       {
         "pi_h": 0.015,
         "M": 66.66666666666667,
-        "monthly_gas": 2365315800,
+        "monthly_gas": 2370324000,
         "detection_at_300_blocks": 0.9892633412645846,
         "below_pod": true,
         "expected_heartbeats": 108
@@ -37698,7 +37740,7 @@
       {
         "pi_h": 0.015099999999999999,
         "M": 66.22516556291392,
-        "monthly_gas": 2380166231,
+        "monthly_gas": 2385349391,
         "detection_at_300_blocks": 0.9895854326058995,
         "below_pod": true,
         "expected_heartbeats": 108.71999999999998
@@ -37706,7 +37748,7 @@
       {
         "pi_h": 0.015199999999999998,
         "M": 65.78947368421053,
-        "monthly_gas": 2395016663,
+        "monthly_gas": 2400374783,
         "detection_at_300_blocks": 0.9898978927023677,
         "below_pod": true,
         "expected_heartbeats": 109.43999999999998
@@ -37714,7 +37756,7 @@
       {
         "pi_h": 0.015300000000000001,
         "M": 65.359477124183,
-        "monthly_gas": 2409867096,
+        "monthly_gas": 2415400176,
         "detection_at_300_blocks": 0.9902010086151373,
         "below_pod": true,
         "expected_heartbeats": 110.16000000000001
@@ -37722,7 +37764,7 @@
       {
         "pi_h": 0.0154,
         "M": 64.93506493506493,
-        "monthly_gas": 2424717528,
+        "monthly_gas": 2430425568,
         "detection_at_300_blocks": 0.9904950588772978,
         "below_pod": true,
         "expected_heartbeats": 110.88000000000001
@@ -37730,7 +37772,7 @@
       {
         "pi_h": 0.0155,
         "M": 64.51612903225806,
-        "monthly_gas": 2439567960,
+        "monthly_gas": 2445450960,
         "detection_at_300_blocks": 0.9907803137464063,
         "below_pod": true,
         "expected_heartbeats": 111.6
@@ -37738,7 +37780,7 @@
       {
         "pi_h": 0.0156,
         "M": 64.1025641025641,
-        "monthly_gas": 2454418391,
+        "monthly_gas": 2460476352,
         "detection_at_300_blocks": 0.9910570354495593,
         "below_pod": true,
         "expected_heartbeats": 112.32
@@ -37746,7 +37788,7 @@
       {
         "pi_h": 0.0157,
         "M": 63.69426751592357,
-        "monthly_gas": 2469268824,
+        "monthly_gas": 2475501744,
         "detection_at_300_blocks": 0.991325478421231,
         "below_pod": true,
         "expected_heartbeats": 113.03999999999999
@@ -37754,7 +37796,7 @@
       {
         "pi_h": 0.0158,
         "M": 63.291139240506325,
-        "monthly_gas": 2484119256,
+        "monthly_gas": 2490527136,
         "detection_at_300_blocks": 0.9915858895340898,
         "below_pod": true,
         "expected_heartbeats": 113.76
@@ -37762,7 +37804,7 @@
       {
         "pi_h": 0.0159,
         "M": 62.893081761006286,
-        "monthly_gas": 2498969688,
+        "monthly_gas": 2505552528,
         "detection_at_300_blocks": 0.9918385083230036,
         "below_pod": true,
         "expected_heartbeats": 114.48
@@ -37770,7 +37812,7 @@
       {
         "pi_h": 0.016,
         "M": 62.5,
-        "monthly_gas": 2513820120,
+        "monthly_gas": 2520577920,
         "detection_at_300_blocks": 0.9920835672024265,
         "below_pod": true,
         "expected_heartbeats": 115.2
@@ -37778,7 +37820,7 @@
       {
         "pi_h": 0.0161,
         "M": 62.11180124223603,
-        "monthly_gas": 2528670552,
+        "monthly_gas": 2535603311,
         "detection_at_300_blocks": 0.9923212916773703,
         "below_pod": true,
         "expected_heartbeats": 115.92
@@ -37786,7 +37828,7 @@
       {
         "pi_h": 0.0162,
         "M": 61.7283950617284,
-        "monthly_gas": 2543520984,
+        "monthly_gas": 2550628704,
         "detection_at_300_blocks": 0.9925519005481428,
         "below_pod": true,
         "expected_heartbeats": 116.64
@@ -37794,7 +37836,7 @@
       {
         "pi_h": 0.016300000000000002,
         "M": 61.349693251533736,
-        "monthly_gas": 2558371416,
+        "monthly_gas": 2565654096,
         "detection_at_300_blocks": 0.9927756061090416,
         "below_pod": true,
         "expected_heartbeats": 117.36000000000001
@@ -37802,7 +37844,7 @@
       {
         "pi_h": 0.0164,
         "M": 60.975609756097555,
-        "monthly_gas": 2573221848,
+        "monthly_gas": 2580679488,
         "detection_at_300_blocks": 0.9929926143411771,
         "below_pod": true,
         "expected_heartbeats": 118.08000000000001
@@ -37810,7 +37852,7 @@
       {
         "pi_h": 0.0165,
         "M": 60.6060606060606,
-        "monthly_gas": 2588072280,
+        "monthly_gas": 2595704880,
         "detection_at_300_blocks": 0.9932031250996004,
         "below_pod": true,
         "expected_heartbeats": 118.80000000000001
@@ -37818,7 +37860,7 @@
       {
         "pi_h": 0.0166,
         "M": 60.24096385542168,
-        "monthly_gas": 2602922711,
+        "monthly_gas": 2610730271,
         "detection_at_300_blocks": 0.9934073322949022,
         "below_pod": true,
         "expected_heartbeats": 119.52
@@ -37826,7 +37868,7 @@
       {
         "pi_h": 0.016700000000000003,
         "M": 59.88023952095807,
-        "monthly_gas": 2617773144,
+        "monthly_gas": 2625755664,
         "detection_at_300_blocks": 0.993605424069447,
         "below_pod": true,
         "expected_heartbeats": 120.24000000000002
@@ -37834,7 +37876,7 @@
       {
         "pi_h": 0.016800000000000002,
         "M": 59.52380952380952,
-        "monthly_gas": 2632623576,
+        "monthly_gas": 2640781056,
         "detection_at_300_blocks": 0.9937975829683976,
         "below_pod": true,
         "expected_heartbeats": 120.96000000000002
@@ -37842,7 +37884,7 @@
       {
         "pi_h": 0.016900000000000002,
         "M": 59.17159763313609,
-        "monthly_gas": 2647474008,
+        "monthly_gas": 2655806448,
         "detection_at_300_blocks": 0.9939839861056887,
         "below_pod": true,
         "expected_heartbeats": 121.68
@@ -37850,7 +37892,7 @@
       {
         "pi_h": 0.017,
         "M": 58.8235294117647,
-        "monthly_gas": 2662324440,
+        "monthly_gas": 2670831840,
         "detection_at_300_blocks": 0.994164805325092,
         "below_pod": true,
         "expected_heartbeats": 122.4
@@ -37858,7 +37900,7 @@
       {
         "pi_h": 0.0171,
         "M": 58.47953216374269,
-        "monthly_gas": 2677174872,
+        "monthly_gas": 2685857231,
         "detection_at_300_blocks": 0.9943402073565217,
         "below_pod": true,
         "expected_heartbeats": 123.12
@@ -37866,7 +37908,7 @@
       {
         "pi_h": 0.0172,
         "M": 58.13953488372093,
-        "monthly_gas": 2692025304,
+        "monthly_gas": 2700882624,
         "detection_at_300_blocks": 0.9945103539677204,
         "below_pod": true,
         "expected_heartbeats": 123.84
@@ -37874,7 +37916,7 @@
       {
         "pi_h": 0.0173,
         "M": 57.80346820809249,
-        "monthly_gas": 2706875736,
+        "monthly_gas": 2715908016,
         "detection_at_300_blocks": 0.9946754021114579,
         "below_pod": true,
         "expected_heartbeats": 124.56
@@ -37882,7 +37924,7 @@
       {
         "pi_h": 0.017400000000000002,
         "M": 57.47126436781608,
-        "monthly_gas": 2721726168,
+        "monthly_gas": 2730933408,
         "detection_at_300_blocks": 0.9948355040683806,
         "below_pod": true,
         "expected_heartbeats": 125.28000000000002
@@ -37890,7 +37932,7 @@
       {
         "pi_h": 0.0175,
         "M": 57.14285714285714,
-        "monthly_gas": 2736576600,
+        "monthly_gas": 2745958800,
         "detection_at_300_blocks": 0.9949908075856353,
         "below_pod": true,
         "expected_heartbeats": 126.00000000000001
@@ -37898,7 +37940,7 @@
       {
         "pi_h": 0.0176,
         "M": 56.81818181818181,
-        "monthly_gas": 2751427032,
+        "monthly_gas": 2760984192,
         "detection_at_300_blocks": 0.9951414560113933,
         "below_pod": true,
         "expected_heartbeats": 126.72000000000001
@@ -37906,7 +37948,7 @@
       {
         "pi_h": 0.0177,
         "M": 56.497175141242934,
-        "monthly_gas": 2766277463,
+        "monthly_gas": 2776009584,
         "detection_at_300_blocks": 0.9952875884253967,
         "below_pod": true,
         "expected_heartbeats": 127.44
@@ -37914,7 +37956,7 @@
       {
         "pi_h": 0.0178,
         "M": 56.17977528089888,
-        "monthly_gas": 2781127896,
+        "monthly_gas": 2791034976,
         "detection_at_300_blocks": 0.9954293397656419,
         "below_pod": true,
         "expected_heartbeats": 128.16
@@ -37922,7 +37964,7 @@
       {
         "pi_h": 0.017900000000000003,
         "M": 55.86592178770949,
-        "monthly_gas": 2795978328,
+        "monthly_gas": 2806060368,
         "detection_at_300_blocks": 0.9955668409513175,
         "below_pod": true,
         "expected_heartbeats": 128.88000000000002
@@ -37930,7 +37972,7 @@
       {
         "pi_h": 0.018000000000000002,
         "M": 55.55555555555555,
-        "monthly_gas": 2810828760,
+        "monthly_gas": 2821085760,
         "detection_at_300_blocks": 0.9957002190021034,
         "below_pod": true,
         "expected_heartbeats": 129.60000000000002
@@ -37938,7 +37980,7 @@
       {
         "pi_h": 0.0181,
         "M": 55.24861878453038,
-        "monthly_gas": 2825679192,
+        "monthly_gas": 2836111152,
         "detection_at_300_blocks": 0.9958295971539403,
         "below_pod": true,
         "expected_heartbeats": 130.32000000000002
@@ -37946,7 +37988,7 @@
       {
         "pi_h": 0.0182,
         "M": 54.94505494505494,
-        "monthly_gas": 2840529624,
+        "monthly_gas": 2851136544,
         "detection_at_300_blocks": 0.9959550949713746,
         "below_pod": true,
         "expected_heartbeats": 131.04000000000002
@@ -37954,7 +37996,7 @@
       {
         "pi_h": 0.0183,
         "M": 54.6448087431694,
-        "monthly_gas": 2855380055,
+        "monthly_gas": 2866161935,
         "detection_at_300_blocks": 0.9960768284565767,
         "below_pod": true,
         "expected_heartbeats": 131.76
@@ -37962,7 +38004,7 @@
       {
         "pi_h": 0.018400000000000003,
         "M": 54.34782608695651,
-        "monthly_gas": 2870230488,
+        "monthly_gas": 2881187328,
         "detection_at_300_blocks": 0.9961949101551352,
         "below_pod": true,
         "expected_heartbeats": 132.48000000000002
@@ -37970,7 +38012,7 @@
       {
         "pi_h": 0.018500000000000003,
         "M": 54.05405405405405,
-        "monthly_gas": 2885080920,
+        "monthly_gas": 2896212720,
         "detection_at_300_blocks": 0.9963094492587166,
         "below_pod": true,
         "expected_heartbeats": 133.20000000000002
@@ -37978,7 +38020,7 @@
       {
         "pi_h": 0.018600000000000002,
         "M": 53.76344086021505,
-        "monthly_gas": 2899931352,
+        "monthly_gas": 2911238112,
         "detection_at_300_blocks": 0.9964205517046885,
         "below_pod": true,
         "expected_heartbeats": 133.92000000000002
@@ -37986,7 +38028,7 @@
       {
         "pi_h": 0.0187,
         "M": 53.475935828877,
-        "monthly_gas": 2914781784,
+        "monthly_gas": 2926263504,
         "detection_at_300_blocks": 0.9965283202727927,
         "below_pod": true,
         "expected_heartbeats": 134.64000000000001
@@ -37994,7 +38036,7 @@
       {
         "pi_h": 0.0188,
         "M": 53.191489361702125,
-        "monthly_gas": 2929632216,
+        "monthly_gas": 2941288896,
         "detection_at_300_blocks": 0.9966328546789543,
         "below_pod": true,
         "expected_heartbeats": 135.36
@@ -38002,7 +38044,7 @@
       {
         "pi_h": 0.018900000000000004,
         "M": 52.9100529100529,
-        "monthly_gas": 2944482648,
+        "monthly_gas": 2956314288,
         "detection_at_300_blocks": 0.9967342516663158,
         "below_pod": true,
         "expected_heartbeats": 136.08
@@ -38010,7 +38052,7 @@
       {
         "pi_h": 0.019000000000000003,
         "M": 52.63157894736841,
-        "monthly_gas": 2959333080,
+        "monthly_gas": 2971339680,
         "detection_at_300_blocks": 0.9968326050935727,
         "below_pod": true,
         "expected_heartbeats": 136.8
@@ -38018,7 +38060,7 @@
       {
         "pi_h": 0.019100000000000002,
         "M": 52.35602094240837,
-        "monthly_gas": 2974183512,
+        "monthly_gas": 2986365072,
         "detection_at_300_blocks": 0.9969280060206945,
         "below_pod": true,
         "expected_heartbeats": 137.52
@@ -38026,7 +38068,7 @@
       {
         "pi_h": 0.019200000000000002,
         "M": 52.08333333333333,
-        "monthly_gas": 2989033944,
+        "monthly_gas": 3001390464,
         "detection_at_300_blocks": 0.9970205427921053,
         "below_pod": true,
         "expected_heartbeats": 138.24
@@ -38034,7 +38076,7 @@
       {
         "pi_h": 0.0193,
         "M": 51.81347150259067,
-        "monthly_gas": 3003884376,
+        "monthly_gas": 3016415856,
         "detection_at_300_blocks": 0.9971103011174015,
         "below_pod": true,
         "expected_heartbeats": 138.96
@@ -38042,7 +38084,7 @@
       {
         "pi_h": 0.019400000000000004,
         "M": 51.54639175257731,
-        "monthly_gas": 3018734808,
+        "monthly_gas": 3031441248,
         "detection_at_300_blocks": 0.9971973641496769,
         "below_pod": true,
         "expected_heartbeats": 139.68000000000004
@@ -38050,7 +38092,7 @@
       {
         "pi_h": 0.019500000000000003,
         "M": 51.28205128205127,
-        "monthly_gas": 3033585240,
+        "monthly_gas": 3046466640,
         "detection_at_300_blocks": 0.9972818125615283,
         "below_pod": true,
         "expected_heartbeats": 140.40000000000003
@@ -38058,7 +38100,7 @@
       {
         "pi_h": 0.019600000000000003,
         "M": 51.0204081632653,
-        "monthly_gas": 3048435672,
+        "monthly_gas": 3061492032,
         "detection_at_300_blocks": 0.9973637246188077,
         "below_pod": true,
         "expected_heartbeats": 141.12000000000003
@@ -38066,7 +38108,7 @@
       {
         "pi_h": 0.019700000000000002,
         "M": 50.76142131979695,
-        "monthly_gas": 3063286104,
+        "monthly_gas": 3076517424,
         "detection_at_300_blocks": 0.9974431762521899,
         "below_pod": true,
         "expected_heartbeats": 141.84
@@ -38074,7 +38116,7 @@
       {
         "pi_h": 0.0198,
         "M": 50.5050505050505,
-        "monthly_gas": 3078136536,
+        "monthly_gas": 3091542816,
         "detection_at_300_blocks": 0.9975202411266174,
         "below_pod": true,
         "expected_heartbeats": 142.56
@@ -38082,7 +38124,7 @@
       {
         "pi_h": 0.019900000000000004,
         "M": 50.251256281407024,
-        "monthly_gas": 3092986968,
+        "monthly_gas": 3106568208,
         "detection_at_300_blocks": 0.997594990708689,
         "below_pod": true,
         "expected_heartbeats": 143.28000000000003
@@ -38090,7 +38132,7 @@
       {
         "pi_h": 0.020000000000000004,
         "M": 49.99999999999999,
-        "monthly_gas": 3107837400,
+        "monthly_gas": 3121593600,
         "detection_at_300_blocks": 0.9976674943320486,
         "below_pod": true,
         "expected_heartbeats": 144.00000000000003
@@ -38098,7 +38140,7 @@
       {
         "pi_h": 0.020100000000000003,
         "M": 49.751243781094516,
-        "monthly_gas": 3122687832,
+        "monthly_gas": 3136618992,
         "detection_at_300_blocks": 0.9977378192608369,
         "below_pod": true,
         "expected_heartbeats": 144.72000000000003
@@ -38106,7 +38148,7 @@
       {
         "pi_h": 0.020200000000000003,
         "M": 49.5049504950495,
-        "monthly_gas": 3137538264,
+        "monthly_gas": 3151644384,
         "detection_at_300_blocks": 0.9978060307512607,
         "below_pod": true,
         "expected_heartbeats": 145.44000000000003
@@ -38114,7 +38156,7 @@
       {
         "pi_h": 0.0203,
         "M": 49.26108374384237,
-        "monthly_gas": 3152388696,
+        "monthly_gas": 3166669776,
         "detection_at_300_blocks": 0.9978721921113374,
         "below_pod": true,
         "expected_heartbeats": 146.16
@@ -38122,7 +38164,7 @@
       {
         "pi_h": 0.020399999999999998,
         "M": 49.01960784313726,
-        "monthly_gas": 3167239128,
+        "monthly_gas": 3181695168,
         "detection_at_300_blocks": 0.9979363647588663,
         "below_pod": true,
         "expected_heartbeats": 146.88
@@ -38130,7 +38172,7 @@
       {
         "pi_h": 0.0205,
         "M": 48.78048780487805,
-        "monthly_gas": 3182089560,
+        "monthly_gas": 3196720560,
         "detection_at_300_blocks": 0.9979986082776823,
         "below_pod": true,
         "expected_heartbeats": 147.6
@@ -38138,7 +38180,7 @@
       {
         "pi_h": 0.0206,
         "M": 48.543689320388346,
-        "monthly_gas": 3196939991,
+        "monthly_gas": 3211745952,
         "detection_at_300_blocks": 0.9980589804722397,
         "below_pod": true,
         "expected_heartbeats": 148.32
@@ -38146,7 +38188,7 @@
       {
         "pi_h": 0.0207,
         "M": 48.309178743961354,
-        "monthly_gas": 3211790424,
+        "monthly_gas": 3226771343,
         "detection_at_300_blocks": 0.9981175374205773,
         "below_pod": true,
         "expected_heartbeats": 149.04
@@ -38154,7 +38196,7 @@
       {
         "pi_h": 0.0208,
         "M": 48.07692307692308,
-        "monthly_gas": 3226640855,
+        "monthly_gas": 3241796735,
         "detection_at_300_blocks": 0.998174333525711,
         "below_pod": true,
         "expected_heartbeats": 149.76
@@ -38162,7 +38204,7 @@
       {
         "pi_h": 0.0209,
         "M": 47.84688995215311,
-        "monthly_gas": 3241491288,
+        "monthly_gas": 3256822128,
         "detection_at_300_blocks": 0.9982294215655042,
         "below_pod": true,
         "expected_heartbeats": 150.48
@@ -38170,7 +38212,7 @@
       {
         "pi_h": 0.021,
         "M": 47.61904761904761,
-        "monthly_gas": 3256341720,
+        "monthly_gas": 3271847520,
         "detection_at_300_blocks": 0.9982828527410548,
         "below_pod": true,
         "expected_heartbeats": 151.20000000000002
@@ -38178,7 +38220,7 @@
       {
         "pi_h": 0.0211,
         "M": 47.39336492890995,
-        "monthly_gas": 3271192152,
+        "monthly_gas": 3286872912,
         "detection_at_300_blocks": 0.998334676723649,
         "below_pod": true,
         "expected_heartbeats": 151.92000000000002
@@ -38186,7 +38228,7 @@
       {
         "pi_h": 0.0212,
         "M": 47.16981132075472,
-        "monthly_gas": 3286042584,
+        "monthly_gas": 3301898304,
         "detection_at_300_blocks": 0.9983849417003202,
         "below_pod": true,
         "expected_heartbeats": 152.64000000000001
@@ -38194,7 +38236,7 @@
       {
         "pi_h": 0.0213,
         "M": 46.948356807511736,
-        "monthly_gas": 3300893015,
+        "monthly_gas": 3316923695,
         "detection_at_300_blocks": 0.9984336944180561,
         "below_pod": true,
         "expected_heartbeats": 153.35999999999999
@@ -38202,7 +38244,7 @@
       {
         "pi_h": 0.0214,
         "M": 46.728971962616825,
-        "monthly_gas": 3315743447,
+        "monthly_gas": 3331949088,
         "detection_at_300_blocks": 0.9984809802266923,
         "below_pod": true,
         "expected_heartbeats": 154.07999999999998
@@ -38210,7 +38252,7 @@
       {
         "pi_h": 0.021500000000000002,
         "M": 46.51162790697674,
-        "monthly_gas": 3330593880,
+        "monthly_gas": 3346974480,
         "detection_at_300_blocks": 0.9985268431205346,
         "below_pod": true,
         "expected_heartbeats": 154.8
@@ -38218,7 +38260,7 @@
       {
         "pi_h": 0.0216,
         "M": 46.29629629629629,
-        "monthly_gas": 3345444312,
+        "monthly_gas": 3361999872,
         "detection_at_300_blocks": 0.9985713257787433,
         "below_pod": true,
         "expected_heartbeats": 155.52
@@ -38226,7 +38268,7 @@
       {
         "pi_h": 0.0217,
         "M": 46.08294930875576,
-        "monthly_gas": 3360294744,
+        "monthly_gas": 3377025264,
         "detection_at_300_blocks": 0.998614469604519,
         "below_pod": true,
         "expected_heartbeats": 156.24
@@ -38234,7 +38276,7 @@
       {
         "pi_h": 0.0218,
         "M": 45.87155963302752,
-        "monthly_gas": 3375145176,
+        "monthly_gas": 3392050656,
         "detection_at_300_blocks": 0.9986563147631256,
         "below_pod": true,
         "expected_heartbeats": 156.96
@@ -38242,7 +38284,7 @@
       {
         "pi_h": 0.0219,
         "M": 45.662100456621005,
-        "monthly_gas": 3389995608,
+        "monthly_gas": 3407076048,
         "detection_at_300_blocks": 0.9986969002187821,
         "below_pod": true,
         "expected_heartbeats": 157.68
@@ -38250,7 +38292,7 @@
       {
         "pi_h": 0.022000000000000002,
         "M": 45.45454545454545,
-        "monthly_gas": 3404846040,
+        "monthly_gas": 3422101440,
         "detection_at_300_blocks": 0.9987362637704607,
         "below_pod": true,
         "expected_heartbeats": 158.4
@@ -38258,7 +38300,7 @@
       {
         "pi_h": 0.0221,
         "M": 45.24886877828054,
-        "monthly_gas": 3419696472,
+        "monthly_gas": 3437126831,
         "detection_at_300_blocks": 0.9987744420866196,
         "below_pod": true,
         "expected_heartbeats": 159.12
@@ -38266,7 +38308,7 @@
       {
         "pi_h": 0.0222,
         "M": 45.04504504504504,
-        "monthly_gas": 3434546904,
+        "monthly_gas": 3452152224,
         "detection_at_300_blocks": 0.9988114707389047,
         "below_pod": true,
         "expected_heartbeats": 159.84
@@ -38274,7 +38316,7 @@
       {
         "pi_h": 0.0223,
         "M": 44.84304932735426,
-        "monthly_gas": 3449397336,
+        "monthly_gas": 3467177616,
         "detection_at_300_blocks": 0.9988473842348504,
         "below_pod": true,
         "expected_heartbeats": 160.56
@@ -38282,7 +38324,7 @@
       {
         "pi_h": 0.0224,
         "M": 44.642857142857146,
-        "monthly_gas": 3464247768,
+        "monthly_gas": 3482203008,
         "detection_at_300_blocks": 0.9988822160496073,
         "below_pod": true,
         "expected_heartbeats": 161.28
@@ -38290,7 +38332,7 @@
       {
         "pi_h": 0.022500000000000003,
         "M": 44.444444444444436,
-        "monthly_gas": 3479098200,
+        "monthly_gas": 3497228400,
         "detection_at_300_blocks": 0.9989159986567282,
         "below_pod": true,
         "expected_heartbeats": 162.00000000000003
@@ -38298,7 +38340,7 @@
       {
         "pi_h": 0.022600000000000002,
         "M": 44.24778761061947,
-        "monthly_gas": 3493948632,
+        "monthly_gas": 3512253792,
         "detection_at_300_blocks": 0.9989487635580391,
         "below_pod": true,
         "expected_heartbeats": 162.72000000000003
@@ -38306,7 +38348,7 @@
       {
         "pi_h": 0.0227,
         "M": 44.052863436123346,
-        "monthly_gas": 3508799063,
+        "monthly_gas": 3527279184,
         "detection_at_300_blocks": 0.9989805413126207,
         "below_pod": true,
         "expected_heartbeats": 163.44
@@ -38314,7 +38356,7 @@
       {
         "pi_h": 0.0228,
         "M": 43.859649122807014,
-        "monthly_gas": 3523649496,
+        "monthly_gas": 3542304576,
         "detection_at_300_blocks": 0.9990113615649308,
         "below_pod": true,
         "expected_heartbeats": 164.16
@@ -38322,7 +38364,7 @@
       {
         "pi_h": 0.0229,
         "M": 43.66812227074236,
-        "monthly_gas": 3538499928,
+        "monthly_gas": 3557329968,
         "detection_at_300_blocks": 0.999041253072088,
         "below_pod": true,
         "expected_heartbeats": 164.88
@@ -38330,7 +38372,7 @@
       {
         "pi_h": 0.023000000000000003,
         "M": 43.47826086956521,
-        "monthly_gas": 3553350360,
+        "monthly_gas": 3572355360,
         "detection_at_300_blocks": 0.9990702437303466,
         "below_pod": true,
         "expected_heartbeats": 165.60000000000002
@@ -38338,7 +38380,7 @@
       {
         "pi_h": 0.023100000000000002,
         "M": 43.290043290043286,
-        "monthly_gas": 3568200792,
+        "monthly_gas": 3587380752,
         "detection_at_300_blocks": 0.9990983606007819,
         "below_pod": true,
         "expected_heartbeats": 166.32000000000002
@@ -38346,7 +38388,7 @@
       {
         "pi_h": 0.023200000000000002,
         "M": 43.103448275862064,
-        "monthly_gas": 3583051224,
+        "monthly_gas": 3602406144,
         "detection_at_300_blocks": 0.9991256299342137,
         "below_pod": true,
         "expected_heartbeats": 167.04000000000002
@@ -38354,7 +38396,7 @@
       {
         "pi_h": 0.0233,
         "M": 42.918454935622314,
-        "monthly_gas": 3597901656,
+        "monthly_gas": 3617431536,
         "detection_at_300_blocks": 0.9991520771953867,
         "below_pod": true,
         "expected_heartbeats": 167.76000000000002
@@ -38362,7 +38404,7 @@
       {
         "pi_h": 0.0234,
         "M": 42.73504273504273,
-        "monthly_gas": 3612752088,
+        "monthly_gas": 3632456928,
         "detection_at_300_blocks": 0.999177727086433,
         "below_pod": true,
         "expected_heartbeats": 168.48000000000002
@@ -38370,7 +38412,7 @@
       {
         "pi_h": 0.023500000000000004,
         "M": 42.553191489361694,
-        "monthly_gas": 3627602520,
+        "monthly_gas": 3647482320,
         "detection_at_300_blocks": 0.9992026035696361,
         "below_pod": true,
         "expected_heartbeats": 169.20000000000002
@@ -38378,7 +38420,7 @@
       {
         "pi_h": 0.023600000000000003,
         "M": 42.3728813559322,
-        "monthly_gas": 3642452952,
+        "monthly_gas": 3662507712,
         "detection_at_300_blocks": 0.9992267298895168,
         "below_pod": true,
         "expected_heartbeats": 169.92000000000002
@@ -38386,7 +38428,7 @@
       {
         "pi_h": 0.023700000000000002,
         "M": 42.19409282700421,
-        "monthly_gas": 3657303384,
+        "monthly_gas": 3677533104,
         "detection_at_300_blocks": 0.999250128594264,
         "below_pod": true,
         "expected_heartbeats": 170.64000000000001
@@ -38394,7 +38436,7 @@
       {
         "pi_h": 0.0238,
         "M": 42.016806722689076,
-        "monthly_gas": 3672153816,
+        "monthly_gas": 3692558496,
         "detection_at_300_blocks": 0.9992728215565253,
         "below_pod": true,
         "expected_heartbeats": 171.36
@@ -38402,7 +38444,7 @@
       {
         "pi_h": 0.0239,
         "M": 41.84100418410041,
-        "monthly_gas": 3687004248,
+        "monthly_gas": 3707583888,
         "detection_at_300_blocks": 0.9992948299935807,
         "below_pod": true,
         "expected_heartbeats": 172.08
@@ -38410,7 +38452,7 @@
       {
         "pi_h": 0.024000000000000004,
         "M": 41.66666666666666,
-        "monthly_gas": 3701854680,
+        "monthly_gas": 3722609280,
         "detection_at_300_blocks": 0.9993161744869148,
         "below_pod": true,
         "expected_heartbeats": 172.80000000000004
@@ -38418,7 +38460,7 @@
       {
         "pi_h": 0.024100000000000003,
         "M": 41.49377593360995,
-        "monthly_gas": 3716705112,
+        "monthly_gas": 3737634672,
         "detection_at_300_blocks": 0.9993368750012072,
         "below_pod": true,
         "expected_heartbeats": 173.52
@@ -38426,7 +38468,7 @@
       {
         "pi_h": 0.024200000000000003,
         "M": 41.32231404958677,
-        "monthly_gas": 3731555544,
+        "monthly_gas": 3752660064,
         "detection_at_300_blocks": 0.9993569509027567,
         "below_pod": true,
         "expected_heartbeats": 174.24
@@ -38434,7 +38476,7 @@
       {
         "pi_h": 0.024300000000000002,
         "M": 41.15226337448559,
-        "monthly_gas": 3746405976,
+        "monthly_gas": 3767685456,
         "detection_at_300_blocks": 0.9993764209773573,
         "below_pod": true,
         "expected_heartbeats": 174.96
@@ -38442,7 +38484,7 @@
       {
         "pi_h": 0.0244,
         "M": 40.983606557377044,
-        "monthly_gas": 3761256408,
+        "monthly_gas": 3782710848,
         "detection_at_300_blocks": 0.9993953034476427,
         "below_pod": true,
         "expected_heartbeats": 175.68
@@ -38450,7 +38492,7 @@
       {
         "pi_h": 0.0245,
         "M": 40.816326530612244,
-        "monthly_gas": 3776106840,
+        "monthly_gas": 3797736240,
         "detection_at_300_blocks": 0.9994136159899129,
         "below_pod": true,
         "expected_heartbeats": 176.4
@@ -38458,7 +38500,7 @@
       {
         "pi_h": 0.0246,
         "M": 40.65040650406504,
-        "monthly_gas": 3790957272,
+        "monthly_gas": 3812761631,
         "detection_at_300_blocks": 0.9994313757504601,
         "below_pod": true,
         "expected_heartbeats": 177.12
@@ -38466,7 +38508,7 @@
       {
         "pi_h": 0.0247,
         "M": 40.48582995951417,
-        "monthly_gas": 3805807704,
+        "monthly_gas": 3827787024,
         "detection_at_300_blocks": 0.99944859936141,
         "below_pod": true,
         "expected_heartbeats": 177.84
@@ -38474,7 +38516,7 @@
       {
         "pi_h": 0.0248,
         "M": 40.32258064516129,
-        "monthly_gas": 3820658136,
+        "monthly_gas": 3842812416,
         "detection_at_300_blocks": 0.9994653029560877,
         "below_pod": true,
         "expected_heartbeats": 178.56
@@ -38482,7 +38524,7 @@
       {
         "pi_h": 0.0249,
         "M": 40.16064257028113,
-        "monthly_gas": 3835508568,
+        "monthly_gas": 3857837808,
         "detection_at_300_blocks": 0.9994815021839301,
         "below_pod": true,
         "expected_heartbeats": 179.28
@@ -38490,7 +38532,7 @@
       {
         "pi_h": 0.025,
         "M": 40,
-        "monthly_gas": 3850359000,
+        "monthly_gas": 3872863200,
         "detection_at_300_blocks": 0.9994972122249501,
         "below_pod": true,
         "expected_heartbeats": 180
@@ -38500,67 +38542,858 @@
       {
         "test": "testContAuditGas",
         "function": "contAudit",
-        "gas": 46894,
+        "gas": 89918,
         "source": "forge gas report function avg"
       },
       {
         "test": "testHBRespondGas",
         "function": "hbRespond",
-        "gas": 34376,
+        "gas": 34781,
         "source": "forge gas report function avg"
       },
       {
-        "test": "testPoDBaselineGas",
-        "function": "podBaseline",
-        "gas": 50465,
+        "test": "testPoDMineBountyGas",
+        "function": "podMineBounty",
+        "gas": 382010,
         "source": "forge gas report function avg"
       },
       {
         "test": "testDisputeGas",
         "function": "sentDispute",
-        "gas": 39209,
+        "gas": 79892,
         "source": "forge gas report function avg"
       },
       {
         "test": "testSentProveGas",
         "function": "sentProve",
-        "gas": 64836,
+        "gas": 69429,
         "source": "forge gas report function avg"
       },
       {
         "test": "testSentReportGas",
         "function": "sentReport",
-        "gas": 68861,
+        "gas": 54915,
         "source": "forge gas report function avg"
       },
       {
         "test": "testTrackInitGas",
         "function": "trackInit",
-        "gas": 113830,
+        "gas": 49359,
         "source": "forge gas report function avg"
       }
     ],
     "foundry_status": "PASS: parsed forge test --gas-report function averages",
     "measurement_provenance": {
       "foundry_test_level_gas": {
-        "testContAuditGas": 46894,
-        "testDisputeGas": 39209,
-        "testHBRespondGas": 34376,
-        "testPoDBaselineGas": 50465,
-        "testSentProveGas": 64836,
-        "testSentReportGas": 68861,
-        "testTrackInitGas": 113830
+        "testContAuditGas": 89918,
+        "testDisputeGas": 79892,
+        "testHBRespondGas": 34781,
+        "testPoDMineBountyGas": 382010,
+        "testSentProveGas": 69429,
+        "testSentReportGas": 54915,
+        "testTrackInitGas": 49359
       },
-      "no_paper_table_fallback": true,
-      "note": "Normal-path Gas figures use local Foundry function-level averages. SentProve/VerSeg adds the Chapter 3 bounded VerSeg replay calibration because that row covers the reused adjudication interface rather than only the proof-submission wrapper.",
-      "pod_monthly_formula": "monthly_pod_epochs * pod_theta * validator_count * local PoD baseline gas",
+      "measurement_status": "checked",
+      "note": "Normal-path Gas figures use Foundry function-level averages. SentProve/VerSeg adds the Chapter 3 bounded VerSeg replay model because that row covers the reused adjudication interface rather than only the proof-submission wrapper.",
+      "pod_monthly_formula": "monthly_pod_epochs * pod_theta * validator_count * podMineBounty gas",
+      "pod_paper_mine_bounty_average_gas": 380000,
+      "pod_protocol_trace": "gas_trace.pod_experiment_trace",
       "pod_validator_count": 20,
-      "sent_prove_submission_gas": 64836,
+      "sent_prove_submission_gas": 69429,
       "source": "forge test --gas-report function-level average gas",
-      "verseg_replay_formula": "1.2 * b, using Chapter 3 bounded VerSeg replay calibration",
+      "verseg_replay_formula": "1.2 * b, using Chapter 3 bounded VerSeg replay model",
       "verseg_replay_gas": 1200000
+    },
+    "pod_experiment_trace": {
+      "paper_source": "Proof of Diligence: Cryptoeconomic Security for Rollups, Sections 4.1 and 6.2",
+      "contract_model": [
+        "OperatorRegistry-style watchtower identity and stake weight",
+        "BountyManager-style hash-minimum/VRF proof submission for each epoch",
+        "AlertManager-style invalid assertion/proof detection path"
+      ],
+      "protocol_steps": [
+        "watchtower recomputes the posted L2 state assertion",
+        "watchtower builds an execution trace Merkle root from transaction execution leaves",
+        "watchtower computes a VRF digest/proof bound to the state root, trace root, epoch, and identity",
+        "other watchtowers can recompute the roots and reject lazy or forged proofs"
+      ],
+      "watchtower_count": 10,
+      "epoch_count": 4,
+      "theta": 0.9,
+      "winner_count": 1,
+      "invalid_proof_count": 1,
+      "honest_all_valid": true,
+      "lazy_detected": true,
+      "epochs": [
+        {
+          "epoch": 1,
+          "watchtower_id": 0,
+          "assertion_root": "fa0219ea4fbcc7818201b980a3d6e588485e24c5191d2fc268c8c9d082e2bb06",
+          "recomputed_state_root": "fa0219ea4fbcc7818201b980a3d6e588485e24c5191d2fc268c8c9d082e2bb06",
+          "trace_root": "2144ae1a5cff7a739e3d40c51569070398615c804c6cc4807362106c9fc78124",
+          "vrf_digest": "ac3f44417a7883d2070e15a3e5f4247a01066a96bab7467d920faaf51f069355",
+          "vrf_proof": "8e2a5a89d86b01ef6a7c86a428b21aba5156b99a9b42f2a950b595c232604994",
+          "eligible": false,
+          "valid_proof": true,
+          "behavior": "diligent"
+        },
+        {
+          "epoch": 1,
+          "watchtower_id": 1,
+          "assertion_root": "fa0219ea4fbcc7818201b980a3d6e588485e24c5191d2fc268c8c9d082e2bb06",
+          "recomputed_state_root": "fa0219ea4fbcc7818201b980a3d6e588485e24c5191d2fc268c8c9d082e2bb06",
+          "trace_root": "2144ae1a5cff7a739e3d40c51569070398615c804c6cc4807362106c9fc78124",
+          "vrf_digest": "8ce7e714b6b228105fa98db021bab28dc2e76fc38a91f5e8feac4176ef9662ae",
+          "vrf_proof": "1688525a64af2bfde341d71bf75e4b59e009925c93ebe3d9ca99140bc48b2e0e",
+          "eligible": false,
+          "valid_proof": true,
+          "behavior": "diligent"
+        },
+        {
+          "epoch": 1,
+          "watchtower_id": 2,
+          "assertion_root": "fa0219ea4fbcc7818201b980a3d6e588485e24c5191d2fc268c8c9d082e2bb06",
+          "recomputed_state_root": "fa0219ea4fbcc7818201b980a3d6e588485e24c5191d2fc268c8c9d082e2bb06",
+          "trace_root": "2144ae1a5cff7a739e3d40c51569070398615c804c6cc4807362106c9fc78124",
+          "vrf_digest": "3674ae13fc4773bab76bccbf2fc50ec0f0662388cd44c5fe818713a48cb25965",
+          "vrf_proof": "f879f9111474abd3f7e307131498f5ceec2b77868ddd216e86a6b51a9fb229b6",
+          "eligible": false,
+          "valid_proof": true,
+          "behavior": "diligent"
+        },
+        {
+          "epoch": 1,
+          "watchtower_id": 3,
+          "assertion_root": "fa0219ea4fbcc7818201b980a3d6e588485e24c5191d2fc268c8c9d082e2bb06",
+          "recomputed_state_root": "fa0219ea4fbcc7818201b980a3d6e588485e24c5191d2fc268c8c9d082e2bb06",
+          "trace_root": "2144ae1a5cff7a739e3d40c51569070398615c804c6cc4807362106c9fc78124",
+          "vrf_digest": "0cfc3d9ee008b4aec27f1611560d3b44b67ba7403b783bf7e14417c3f16fcffb",
+          "vrf_proof": "69bcf239ead5e71d648dd8bf5769b972541f802e4063f75c6068015f8d990dcf",
+          "eligible": true,
+          "valid_proof": true,
+          "behavior": "diligent"
+        },
+        {
+          "epoch": 1,
+          "watchtower_id": 4,
+          "assertion_root": "fa0219ea4fbcc7818201b980a3d6e588485e24c5191d2fc268c8c9d082e2bb06",
+          "recomputed_state_root": "fa0219ea4fbcc7818201b980a3d6e588485e24c5191d2fc268c8c9d082e2bb06",
+          "trace_root": "2144ae1a5cff7a739e3d40c51569070398615c804c6cc4807362106c9fc78124",
+          "vrf_digest": "a1aa459e6b1f4b4f3d2a3454e7dc841575dc6c7c9e483875027ecef27a9813ee",
+          "vrf_proof": "4eef01f25451f18764c6f1a31b43f0f7a265271651fedfa4a164e496a4ef7044",
+          "eligible": false,
+          "valid_proof": true,
+          "behavior": "diligent"
+        },
+        {
+          "epoch": 1,
+          "watchtower_id": 5,
+          "assertion_root": "fa0219ea4fbcc7818201b980a3d6e588485e24c5191d2fc268c8c9d082e2bb06",
+          "recomputed_state_root": "fa0219ea4fbcc7818201b980a3d6e588485e24c5191d2fc268c8c9d082e2bb06",
+          "trace_root": "2144ae1a5cff7a739e3d40c51569070398615c804c6cc4807362106c9fc78124",
+          "vrf_digest": "186d89276d4a797c2b9f8d7fdbe51cc6e2c40ef5f4a15ac164302ab6ed972277",
+          "vrf_proof": "64b9e80f09786f7e979f1dd7ac7a884ba1293a20768c110b3ce90b93ee10f03e",
+          "eligible": false,
+          "valid_proof": true,
+          "behavior": "diligent"
+        },
+        {
+          "epoch": 1,
+          "watchtower_id": 6,
+          "assertion_root": "fa0219ea4fbcc7818201b980a3d6e588485e24c5191d2fc268c8c9d082e2bb06",
+          "recomputed_state_root": "fa0219ea4fbcc7818201b980a3d6e588485e24c5191d2fc268c8c9d082e2bb06",
+          "trace_root": "2144ae1a5cff7a739e3d40c51569070398615c804c6cc4807362106c9fc78124",
+          "vrf_digest": "a806f341e99e20b309e0a57ad001b639429d75f7245a93c534878cab3d45a55b",
+          "vrf_proof": "5cbf1db7bb3bff75b8e4a0e8214b5ee36342d52e80983260baacfeafaa87fa8f",
+          "eligible": false,
+          "valid_proof": true,
+          "behavior": "diligent"
+        },
+        {
+          "epoch": 1,
+          "watchtower_id": 7,
+          "assertion_root": "fa0219ea4fbcc7818201b980a3d6e588485e24c5191d2fc268c8c9d082e2bb06",
+          "recomputed_state_root": "fa0219ea4fbcc7818201b980a3d6e588485e24c5191d2fc268c8c9d082e2bb06",
+          "trace_root": "2144ae1a5cff7a739e3d40c51569070398615c804c6cc4807362106c9fc78124",
+          "vrf_digest": "67cbf46a9243cc7977fbaa2e41692d56f3bb819001daba075acd3a10e9dac678",
+          "vrf_proof": "f3f4fe1bb6be30b8d7834648a2f63ff7e284f940c342a09c056f7f89d5aeb432",
+          "eligible": false,
+          "valid_proof": true,
+          "behavior": "diligent"
+        },
+        {
+          "epoch": 1,
+          "watchtower_id": 8,
+          "assertion_root": "fa0219ea4fbcc7818201b980a3d6e588485e24c5191d2fc268c8c9d082e2bb06",
+          "recomputed_state_root": "fa0219ea4fbcc7818201b980a3d6e588485e24c5191d2fc268c8c9d082e2bb06",
+          "trace_root": "2144ae1a5cff7a739e3d40c51569070398615c804c6cc4807362106c9fc78124",
+          "vrf_digest": "955239208b254eda36aac64671533e029c27fed033f0a51e2257cc28eac1c911",
+          "vrf_proof": "28a7cbfa1cf403d2bc0068f1d19e3f17c577c61d40083f5fb4c2bf3e27a5beed",
+          "eligible": false,
+          "valid_proof": true,
+          "behavior": "diligent"
+        },
+        {
+          "epoch": 1,
+          "watchtower_id": 9,
+          "assertion_root": "fa0219ea4fbcc7818201b980a3d6e588485e24c5191d2fc268c8c9d082e2bb06",
+          "recomputed_state_root": "fa0219ea4fbcc7818201b980a3d6e588485e24c5191d2fc268c8c9d082e2bb06",
+          "trace_root": "2144ae1a5cff7a739e3d40c51569070398615c804c6cc4807362106c9fc78124",
+          "vrf_digest": "b2d896c03412a4eea8952cce6861d5bc6beac2eebec2a487145cb21d5895eb5b",
+          "vrf_proof": "a1a68d5b406aec85c5f75b661c5b0ef159348228f65bc2703054360963153004",
+          "eligible": false,
+          "valid_proof": true,
+          "behavior": "diligent"
+        },
+        {
+          "epoch": 2,
+          "watchtower_id": 0,
+          "assertion_root": "7f34e0b998ff79746e4fb2be7ad3173cfd4776916b6586262ae180157b1f65f0",
+          "recomputed_state_root": "7f34e0b998ff79746e4fb2be7ad3173cfd4776916b6586262ae180157b1f65f0",
+          "trace_root": "539b1ee18018eb0d1b1ede9f8eeef43e1efb9532b1e28aec685935f441d7f0c6",
+          "vrf_digest": "cc35edf2598c324bdc3cdbcd845a13b629225c78f49e46324a2a047a925674de",
+          "vrf_proof": "a80b04cac10896357d22b157f5033de18e966805a0a8caabc4309c3b1b35fff1",
+          "eligible": false,
+          "valid_proof": true,
+          "behavior": "diligent"
+        },
+        {
+          "epoch": 2,
+          "watchtower_id": 1,
+          "assertion_root": "7f34e0b998ff79746e4fb2be7ad3173cfd4776916b6586262ae180157b1f65f0",
+          "recomputed_state_root": "7f34e0b998ff79746e4fb2be7ad3173cfd4776916b6586262ae180157b1f65f0",
+          "trace_root": "539b1ee18018eb0d1b1ede9f8eeef43e1efb9532b1e28aec685935f441d7f0c6",
+          "vrf_digest": "4c35f767a1efc5d0b2925033c1a03459a91a128687f716123e6fb1464c84284e",
+          "vrf_proof": "4237278ea25ac815048b8b99e32800cbfe9e3d47902b68047e4eb02129e5039e",
+          "eligible": false,
+          "valid_proof": true,
+          "behavior": "diligent"
+        },
+        {
+          "epoch": 2,
+          "watchtower_id": 2,
+          "assertion_root": "7f34e0b998ff79746e4fb2be7ad3173cfd4776916b6586262ae180157b1f65f0",
+          "recomputed_state_root": "7f34e0b998ff79746e4fb2be7ad3173cfd4776916b6586262ae180157b1f65f0",
+          "trace_root": "539b1ee18018eb0d1b1ede9f8eeef43e1efb9532b1e28aec685935f441d7f0c6",
+          "vrf_digest": "ed797584979917e7ee2ce54c52b6a51dbe167f4374e788cccaf73eb622387cfa",
+          "vrf_proof": "a78c39737fa67166c379a148acc5f062c964e7d2b18e5859eec8e2d5660cb7ed",
+          "eligible": false,
+          "valid_proof": true,
+          "behavior": "diligent"
+        },
+        {
+          "epoch": 2,
+          "watchtower_id": 3,
+          "assertion_root": "7f34e0b998ff79746e4fb2be7ad3173cfd4776916b6586262ae180157b1f65f0",
+          "recomputed_state_root": "7f34e0b998ff79746e4fb2be7ad3173cfd4776916b6586262ae180157b1f65f0",
+          "trace_root": "539b1ee18018eb0d1b1ede9f8eeef43e1efb9532b1e28aec685935f441d7f0c6",
+          "vrf_digest": "9e200a35196972f13e8a3bf4d6e6f82a6de431ebcb68a41df8de82abdf5d17c5",
+          "vrf_proof": "a364761f6c540d9ddeba943b2d220182f673a60750637742f259a4ae805feee0",
+          "eligible": false,
+          "valid_proof": true,
+          "behavior": "diligent"
+        },
+        {
+          "epoch": 2,
+          "watchtower_id": 4,
+          "assertion_root": "7f34e0b998ff79746e4fb2be7ad3173cfd4776916b6586262ae180157b1f65f0",
+          "recomputed_state_root": "7f34e0b998ff79746e4fb2be7ad3173cfd4776916b6586262ae180157b1f65f0",
+          "trace_root": "539b1ee18018eb0d1b1ede9f8eeef43e1efb9532b1e28aec685935f441d7f0c6",
+          "vrf_digest": "314472e45698a21e08dd9fedc302a63ec8e4bdb5c0f0ac4a047dc61b1b727e8f",
+          "vrf_proof": "158e32b63b0d6476ef05372cf1d5b27219545a64daeb16a35a86da425e1f783f",
+          "eligible": false,
+          "valid_proof": true,
+          "behavior": "diligent"
+        },
+        {
+          "epoch": 2,
+          "watchtower_id": 5,
+          "assertion_root": "7f34e0b998ff79746e4fb2be7ad3173cfd4776916b6586262ae180157b1f65f0",
+          "recomputed_state_root": "7f34e0b998ff79746e4fb2be7ad3173cfd4776916b6586262ae180157b1f65f0",
+          "trace_root": "539b1ee18018eb0d1b1ede9f8eeef43e1efb9532b1e28aec685935f441d7f0c6",
+          "vrf_digest": "cb3cd9cee7050939b5e8dd42909172ff4c6734fbfd45a52d819d12753a30e30c",
+          "vrf_proof": "509355d7c9e1cf95b74a6616d1401d02f9eec1acd4df0b175e7c2f8d4d5608f3",
+          "eligible": false,
+          "valid_proof": true,
+          "behavior": "diligent"
+        },
+        {
+          "epoch": 2,
+          "watchtower_id": 6,
+          "assertion_root": "7f34e0b998ff79746e4fb2be7ad3173cfd4776916b6586262ae180157b1f65f0",
+          "recomputed_state_root": "7f34e0b998ff79746e4fb2be7ad3173cfd4776916b6586262ae180157b1f65f0",
+          "trace_root": "539b1ee18018eb0d1b1ede9f8eeef43e1efb9532b1e28aec685935f441d7f0c6",
+          "vrf_digest": "70a00f4e8019c3cd1c44e7039f0848f00145b0fce5f8f53978f35a211f50127f",
+          "vrf_proof": "ac3b6783df681f8d592c77d7d63b6e12923aa96246a6213c6da8d5b7b85ab082",
+          "eligible": false,
+          "valid_proof": true,
+          "behavior": "diligent"
+        },
+        {
+          "epoch": 2,
+          "watchtower_id": 7,
+          "assertion_root": "7f34e0b998ff79746e4fb2be7ad3173cfd4776916b6586262ae180157b1f65f0",
+          "recomputed_state_root": "7f34e0b998ff79746e4fb2be7ad3173cfd4776916b6586262ae180157b1f65f0",
+          "trace_root": "539b1ee18018eb0d1b1ede9f8eeef43e1efb9532b1e28aec685935f441d7f0c6",
+          "vrf_digest": "f2927cd1429fba88ce5c87658878fb12b815ad7aa7ef17b334349970d4fb95fc",
+          "vrf_proof": "764cf1244583ddffb15bff4161d4684321733cc3fcadef4ebd62d6c5b9dc8a6d",
+          "eligible": false,
+          "valid_proof": true,
+          "behavior": "diligent"
+        },
+        {
+          "epoch": 2,
+          "watchtower_id": 8,
+          "assertion_root": "7f34e0b998ff79746e4fb2be7ad3173cfd4776916b6586262ae180157b1f65f0",
+          "recomputed_state_root": "7f34e0b998ff79746e4fb2be7ad3173cfd4776916b6586262ae180157b1f65f0",
+          "trace_root": "539b1ee18018eb0d1b1ede9f8eeef43e1efb9532b1e28aec685935f441d7f0c6",
+          "vrf_digest": "4512c4fafc5436ef31f05a2cab02a42c984b35d8e6b7c8a9571254ae1be07d53",
+          "vrf_proof": "774c42610412cc5e18b0f3fba873851b97dbbf527426f30b1257d8700ff44ca9",
+          "eligible": false,
+          "valid_proof": true,
+          "behavior": "diligent"
+        },
+        {
+          "epoch": 2,
+          "watchtower_id": 9,
+          "assertion_root": "7f34e0b998ff79746e4fb2be7ad3173cfd4776916b6586262ae180157b1f65f0",
+          "recomputed_state_root": "7f34e0b998ff79746e4fb2be7ad3173cfd4776916b6586262ae180157b1f65f0",
+          "trace_root": "539b1ee18018eb0d1b1ede9f8eeef43e1efb9532b1e28aec685935f441d7f0c6",
+          "vrf_digest": "7efc261c916cbc6e3c5193e58cd8c17995f0273a43c0c3c54d2d713d5fd49bf7",
+          "vrf_proof": "d53d55a5a1317c254bf07868f563702ea9087c7524b864027fa47ccf24cbe7b0",
+          "eligible": false,
+          "valid_proof": true,
+          "behavior": "diligent"
+        },
+        {
+          "epoch": 3,
+          "watchtower_id": 0,
+          "assertion_root": "d1b5a1a924f6e7b3f4fd9742876eeaf5d032f154ebd908f551746e38c46e5055",
+          "recomputed_state_root": "d1b5a1a924f6e7b3f4fd9742876eeaf5d032f154ebd908f551746e38c46e5055",
+          "trace_root": "dd449a7557fbaabf74fd930ba5390d165e356185fc8519fba6ef03764fca34a6",
+          "vrf_digest": "9035245f7752e6a1d5ac2b240a90631b7eeecaa3dd9ecc868c92c0361e5d6b39",
+          "vrf_proof": "99f5e4dd8d4e05541baadf81c002d940e4167320a808ba3e936e4631a4aa0197",
+          "eligible": false,
+          "valid_proof": true,
+          "behavior": "diligent"
+        },
+        {
+          "epoch": 3,
+          "watchtower_id": 1,
+          "assertion_root": "d1b5a1a924f6e7b3f4fd9742876eeaf5d032f154ebd908f551746e38c46e5055",
+          "recomputed_state_root": "d1b5a1a924f6e7b3f4fd9742876eeaf5d032f154ebd908f551746e38c46e5055",
+          "trace_root": "dd449a7557fbaabf74fd930ba5390d165e356185fc8519fba6ef03764fca34a6",
+          "vrf_digest": "604cf561f32456efa8bdf34b3a744ea11433a15637b43e26c82c622216bd1b00",
+          "vrf_proof": "3c088bea3c7760361c4eb04f72b19d41082e89274b56fa48002cb4c719b2e2f1",
+          "eligible": false,
+          "valid_proof": true,
+          "behavior": "diligent"
+        },
+        {
+          "epoch": 3,
+          "watchtower_id": 2,
+          "assertion_root": "d1b5a1a924f6e7b3f4fd9742876eeaf5d032f154ebd908f551746e38c46e5055",
+          "recomputed_state_root": "d1b5a1a924f6e7b3f4fd9742876eeaf5d032f154ebd908f551746e38c46e5055",
+          "trace_root": "dd449a7557fbaabf74fd930ba5390d165e356185fc8519fba6ef03764fca34a6",
+          "vrf_digest": "4752afc17f58584102912f5e01bd5d1e83303d78ed926db551716a64a603c09a",
+          "vrf_proof": "10ea0e3c368e9cbe3aeb4adf4fdeb22b6921b7fe9c94e4659b2629e14350a1e3",
+          "eligible": false,
+          "valid_proof": true,
+          "behavior": "diligent"
+        },
+        {
+          "epoch": 3,
+          "watchtower_id": 3,
+          "assertion_root": "d1b5a1a924f6e7b3f4fd9742876eeaf5d032f154ebd908f551746e38c46e5055",
+          "recomputed_state_root": "d1b5a1a924f6e7b3f4fd9742876eeaf5d032f154ebd908f551746e38c46e5055",
+          "trace_root": "dd449a7557fbaabf74fd930ba5390d165e356185fc8519fba6ef03764fca34a6",
+          "vrf_digest": "1c4789d87b998cc3b489beac1c15118b92677e93bde624cb73a0b733da528586",
+          "vrf_proof": "d47298e3262f2216e82e4b8e9e0291585712c01160b12dbd45b2853cbfdd15cd",
+          "eligible": false,
+          "valid_proof": true,
+          "behavior": "diligent"
+        },
+        {
+          "epoch": 3,
+          "watchtower_id": 4,
+          "assertion_root": "d1b5a1a924f6e7b3f4fd9742876eeaf5d032f154ebd908f551746e38c46e5055",
+          "recomputed_state_root": "d1b5a1a924f6e7b3f4fd9742876eeaf5d032f154ebd908f551746e38c46e5055",
+          "trace_root": "dd449a7557fbaabf74fd930ba5390d165e356185fc8519fba6ef03764fca34a6",
+          "vrf_digest": "65952c3c7dcbcdc3b15e49cff2438b0997bcbeda00c62a05cce01e4768f5fda9",
+          "vrf_proof": "eb1aeaa2bcf9606f8e0fb5c25f904c9829fb64e6ec205b73fe3ab6042ce02b2a",
+          "eligible": false,
+          "valid_proof": true,
+          "behavior": "diligent"
+        },
+        {
+          "epoch": 3,
+          "watchtower_id": 5,
+          "assertion_root": "d1b5a1a924f6e7b3f4fd9742876eeaf5d032f154ebd908f551746e38c46e5055",
+          "recomputed_state_root": "d1b5a1a924f6e7b3f4fd9742876eeaf5d032f154ebd908f551746e38c46e5055",
+          "trace_root": "dd449a7557fbaabf74fd930ba5390d165e356185fc8519fba6ef03764fca34a6",
+          "vrf_digest": "759b632d6b8167c921dee0261c1b27558864b5179188acab3da38273625aa8b2",
+          "vrf_proof": "663817295eb16381b6391056d6da4c3df0418cae0ed664f5a254214dc8d7f688",
+          "eligible": false,
+          "valid_proof": true,
+          "behavior": "diligent"
+        },
+        {
+          "epoch": 3,
+          "watchtower_id": 6,
+          "assertion_root": "d1b5a1a924f6e7b3f4fd9742876eeaf5d032f154ebd908f551746e38c46e5055",
+          "recomputed_state_root": "d1b5a1a924f6e7b3f4fd9742876eeaf5d032f154ebd908f551746e38c46e5055",
+          "trace_root": "dd449a7557fbaabf74fd930ba5390d165e356185fc8519fba6ef03764fca34a6",
+          "vrf_digest": "faa320fcacba7a6ec9d4ec85271d3000c7757c9ac7fbb26d5dc3753b3e996571",
+          "vrf_proof": "bdf9b03c61cb7c8b21d59eba52c19a891e6860c2758df1d084c7b6b552f78572",
+          "eligible": false,
+          "valid_proof": true,
+          "behavior": "diligent"
+        },
+        {
+          "epoch": 3,
+          "watchtower_id": 7,
+          "assertion_root": "d1b5a1a924f6e7b3f4fd9742876eeaf5d032f154ebd908f551746e38c46e5055",
+          "recomputed_state_root": "d1b5a1a924f6e7b3f4fd9742876eeaf5d032f154ebd908f551746e38c46e5055",
+          "trace_root": "dd449a7557fbaabf74fd930ba5390d165e356185fc8519fba6ef03764fca34a6",
+          "vrf_digest": "7091400be2093849225897fcecaf17d80dfa20dc43a712770ca5318664f75ca8",
+          "vrf_proof": "710bf35d33d1cc78f7abf264493d194de9cd141f98b10cdaaadd7220a127896d",
+          "eligible": false,
+          "valid_proof": true,
+          "behavior": "diligent"
+        },
+        {
+          "epoch": 3,
+          "watchtower_id": 8,
+          "assertion_root": "d1b5a1a924f6e7b3f4fd9742876eeaf5d032f154ebd908f551746e38c46e5055",
+          "recomputed_state_root": "d1b5a1a924f6e7b3f4fd9742876eeaf5d032f154ebd908f551746e38c46e5055",
+          "trace_root": "dd449a7557fbaabf74fd930ba5390d165e356185fc8519fba6ef03764fca34a6",
+          "vrf_digest": "93057a2a312b8c97dec814edc16c613cd9b3945f6d16f23da642b6f1f1cfc332",
+          "vrf_proof": "82449a7557d608b433a5ea00fc38b971b1151b2abe24937d5db8e8d5d9c3a9d6",
+          "eligible": false,
+          "valid_proof": true,
+          "behavior": "diligent"
+        },
+        {
+          "epoch": 3,
+          "watchtower_id": 9,
+          "assertion_root": "d1b5a1a924f6e7b3f4fd9742876eeaf5d032f154ebd908f551746e38c46e5055",
+          "recomputed_state_root": "d1b5a1a924f6e7b3f4fd9742876eeaf5d032f154ebd908f551746e38c46e5055",
+          "trace_root": "dd449a7557fbaabf74fd930ba5390d165e356185fc8519fba6ef03764fca34a6",
+          "vrf_digest": "bc6c05824ac37c14e7d5d882b9944ddd5cfc66d73819942f27bad2944e05d0f1",
+          "vrf_proof": "071224529fd3bf0a816c8742878443a7f7af5c849dcf30ad9e4ed395336b791f",
+          "eligible": false,
+          "valid_proof": true,
+          "behavior": "diligent"
+        },
+        {
+          "epoch": 4,
+          "watchtower_id": 0,
+          "assertion_root": "d94ca26abca80fc43bf9e6ff67bf2a252b2b3eabaeef755c9927ca3f1cf0766e",
+          "recomputed_state_root": "d94ca26abca80fc43bf9e6ff67bf2a252b2b3eabaeef755c9927ca3f1cf0766e",
+          "trace_root": "b99d4eb9c8d965a269610d7a2361fd7a2be49fdc0ff2704d8f40fccc268da85b",
+          "vrf_digest": "b3e45175e89c99da261d1ded06c157c006511b5d793249067b3389712364bc65",
+          "vrf_proof": "42b8baf1ecec7c35d29e31344ffccbf62d24150a6d3f4115071ec9b9f95e48a7",
+          "eligible": false,
+          "valid_proof": true,
+          "behavior": "diligent"
+        },
+        {
+          "epoch": 4,
+          "watchtower_id": 1,
+          "assertion_root": "d94ca26abca80fc43bf9e6ff67bf2a252b2b3eabaeef755c9927ca3f1cf0766e",
+          "recomputed_state_root": "d94ca26abca80fc43bf9e6ff67bf2a252b2b3eabaeef755c9927ca3f1cf0766e",
+          "trace_root": "b99d4eb9c8d965a269610d7a2361fd7a2be49fdc0ff2704d8f40fccc268da85b",
+          "vrf_digest": "88c381ee1225f22af5278668b8287aff4d83f96e400c91ed4e85cbfc05457b2c",
+          "vrf_proof": "821c068ea41abeca72ab60dffdd32c2d56662ce048a7c070707df1d50a7a502a",
+          "eligible": false,
+          "valid_proof": true,
+          "behavior": "diligent"
+        },
+        {
+          "epoch": 4,
+          "watchtower_id": 2,
+          "assertion_root": "d94ca26abca80fc43bf9e6ff67bf2a252b2b3eabaeef755c9927ca3f1cf0766e",
+          "recomputed_state_root": "d94ca26abca80fc43bf9e6ff67bf2a252b2b3eabaeef755c9927ca3f1cf0766e",
+          "trace_root": "b99d4eb9c8d965a269610d7a2361fd7a2be49fdc0ff2704d8f40fccc268da85b",
+          "vrf_digest": "af15811e193659c5ceb5bf46ab4d8dc60b8ab78362b497ddb8c56f861533d162",
+          "vrf_proof": "9e716358c5e733ad32a51cd17e1d728b3b095fd31831595133ccf713494c6999",
+          "eligible": false,
+          "valid_proof": true,
+          "behavior": "diligent"
+        },
+        {
+          "epoch": 4,
+          "watchtower_id": 3,
+          "assertion_root": "d94ca26abca80fc43bf9e6ff67bf2a252b2b3eabaeef755c9927ca3f1cf0766e",
+          "recomputed_state_root": "d94ca26abca80fc43bf9e6ff67bf2a252b2b3eabaeef755c9927ca3f1cf0766e",
+          "trace_root": "b99d4eb9c8d965a269610d7a2361fd7a2be49fdc0ff2704d8f40fccc268da85b",
+          "vrf_digest": "a5d71a69e3d5a70c747ade811837af6cf6091f392ddcd6b0c4dd3701910b0960",
+          "vrf_proof": "a210de4d0ebbf6e62206027e46b5d4a838704e373e07a93874a61dc066e13609",
+          "eligible": false,
+          "valid_proof": true,
+          "behavior": "diligent"
+        },
+        {
+          "epoch": 4,
+          "watchtower_id": 4,
+          "assertion_root": "d94ca26abca80fc43bf9e6ff67bf2a252b2b3eabaeef755c9927ca3f1cf0766e",
+          "recomputed_state_root": "d94ca26abca80fc43bf9e6ff67bf2a252b2b3eabaeef755c9927ca3f1cf0766e",
+          "trace_root": "b99d4eb9c8d965a269610d7a2361fd7a2be49fdc0ff2704d8f40fccc268da85b",
+          "vrf_digest": "ed9cdf0b5d8a92af300300289d255bcd620c8470c97ba66e208b80c30b4d0810",
+          "vrf_proof": "c87c6c1149a0289f2a8a7aa9684e97dfd2fe44391221dc7efca30666b878b828",
+          "eligible": false,
+          "valid_proof": true,
+          "behavior": "diligent"
+        },
+        {
+          "epoch": 4,
+          "watchtower_id": 5,
+          "assertion_root": "d94ca26abca80fc43bf9e6ff67bf2a252b2b3eabaeef755c9927ca3f1cf0766e",
+          "recomputed_state_root": "d94ca26abca80fc43bf9e6ff67bf2a252b2b3eabaeef755c9927ca3f1cf0766e",
+          "trace_root": "b99d4eb9c8d965a269610d7a2361fd7a2be49fdc0ff2704d8f40fccc268da85b",
+          "vrf_digest": "e6f93cb79af31e11f6ad46a11ff7b35d131c18091d4cc41d52859155850d8936",
+          "vrf_proof": "96269760156c3486a58a3b023976694e081a84f7531b66db41f622213f82d15a",
+          "eligible": false,
+          "valid_proof": true,
+          "behavior": "diligent"
+        },
+        {
+          "epoch": 4,
+          "watchtower_id": 6,
+          "assertion_root": "d94ca26abca80fc43bf9e6ff67bf2a252b2b3eabaeef755c9927ca3f1cf0766e",
+          "recomputed_state_root": "d94ca26abca80fc43bf9e6ff67bf2a252b2b3eabaeef755c9927ca3f1cf0766e",
+          "trace_root": "b99d4eb9c8d965a269610d7a2361fd7a2be49fdc0ff2704d8f40fccc268da85b",
+          "vrf_digest": "1786dc1e72c857d90291048316c4f9bc373873dbd8eed29c6ab171552e20695f",
+          "vrf_proof": "2acede1d7570cfffbbaceede37f44d0b2d8acefb1cda3c066dd9a6c7b996c4ce",
+          "eligible": false,
+          "valid_proof": true,
+          "behavior": "diligent"
+        },
+        {
+          "epoch": 4,
+          "watchtower_id": 7,
+          "assertion_root": "d94ca26abca80fc43bf9e6ff67bf2a252b2b3eabaeef755c9927ca3f1cf0766e",
+          "recomputed_state_root": "d94ca26abca80fc43bf9e6ff67bf2a252b2b3eabaeef755c9927ca3f1cf0766e",
+          "trace_root": "b99d4eb9c8d965a269610d7a2361fd7a2be49fdc0ff2704d8f40fccc268da85b",
+          "vrf_digest": "fdc21832c8c4aa8086f3db09cfc7f90d950a6367f7cf3e8249d5adfa980e2ebe",
+          "vrf_proof": "3f4aeda4fbb7d54da62f30dbc227bf9130bc43ecfeb636b247d9ed74b5c87263",
+          "eligible": false,
+          "valid_proof": true,
+          "behavior": "diligent"
+        },
+        {
+          "epoch": 4,
+          "watchtower_id": 8,
+          "assertion_root": "d94ca26abca80fc43bf9e6ff67bf2a252b2b3eabaeef755c9927ca3f1cf0766e",
+          "recomputed_state_root": "d94ca26abca80fc43bf9e6ff67bf2a252b2b3eabaeef755c9927ca3f1cf0766e",
+          "trace_root": "b99d4eb9c8d965a269610d7a2361fd7a2be49fdc0ff2704d8f40fccc268da85b",
+          "vrf_digest": "9d8d47633e2b0808abcaf25eb8358c0c6d076b784c44a3bd7438468601caf98f",
+          "vrf_proof": "c4993f621d36d4b5863c18d840a49f8dbb3eb5610ab8ea7d36ceb86c74159469",
+          "eligible": false,
+          "valid_proof": true,
+          "behavior": "diligent"
+        },
+        {
+          "epoch": 4,
+          "watchtower_id": 9,
+          "assertion_root": "d94ca26abca80fc43bf9e6ff67bf2a252b2b3eabaeef755c9927ca3f1cf0766e",
+          "recomputed_state_root": "768c79fd6a8b67752295d78752df827aeb0a1f981fb5a0eae15f3a4bf1a344cc",
+          "trace_root": "353d9199cc8f9c602839f0fccbfd37c34253cbbb114cf9d60a209e34f2dbbe95",
+          "vrf_digest": "4e8fa6537f4854e6624328a74a360070bc89981a2c878f83f442838500ac5fe3",
+          "vrf_proof": "4d91bb7b902c2c3627f760480a985ac66b2752dd49c91e20427dfdd4eec248f4",
+          "eligible": false,
+          "valid_proof": false,
+          "behavior": "lazy_random_trace",
+          "detection_reason": "recomputed state root or execution trace root does not match the asserted rollup state"
+        }
+      ]
     }
   },
+  "comparison_experiments": [
+    {
+      "scheme": "TrueBit",
+      "execution_environment": "WASM",
+      "online_audit": "no",
+      "semantic_diligence": "partial",
+      "unpredictable_audit": "-",
+      "external_network": "no",
+      "benchmark_mode": "local minimal benchmark faithful to solver/verifier verification-game flow",
+      "source_kind": "flow_benchmark_from_published_protocol_shape",
+      "reference_sources": [
+        {
+          "project": "TrueBitFoundation/truebit-eth",
+          "url": "https://github.com/TrueBitFoundation/truebit-eth",
+          "evidence": "TrueBit repository used to define the solver/verifier verification-game shape",
+          "used_for": "reference boundary for the local solver/verifier scenario in table 11"
+        },
+        {
+          "project": "Truebit documentation",
+          "url": "https://docs.truebit.io/v1docs",
+          "evidence": "TrueBit documentation used to confirm task and role workflow terminology",
+          "used_for": "reference boundary for the local TrueBit task and role workflow model"
+        }
+      ],
+      "scenarios": [
+        {
+          "name": "offline_validator",
+          "requirement": "detect online/offline state during execution",
+          "outcome": "not covered",
+          "evidence": "verification game starts after an explicit challenge; no periodic online heartbeat path is modeled"
+        },
+        {
+          "name": "lazy_semantic_report",
+          "requirement": "detect semantic diligence without rerunning the whole task",
+          "outcome": "partially covered",
+          "evidence": "interactive verification can isolate a disputed step, but routine semantic diligence sampling is not present"
+        },
+        {
+          "name": "unpredictable_audit_target",
+          "requirement": "hide sampled audit points before work is done",
+          "outcome": "not covered",
+          "evidence": "challenge targets are chosen after a dispute rather than by an in-execution sentinel trigger"
+        }
+      ],
+      "protocol_flow": [
+        {
+          "phase": "submit",
+          "action": "solver commits to task output and execution trace root",
+          "evidence": "comparison benchmark records solver commitment before any audit decision"
+        },
+        {
+          "phase": "challenge",
+          "action": "verifier challenges the solver claim after observing a mismatch",
+          "evidence": "no heartbeat or in-execution sentinel trigger is required"
+        },
+        {
+          "phase": "localize",
+          "action": "solver and verifier bisect the trace to one disputed instruction",
+          "evidence": "semantic diligence is partial because the game can isolate a disputed step only after challenge"
+        },
+        {
+          "phase": "adjudicate",
+          "action": "single-step judge decides the instruction transition",
+          "evidence": "final evidence is a post-execution fraud-proof verdict"
+        }
+      ],
+      "reproduce": "go run ./cmd/comparison-exp --raw logs/raw_experiment_log.json",
+      "validation_claim": "table 11 row is generated from explicit local scenario outcomes and the TrueBit protocol_flow model in comparisons.RunCapabilityExperiments"
+    },
+    {
+      "scheme": "Arbitrum",
+      "execution_environment": "AVM/WASM",
+      "online_audit": "no",
+      "semantic_diligence": "no",
+      "unpredictable_audit": "-",
+      "external_network": "no",
+      "benchmark_mode": "local minimal benchmark faithful to fraud-proof assertion/challenge flow",
+      "source_kind": "flow_benchmark_from_rollup_fraud_proof_shape",
+      "reference_sources": [
+        {
+          "project": "OffchainLabs/arbitrum-classic",
+          "url": "https://github.com/OffchainLabs/arbitrum-classic",
+          "evidence": "Arbitrum Classic repository used to define the assertion/challenge fraud-proof shape",
+          "used_for": "reference boundary for the local assertion/challenge scenario in table 11"
+        },
+        {
+          "project": "OffchainLabs/bold",
+          "url": "https://github.com/OffchainLabs/bold",
+          "evidence": "BoLD repository used as the current Arbitrum dispute-system reference",
+          "used_for": "reference boundary for the local Arbitrum dispute-system scenario"
+        }
+      ],
+      "scenarios": [
+        {
+          "name": "offline_validator",
+          "requirement": "detect online/offline state during execution",
+          "outcome": "not covered",
+          "evidence": "rollup challenge logic does not require a validator heartbeat during off-chain execution"
+        },
+        {
+          "name": "lazy_semantic_report",
+          "requirement": "detect semantic diligence without rerunning the whole task",
+          "outcome": "not covered",
+          "evidence": "fraud proof resolves a challenged state transition, not routine diligence during local work"
+        },
+        {
+          "name": "unpredictable_audit_target",
+          "requirement": "hide sampled audit points before work is done",
+          "outcome": "not covered",
+          "evidence": "audit target selection is tied to later disputes"
+        }
+      ],
+      "protocol_flow": [
+        {
+          "phase": "submit",
+          "action": "validator posts an assertion over the off-chain execution result",
+          "evidence": "comparison benchmark models the assertion root as the starting object"
+        },
+        {
+          "phase": "challenge",
+          "action": "opponent opens an interactive fraud-proof challenge",
+          "evidence": "challenge happens after execution, not as online-work audit"
+        },
+        {
+          "phase": "localize",
+          "action": "parties bisect the assertion interval to a single transition",
+          "evidence": "no routine opcode/rw sampling is performed during execution"
+        },
+        {
+          "phase": "adjudicate",
+          "action": "one-step proof confirms or rejects the challenged transition",
+          "evidence": "final evidence is a rollup dispute verdict"
+        }
+      ],
+      "reproduce": "go run ./cmd/comparison-exp --raw logs/raw_experiment_log.json",
+      "validation_claim": "table 11 row is generated from explicit local scenario outcomes and the Arbitrum fraud-proof protocol_flow model"
+    },
+    {
+      "scheme": "PoD",
+      "execution_environment": "independent network",
+      "online_audit": "yes",
+      "semantic_diligence": "no",
+      "unpredictable_audit": "limited",
+      "external_network": "yes",
+      "benchmark_mode": "Solidity MineBounty gas benchmark plus deterministic watchtower epoch trace",
+      "source_kind": "scenario_comparison_experiment_plus_solidity_pod_mine_bounty",
+      "reference_sources": [
+        {
+          "project": "witnesschain-com/diligencewatchtower-contracts",
+          "url": "https://github.com/witnesschain-com/diligencewatchtower-contracts",
+          "evidence": "Witness Chain contracts used to define the diligence watchtower and bounty-submission shape",
+          "used_for": "reference boundary for the local PoD watchtower and MineBounty benchmark context"
+        },
+        {
+          "project": "witnesschain-com/diligencewatchtower-client",
+          "url": "https://github.com/witnesschain-com/diligencewatchtower-client",
+          "evidence": "Witness Chain watchtower client used to confirm the recomputation workflow",
+          "used_for": "reference boundary for the local watchtower epoch trace"
+        },
+        {
+          "project": "Proof of Diligence paper",
+          "url": "https://eprint.iacr.org/2024/736",
+          "evidence": "Proof of Diligence: Cryptoeconomic Security for Rollups",
+          "used_for": "MineBounty normal-path gas baseline and watchtower incentive workflow"
+        }
+      ],
+      "scenarios": [
+        {
+          "name": "offline_validator",
+          "requirement": "detect online/offline state during execution",
+          "outcome": "covered by external watchtower pool",
+          "evidence": "PoD watchtowers recompute the assertion and execution trace root, then submit a VRF proof through podMineBounty"
+        },
+        {
+          "name": "lazy_semantic_report",
+          "requirement": "detect semantic diligence without rerunning the whole task",
+          "outcome": "not covered",
+          "evidence": "PoD proves rollup assertion checking and trace-root work, but does not include SenCk-style opcode/rw sentinel digest sampling"
+        },
+        {
+          "name": "unpredictable_audit_target",
+          "requirement": "hide sampled audit points before work is done",
+          "outcome": "limited",
+          "evidence": "VRF bounty eligibility is unpredictable, but audit targets are external watchtower bounty epochs rather than task-local Gamma triggers"
+        }
+      ],
+      "protocol_flow": [
+        {
+          "phase": "watchtower_recompute",
+          "action": "watchtower recomputes the asserted state root for each epoch",
+          "evidence": "gas_trace.pod_experiment_trace records honest and lazy watchtower roots"
+        },
+        {
+          "phase": "trace_root",
+          "action": "watchtower builds an execution trace Merkle-style root",
+          "evidence": "testPoDMineBountyGas submits a calibrated 260-leaf execution trace"
+        },
+        {
+          "phase": "vrf_bounty",
+          "action": "watchtower binds state root, trace root, epoch, identity, and VRF proof",
+          "evidence": "ValidatorAudit.podMineBounty verifies the digest and bounty threshold"
+        },
+        {
+          "phase": "detect_lazy",
+          "action": "other watchtowers reject mismatched recomputation or forged trace roots",
+          "evidence": "pod_experiment_trace.lazy_detected and invalid_proof_count provide raw evidence"
+        }
+      ],
+      "reproduce": "forge test --gas-report; parse testPoDMineBountyGas or run go run ./cmd/comparison-exp",
+      "validation_claim": "PoD row and monthly gas baseline are generated from the Solidity podMineBounty benchmark plus deterministic watchtower epoch traces"
+    },
+    {
+      "scheme": "RanCk+SenCk",
+      "execution_environment": "EVM",
+      "online_audit": "yes",
+      "semantic_diligence": "yes",
+      "unpredictable_audit": "yes",
+      "external_network": "no",
+      "benchmark_mode": "implemented protocol simulation and Solidity gas benchmark in this repository",
+      "source_kind": "project_protocol_implementation",
+      "reference_sources": [
+        {
+          "project": "paper-exp chapter5",
+          "url": "chapter5/experiment/audit/protocol.go",
+          "evidence": "local RanCk/SenCk protocol implementation and deterministic experiment traces",
+          "used_for": "online heartbeat, continuity audit, sentinel diligence, and gas benchmark rows"
+        },
+        {
+          "project": "paper-exp chapter5 Solidity",
+          "url": "chapter5/experiment/src/ValidatorAudit.sol",
+          "evidence": "local Solidity benchmark for TrackInit/HBRespond/ContAudit/SentReport/Dispute/SentProve",
+          "used_for": "table 10 and figures 30-31 gas measurement"
+        }
+      ],
+      "scenarios": [
+        {
+          "name": "offline_validator",
+          "requirement": "detect online/offline state during execution",
+          "outcome": "covered by RanCk",
+          "evidence": "Trigger(t,i)=H(bh_t||tid||i) mod M plus ContAudit detects missed or inconsistent heartbeat traces"
+        },
+        {
+          "name": "lazy_semantic_report",
+          "requirement": "detect semantic diligence without rerunning the whole task",
+          "outcome": "covered by SenCk",
+          "evidence": "Gamma(r,tid,k,t,rw_t) sentinel sampling checks local opcode/rw digests"
+        },
+        {
+          "name": "unpredictable_audit_target",
+          "requirement": "hide sampled audit points before work is done",
+          "outcome": "covered",
+          "evidence": "block-hash and runtime rw dependent Gamma triggers are computed during instrumented execution"
+        }
+      ],
+      "protocol_flow": [
+        {
+          "phase": "TrackInit",
+          "action": "validator commits seed/nonce and TC_0",
+          "evidence": "ranck_traces[].track_init and ValidatorAudit.trackInit"
+        },
+        {
+          "phase": "HBRespond",
+          "action": "Trigger(t,i)=H(bh_t||tid||i) mod M selects heartbeat points",
+          "evidence": "ranck_traces[].heartbeats records responses and misses"
+        },
+        {
+          "phase": "ContAudit",
+          "action": "opened credential chain and sampled single-step witnesses are checked",
+          "evidence": "ranck_traces[].cont_audit records pass/detection evidence"
+        },
+        {
+          "phase": "SentReport",
+          "action": "instrumented EVM hook emits opcode/rw sentinel digests",
+          "evidence": "senck_traces[].segment_reports and trace_sample record Gamma sampling"
+        },
+        {
+          "phase": "Dispute/VerSeg",
+          "action": "mismatched sentinel reports are replayed and adjudicated",
+          "evidence": "senck_traces[].sent_report.dispute_passed and ValidatorAudit.sentProve"
+        }
+      ],
+      "reproduce": "go test ./...; go run ./cmd/audit-exp --out logs/raw_experiment_log.json",
+      "validation_claim": "RanCk/SenCk row is generated from implemented protocol traces and explicit scenario outcomes"
+    }
+  ],
   "comparison_table_11": [
     {
       "execution_environment": "WASM",

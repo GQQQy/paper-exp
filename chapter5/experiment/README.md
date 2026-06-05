@@ -2,19 +2,35 @@
 
 本目录用于运行第五章“面向链下计算的验证者工作审计”实验，覆盖 RanCk 随机连续性抽查、SenCk 哨兵抽样勤勉检测、链下旁路审计开销、链上 Gas 基准与论文图 24-31/表 9-11 的数据生成。
 
+表 10、图 30 和图 31 的 Gas 数据由 Foundry gas report 生成，并在 raw log 的 `measurement_provenance.measurement_status=checked` 中记录函数级 Gas、PoD 月度派生公式、PoD watchtower trace 和 `podMineBounty` benchmark。根目录的 `scripts/check_experiment_coverage.py` 会检查这些结果是否由可运行实验产物支撑。
+
 ## 实验内容
 
 - RanCk：生成验证者私有 seed/nonce、提交 `TC_0`、维护 `alpha_t = H(alpha_{t-1} || bh_t || PRF(seed_i,t) || tau_t)`、按 `Trigger(t,i)=H(bh_t||tid||i) mod M` 触发心跳，并对端点和抽样点执行连续性审计。
 - SenCk：在 instrumented EVM-style opcode interpreter 的每个 opcode 执行后，通过 `AfterOpcodeHook` 采集 `pc_t/op_t`、memory/storage/stack 访问，编码运行时 `rw_t` 与 `val_t`，计算 `Gamma(r,tid,k,t,rw_t)`，生成哨兵事件和段摘要 `dig_k`，再从快照段局部重放提交 `SentReport`。
 - 行为模型：覆盖诚实在线、完全离线、间歇在线、补算失败、凭证链不一致、惰性猜摘要、执行方污染 `ComAud` 等偏离。
-- Foundry：提供最小审计合约和 gas benchmark 测试，覆盖 `TrackInit`、`HBRespond`、`ContAudit`、`SentReport`、`Dispute`、`SentProve` 和 PoD baseline。
+- Foundry：提供最小审计合约和 gas benchmark 测试，覆盖 `TrackInit`、`HBRespond`、`ContAudit`、`SentReport`、`Dispute`、`SentProve` 和 PoD MineBounty。
+- 对比实验：`comparisons/model.go` 生成 TrueBit、Arbitrum、PoD、RanCk+SenCk 的能力场景对比，并用 Foundry `testPoDMineBountyGas`/`podMineBounty` 计算 PoD 月度基线。
 - 可视化：从 `logs/raw_experiment_log.json` 生成结构化数据和图 24-31。
+
+## 对比复现边界
+
+`comparison_experiments` 和 `gas_trace.pod_baseline` 记录的是本地场景模型和 benchmark 的复现边界。第五章不读取外部整理表；TrueBit/Arbitrum 行由本地场景模型生成能力结果，PoD 行由 watchtower epoch trace 和 `podMineBounty` Foundry Gas 生成，RanCk+SenCk 行由本目录的协议 trace 和合约 Gas 生成。
+
+| 方案 | 本地复现实验 | 验收查看字段 |
+| --- | --- | --- |
+| TrueBit | solver/verifier 场景模型 | `comparison_experiments[].scenarios`、`protocol_flow` |
+| Arbitrum | assertion/challenge 场景模型 | `comparison_experiments[].scenarios`、`protocol_flow` |
+| PoD | deterministic watchtower epoch trace + `podMineBounty` benchmark | `gas_trace.pod_experiment_trace`、`gas_trace.pod_baseline` |
+| RanCk+SenCk | RanCk/SenCk Go trace + `ValidatorAudit.sol` benchmark | `ranck_traces`、`senck_traces`、`gas_trace.operations` |
 
 ## 目录说明
 
 - `audit/protocol.go`：RanCk/SenCk 协议实现、instrumented EVM opcode hook、Monte Carlo、旁路开销和 Foundry Gas 数据结构。
 - `audit/protocol_test.go`：RanCk、SenCk 和完整审计流单元/集成测试。
 - `cmd/audit-exp/main.go`：实验入口，生成 `logs/raw_experiment_log.json`。
+- `cmd/comparison-exp/main.go`：单独导出表 11 能力对比和 PoD MineBounty 报告。
+- `comparisons/model.go`：TrueBit、Arbitrum、PoD、RanCk+SenCk 的场景对比实验配置。
 - `src/ValidatorAudit.sol`：链上审计 benchmark 合约。
 - `test/ValidatorAudit.t.sol`：Foundry gas 测试。
 - `logs/raw_experiment_log.json`：实验原始日志。
@@ -48,9 +64,11 @@ forge test --gas-report
 
 ```bash
 go run ./cmd/audit-exp --out logs/raw_experiment_log.json
+go run ./cmd/comparison-exp --raw logs/raw_experiment_log.json --out logs/comparison_experiments.json
 ```
 
-实验入口会解析 Foundry gas report 的函数级平均 Gas。raw log 会记录 Foundry 实测值和测量来源；图 30-31 使用本地 Foundry 函数级 Gas 生成。如果 Foundry 不可用，Gas 数据会被标记为不完整，而不会回退到论文表 10 目标值。
+实验入口会解析 Foundry gas report 的函数级平均 Gas。raw log 会记录 Foundry 实测值、测量来源、PoD watchtower trace 和月度 Gas 派生公式；图 30-31 使用这些函数级 Gas 生成。如果 Foundry 不可用，Gas 数据会被标记为不完整。
+`cmd/comparison-exp` 可单独输出 TrueBit、Arbitrum、PoD、RanCk+SenCk 的对比场景，以及 PoD MineBounty 的 `podMineBounty` 函数、单 epoch Gas 和月度 Gas。
 
 ## 生成可视化
 
@@ -64,6 +82,7 @@ python3 visualization/chapter5_all_figures.py
 输出：
 
 - `visualization/chapter5_experiment_data.json`
+- `experiment/logs/comparison_experiments.json`
 - `visualization/正确图片输出/fig24_feasibility_ab.png`
 - `visualization/正确图片输出/fig25_joint_feasibility.png`
 - `visualization/正确图片输出/fig26_ranck_detection.png`
@@ -77,4 +96,12 @@ python3 visualization/chapter5_all_figures.py
 
 - `out/`、`cache/`、`__pycache__/`、生成 PDF 和其他可重建产物不提交。
 - 如果重新生成图表，应先重新运行实验入口或让可视化脚本自动补齐 raw log。
-- 所有图表数据均来自 RanCk/SenCk 协议实现、SenCk instrumented EVM opcode hook、公式扫描、Monte Carlo trace 或 Foundry 输出。
+- 所有图表数据均来自 RanCk/SenCk 协议实现、SenCk instrumented EVM opcode hook、公式扫描、Monte Carlo trace、对比实验模型或 Foundry 输出。
+
+## 验收流程
+
+1. 运行 `go test ./...` 和 `forge test --gas-report`。
+2. 运行 `go run ./cmd/audit-exp --out logs/raw_experiment_log.json`，重新生成协议 trace、Monte Carlo、Gas trace 和表 11 场景对比。
+3. 运行 `go run ./cmd/comparison-exp --raw logs/raw_experiment_log.json --out logs/comparison_experiments.json`，导出对比报告。
+4. 回到 `chapter5` 运行 `python3 visualization/chapter5_all_figures.py`。
+5. 回到仓库根目录运行 `python3 scripts/check_experiment_coverage.py`。

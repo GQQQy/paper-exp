@@ -14,6 +14,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"clever-chapter3-exp/comparisons"
 )
 
 type Params struct {
@@ -155,9 +157,11 @@ type TimelineEvidence struct {
 }
 
 type TimelineEntry struct {
-	Name         string  `json:"name"`
-	DisputeSlots int     `json:"dispute_slots"`
-	TotalTime    float64 `json:"total_time"`
+	Name         string                         `json:"name"`
+	DisputeSlots int                            `json:"dispute_slots"`
+	TotalTime    float64                        `json:"total_time"`
+	Formula      string                         `json:"formula,omitempty"`
+	Derivation   comparisons.TimelineDerivation `json:"timeline_derivation,omitempty"`
 }
 
 type FoundryGasRun struct {
@@ -177,12 +181,25 @@ type EVMRunSample struct {
 }
 
 type ComparisonRun struct {
-	Scheme         string  `json:"scheme"`
-	Mechanism      string  `json:"mechanism"`
-	OnchainRounds  int     `json:"onchain_rounds"`
-	OptimisticGasK float64 `json:"optimistic_gas_k"`
-	DisputeGasK    float64 `json:"dispute_gas_k"`
-	Notes          string  `json:"notes"`
+	Scheme              string                         `json:"scheme"`
+	Mechanism           string                         `json:"mechanism"`
+	Family              string                         `json:"family,omitempty"`
+	OnchainRounds       int                            `json:"onchain_rounds"`
+	OptimisticGasK      float64                        `json:"optimistic_gas_k"`
+	DisputeGasK         float64                        `json:"dispute_gas_k"`
+	OptimisticBenchmark comparisons.PathResult         `json:"optimistic_benchmark,omitempty"`
+	DisputeBenchmark    comparisons.PathResult         `json:"dispute_benchmark,omitempty"`
+	DisputeFlow         []string                       `json:"dispute_flow,omitempty"`
+	TimelineSlots       int                            `json:"timeline_slots,omitempty"`
+	TimelineDerivation  comparisons.TimelineDerivation `json:"timeline_derivation,omitempty"`
+	Concurrent          bool                           `json:"concurrent,omitempty"`
+	ModelScope          string                         `json:"model_scope,omitempty"`
+	SourceKind          string                         `json:"source_kind,omitempty"`
+	ReferenceSources    []comparisons.ReferenceSource  `json:"reference_sources,omitempty"`
+	MeasurementMethod   string                         `json:"measurement_method,omitempty"`
+	Reproduce           string                         `json:"reproduce,omitempty"`
+	Notes               string                         `json:"notes"`
+	ValidationClaim     string                         `json:"validation_claim,omitempty"`
 }
 
 type VMState struct {
@@ -415,30 +432,42 @@ func runSingleEVM(task, code string) EVMRunSample {
 
 func runComparisonProtocols(foundryGas []FoundryGasRun) []ComparisonRun {
 	totalGas := 1e11
-	rounds := int(math.Ceil(math.Log2(totalGas)))
 	gasByFunction := map[string]uint64{}
 	for _, run := range foundryGas {
 		gasByFunction[run.Function] = run.Gas
 	}
-	required := []string{
-		"arbitrumOptimisticPath", "truebitOptimisticPath", "cartesiOptimisticPath", "boldOptimisticPath", "cleverOptimisticPath",
-		"arbitrumClassicPath", "truebitPath", "cartesiDavePath", "boldPath", "cleverPath",
-	}
-	for _, name := range required {
-		if gasByFunction[name] == 0 {
-			panic("missing Foundry gas for " + name)
-		}
-	}
 	if len(gasByFunction) == 0 {
 		panic("missing Foundry dispute path gas; run forge test --gas-report successfully")
 	}
-	return []ComparisonRun{
-		comparison("Arbitrum\nClassic", "1v1 bisection", rounds, gasK(gasByFunction["arbitrumOptimisticPath"]), gasK(gasByFunction["arbitrumClassicPath"]), "direct Foundry gas for representative O(log N) bisection path"),
-		comparison("TrueBit", "solver-verifier bisection", rounds, gasK(gasByFunction["truebitOptimisticPath"]), gasK(gasByFunction["truebitPath"]), "direct Foundry gas for solver/verifier bisection path"),
-		comparison("Cartesi\nDave", "tournament + bisection", rounds, gasK(gasByFunction["cartesiOptimisticPath"]), gasK(gasByFunction["cartesiDavePath"]), "direct Foundry gas for tournament plus bisection path"),
-		comparison("Arbitrum\nBoLD", "three-level bisection", rounds, gasK(gasByFunction["boldOptimisticPath"]), gasK(gasByFunction["boldPath"]), "direct Foundry gas for three-level dispute path"),
-		comparison("CleVer\n(ours)", "two-layer slicing + VerSeg", 3, gasK(gasByFunction["cleverOptimisticPath"]), gasK(gasByFunction["cleverPath"]), "direct Foundry gas for two-layer slicing and bounded VerSeg path"),
+	results, err := comparisons.BuildResults(gasByFunction, totalGas)
+	if err != nil {
+		panic(err)
 	}
+	out := make([]ComparisonRun, 0, len(results))
+	for _, result := range results {
+		out = append(out, ComparisonRun{
+			Scheme:              result.Scheme,
+			Mechanism:           result.Mechanism,
+			Family:              result.Family,
+			OnchainRounds:       result.OnchainRounds,
+			OptimisticGasK:      result.OptimisticGasK,
+			DisputeGasK:         result.DisputeGasK,
+			OptimisticBenchmark: result.Optimistic,
+			DisputeBenchmark:    result.Dispute,
+			DisputeFlow:         append([]string(nil), result.DisputeFlow...),
+			TimelineSlots:       result.TimelineSlots,
+			TimelineDerivation:  result.Timeline,
+			Concurrent:          result.Concurrent,
+			ModelScope:          result.ModelScope,
+			SourceKind:          result.SourceKind,
+			ReferenceSources:    append([]comparisons.ReferenceSource(nil), result.ReferenceSources...),
+			MeasurementMethod:   result.MeasurementMethod,
+			Reproduce:           result.Reproduce,
+			Notes:               result.Notes,
+			ValidationClaim:     result.ValidationClaim,
+		})
+	}
+	return out
 }
 
 func runPaperEvidence() PaperEvidence {
@@ -671,22 +700,8 @@ func deriveTimeline() TimelineEvidence {
 	tExec, tSlot, gamma, tSeg, eta := 1.0, 0.008, 0.85, 0.02, 0.4
 	tReexec := 1 - eta
 	timeline := TimelineEvidence{TExec: tExec, TSlot: tSlot, Gamma: gamma, TSeg: tSeg, Eta: eta, TReexec: tReexec}
-	for _, item := range []struct {
-		name   string
-		slots  int
-		clever bool
-	}{
-		{"CleVer\n（并发）", 3, true},
-		{"Arbitrum\nBoLD", 25, false},
-		{"Cartesi\nDave", 35, false},
-		{"TrueBit", 33, false},
-		{"Arbitrum\nClassic", 30, false},
-	} {
-		total := tExec + gamma + float64(item.slots)*tSlot + tReexec
-		if item.clever {
-			total = eta*tExec + tSeg + float64(item.slots)*tSlot + tReexec
-		}
-		timeline.Schemes = append(timeline.Schemes, TimelineEntry{Name: item.name, DisputeSlots: item.slots, TotalTime: total})
+	for _, item := range comparisons.BuildTimeline(comparisons.TimelineParams{TExec: tExec, TSlot: tSlot, Gamma: gamma, TSeg: tSeg, Eta: eta}, 1e11) {
+		timeline.Schemes = append(timeline.Schemes, TimelineEntry{Name: item.Name, DisputeSlots: item.DisputeSlots, TotalTime: item.TotalTime, Formula: item.Formula, Derivation: item.Derivation})
 	}
 	return timeline
 }
@@ -742,10 +757,6 @@ func expectedExitRound(g int, belief, beta float64) float64 {
 	return math.Min(float64(g), math.Max(1.0, math.Ceil(raw)))
 }
 
-func gasK(gas uint64) float64 {
-	return float64(gas) / 1000
-}
-
 func runFoundryGasReport() []FoundryGasRun {
 	cmd := exec.Command("forge", "test", "--gas-report")
 	out, err := cmd.CombinedOutput()
@@ -788,10 +799,6 @@ func parseFoundryGasReport(raw string) []FoundryGasRun {
 		runs = append(runs, FoundryGasRun{Contract: contract, Function: match[1], Gas: gas})
 	}
 	return runs
-}
-
-func comparison(name, mechanism string, rounds int, optimistic, dispute float64, notes string) ComparisonRun {
-	return ComparisonRun{Scheme: name, Mechanism: mechanism, OnchainRounds: rounds, OptimisticGasK: optimistic, DisputeGasK: dispute, Notes: notes}
 }
 
 func verSegReplayGasK(threshold, factor float64) float64 {

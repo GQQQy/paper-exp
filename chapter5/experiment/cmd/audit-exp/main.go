@@ -13,22 +13,24 @@ import (
 	"strings"
 
 	"chapter5/experiment/audit"
+	"chapter5/experiment/comparisons"
 )
 
 type RawExperimentLog struct {
-	Metadata              map[string]any        `json:"metadata"`
-	Params                audit.Params          `json:"params"`
-	Table9                map[string]any        `json:"table9_parameters"`
-	RanCkTraces           []audit.RanCkTrace    `json:"ranck_traces"`
-	SenCkTraces           []audit.SenCkTrace    `json:"senck_traces"`
-	MonteCarlo            MonteCarloEvidence    `json:"monte_carlo"`
-	DetectionParameters   DetectionParameters   `json:"detection_parameters"`
-	Feasibility           FeasibilityEvidence   `json:"feasibility"`
-	Overhead              []audit.OverheadTrace `json:"overhead_traces"`
-	Gas                   audit.GasTrace        `json:"gas_trace"`
-	ProtocolCoverage      []CoverageItem        `json:"protocol_coverage"`
-	ComparisonTable11     []map[string]string   `json:"comparison_table_11"`
-	FigureReferenceInputs map[string]any        `json:"figure_reference_inputs"`
+	Metadata              map[string]any                 `json:"metadata"`
+	Params                audit.Params                   `json:"params"`
+	Table9                map[string]any                 `json:"table9_parameters"`
+	RanCkTraces           []audit.RanCkTrace             `json:"ranck_traces"`
+	SenCkTraces           []audit.SenCkTrace             `json:"senck_traces"`
+	MonteCarlo            MonteCarloEvidence             `json:"monte_carlo"`
+	DetectionParameters   DetectionParameters            `json:"detection_parameters"`
+	Feasibility           FeasibilityEvidence            `json:"feasibility"`
+	Overhead              []audit.OverheadTrace          `json:"overhead_traces"`
+	Gas                   audit.GasTrace                 `json:"gas_trace"`
+	ProtocolCoverage      []CoverageItem                 `json:"protocol_coverage"`
+	ComparisonExperiments []comparisons.SchemeExperiment `json:"comparison_experiments"`
+	ComparisonTable11     []map[string]string            `json:"comparison_table_11"`
+	FigureReferenceInputs map[string]any                 `json:"figure_reference_inputs"`
 }
 
 type MonteCarloEvidence struct {
@@ -115,6 +117,7 @@ func main() {
 	if !*skipFoundry {
 		foundry, status = runFoundryGas()
 	}
+	comparisonExperiments := comparisons.RunCapabilityExperiments()
 	log := RawExperimentLog{
 		Metadata: map[string]any{
 			"chapter":    "第五章 面向链下计算的验证者工作审计",
@@ -132,7 +135,8 @@ func main() {
 		Overhead:              audit.OverheadTraces(p),
 		Gas:                   audit.GasTraceFromFoundry(foundry, status, p),
 		ProtocolCoverage:      coverage(),
-		ComparisonTable11:     table11(),
+		ComparisonExperiments: comparisonExperiments,
+		ComparisonTable11:     comparisons.Table11Rows(comparisonExperiments),
 		FigureReferenceInputs: figureReferenceInputs(),
 	}
 	if err := os.MkdirAll(filepath.Dir(*out), 0o755); err != nil {
@@ -171,13 +175,13 @@ func runFoundryGas() ([]audit.FoundryGasEntry, string) {
 	}
 	rows := []audit.FoundryGasEntry{}
 	functionToTest := map[string]string{
-		"trackInit":   "testTrackInitGas",
-		"hbRespond":   "testHBRespondGas",
-		"contAudit":   "testContAuditGas",
-		"sentReport":  "testSentReportGas",
-		"sentDispute": "testDisputeGas",
-		"sentProve":   "testSentProveGas",
-		"podBaseline": "testPoDBaselineGas",
+		"trackInit":     "testTrackInitGas",
+		"hbRespond":     "testHBRespondGas",
+		"contAudit":     "testContAuditGas",
+		"sentReport":    "testSentReportGas",
+		"sentDispute":   "testDisputeGas",
+		"sentProve":     "testSentProveGas",
+		"podMineBounty": "testPoDMineBountyGas",
 	}
 	for _, match := range regexp.MustCompile(`\|\s*([A-Za-z][A-Za-z0-9_]*)\s*\|\s*([0-9]+)\s*\|\s*([0-9]+)\s*\|\s*([0-9]+)\s*\|\s*([0-9]+)\s*\|\s*([0-9]+)\s*\|`).FindAllStringSubmatch(text, -1) {
 		testName, ok := functionToTest[match[1]]
@@ -315,15 +319,6 @@ func coverage() []CoverageItem {
 	}
 }
 
-func table11() []map[string]string {
-	return []map[string]string{
-		{"scheme": "TrueBit", "execution_environment": "WASM", "online_audit": "no", "semantic_diligence": "partial", "unpredictable_audit": "-", "external_network": "no"},
-		{"scheme": "Arbitrum", "execution_environment": "AVM/WASM", "online_audit": "no", "semantic_diligence": "no", "unpredictable_audit": "-", "external_network": "no"},
-		{"scheme": "PoD", "execution_environment": "independent network", "online_audit": "yes", "semantic_diligence": "no", "unpredictable_audit": "limited", "external_network": "yes"},
-		{"scheme": "RanCk+SenCk", "execution_environment": "EVM", "online_audit": "yes", "semantic_diligence": "yes", "unpredictable_audit": "yes", "external_network": "no"},
-	}
-}
-
 func figureReferenceInputs() map[string]any {
 	return map[string]any{
 		"figure_24": "C1/C2 formula scans generated in feasibility evidence",
@@ -332,10 +327,10 @@ func figureReferenceInputs() map[string]any {
 		"figure_27": "SenCk lazy pass probability from rho and m_s",
 		"figure_28": "Monte Carlo traces from implemented Bernoulli trigger and segment hit simulation",
 		"figure_29": "overhead trace from instrumented EVM opcode hook: rw encoding, hash, Gamma, sentinel digest, snapshot load, and deterministic replay model",
-		"table_10":  "Foundry per-test gas from ValidatorAudit.t.sol; no paper table fallback is used",
+		"table_10":  "Foundry per-test gas from ValidatorAudit.t.sol, with function-level provenance recorded in gas_trace.measurement_provenance",
 		"figure_30": "normal path gas decomposition and monthly comparison",
 		"figure_31": "pi_h sweep of gas and ell=300 detection probability, with below-PoD region",
-		"table_11":  "comparison_table_11",
+		"table_11":  "comparison_experiments -> comparison_table_11",
 	}
 }
 

@@ -24,15 +24,11 @@ contract ValidatorAuditTest {
 
     function testContAuditGas() public {
         audit.trackInit(tid, keccak256(abi.encodePacked(seed)), keccak256(abi.encodePacked(nonce)));
-        bytes32[] memory bhs = new bytes32[](10);
-        bytes32[] memory taus = new bytes32[](10);
-        uint256[] memory steps = new uint256[](10);
+        bytes32[] memory witnesses = new bytes32[](10);
         for (uint256 i = 0; i < 10; i++) {
-            bhs[i] = keccak256(abi.encodePacked("bh", i));
-            taus[i] = keccak256(abi.encodePacked("tau", i));
-            steps[i] = i + 1;
+            witnesses[i] = keccak256(abi.encodePacked("audit-witness", i));
         }
-        audit.contAudit(tid, address(this), seed, nonce, bhs, taus, steps, bytes32(0));
+        audit.contAudit(tid, address(this), seed, witnesses, bytes32(0));
     }
 
     function testSentReportGas() public {
@@ -57,8 +53,18 @@ contract ValidatorAuditTest {
         audit.sentProve(tid, address(this), events, digest);
     }
 
-    function testPoDBaselineGas() public {
-        audit.podBaseline(tid, address(this), 7, keccak256("watchtower"));
+    function testPoDMineBountyGas() public {
+        uint256 epoch = 7;
+        bytes32 asserted = keccak256("asserted-state-root");
+        bytes32[] memory leaves = new bytes32[](260);
+        bytes32 traceRoot = keccak256(abi.encodePacked("trace-root", tid, epoch, leaves.length));
+        for (uint256 i = 0; i < leaves.length; i++) {
+            leaves[i] = keccak256(abi.encodePacked("execution-leaf", i));
+            traceRoot = keccak256(abi.encodePacked(traceRoot, leaves[i], i));
+        }
+        bytes32 proof = keccak256("watchtower-vrf-proof");
+        bytes32 digest = keccak256(abi.encodePacked("VRF", tid, address(this), epoch, asserted, traceRoot, proof));
+        audit.podMineBounty(tid, address(this), epoch, asserted, asserted, digest, proof, 1e18, 9e17, leaves);
     }
 
     function testHeartbeatTriggerPure() public view {
@@ -68,13 +74,9 @@ contract ValidatorAuditTest {
     function testFullAuditFlow() public {
         audit.trackInit(tid, keccak256(abi.encodePacked(seed)), keccak256(abi.encodePacked(nonce)));
         audit.hbRespond(tid, block.number, keccak256("alpha"));
-        bytes32[] memory bhs = new bytes32[](1);
-        bytes32[] memory taus = new bytes32[](1);
-        uint256[] memory steps = new uint256[](1);
-        bhs[0] = keccak256("bh");
-        taus[0] = keccak256("tau");
-        steps[0] = 1;
-        audit.contAudit(tid, address(this), seed, nonce, bhs, taus, steps, bytes32(0));
+        bytes32[] memory witnesses = new bytes32[](1);
+        witnesses[0] = keccak256("audit-witness");
+        audit.contAudit(tid, address(this), seed, witnesses, bytes32(0));
         bytes32 dig = keccak256("dig");
         audit.setAudRoot(tid, keccak256("aud-root"));
         audit.sentReport(tid, dig);

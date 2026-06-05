@@ -50,28 +50,42 @@ THRESHOLD_VALUES = [1e4, 1e5, 1e6, 1e7]
 @dataclass(frozen=True)
 class Scheme:
     name: str
-    dispute_slots: int
     clever: bool = False
 
 
 SCHEMES = [
-    Scheme("Arbitrum\nClassic", 30),
-    Scheme("TrueBit", 33),
-    Scheme("Cartesi\nDave", 35),
-    Scheme("Arbitrum\nBoLD", 25),
-    Scheme("CleVer\n(ours)", 3, True),
+    Scheme("Arbitrum\nClassic"),
+    Scheme("TrueBit"),
+    Scheme("Cartesi\nDave"),
+    Scheme("Arbitrum\nBoLD"),
+    Scheme("CleVer\n(ours)", True),
 ]
 
 
 def ensure_raw_log() -> dict:
-    if not RAW_LOG.exists():
+    def regenerate() -> None:
         subprocess.run(
             ["go", "run", "./cmd/clever-exp", "--quick", "--out", str(RAW_LOG)],
             cwd=EXP_DIR,
             check=True,
         )
+
+    if not RAW_LOG.exists():
+        regenerate()
     with RAW_LOG.open("r", encoding="utf-8") as f:
         raw = json.load(f)
+    comparisons = raw.get("comparison_protocols", [])
+    if not comparisons or any(
+        "dispute_benchmark" not in item
+        or not item.get("validation_claim")
+        or not item.get("reference_sources")
+        or "official source binding" in item.get("notes", "")
+        or "official protocol flow" in item.get("measurement_method", "")
+        for item in comparisons
+    ):
+        regenerate()
+        with RAW_LOG.open("r", encoding="utf-8") as f:
+            raw = json.load(f)
     validate_raw_log(raw)
     return raw
 
@@ -93,6 +107,13 @@ def validate_raw_log(raw: dict) -> None:
     for scheme in SCHEMES:
         assert scheme.name in comparisons, f"missing comparison run for {scheme.name}"
         assert comparisons[scheme.name]["dispute_gas_k"] > 0, f"comparison gas missing for {scheme.name}"
+        assert comparisons[scheme.name].get("dispute_benchmark", {}).get("function"), f"missing benchmark function for {scheme.name}"
+        assert comparisons[scheme.name].get("timeline_derivation", {}).get("events"), f"missing timeline derivation for {scheme.name}"
+        assert comparisons[scheme.name]["timeline_slots"] == comparisons[scheme.name]["timeline_derivation"]["slots"], f"timeline slot derivation mismatch for {scheme.name}"
+        assert comparisons[scheme.name].get("reproduce"), f"missing reproduction command for {scheme.name}"
+        assert comparisons[scheme.name].get("validation_claim"), f"missing validation claim for {scheme.name}"
+        assert comparisons[scheme.name].get("reference_sources"), f"missing comparison boundary references for {scheme.name}"
+        assert "official source binding" not in comparisons[scheme.name].get("notes", ""), f"outdated source-binding wording for {scheme.name}"
 
 
 def poly(coefficients: tuple[float, ...], x: float) -> float:
@@ -146,19 +167,6 @@ def expected_exit_round(g: int, belief: float, beta: float) -> float:
     return float(np.clip(math.ceil(raw), 1.0, g))
 
 
-def timeline_entry(scheme: Scheme, eta: float, t_exec: float, t_slot: float) -> dict:
-    gamma = 0.85
-    t_seg = 0.02
-    t_reexec = (1 - eta) * t_exec
-    if scheme.clever:
-        total = eta * t_exec + t_seg + scheme.dispute_slots * t_slot + t_reexec
-        name = "CleVer\n（并发）"
-    else:
-        total = t_exec + gamma + scheme.dispute_slots * t_slot + t_reexec
-        name = scheme.name
-    return {"name": name, "dispute_slots": scheme.dispute_slots, "total_time": total}
-
-
 def comparison_from_raw(raw: dict) -> dict:
     by_scheme = {item["scheme"]: item for item in raw["comparison_protocols"]}
     ordered = [by_scheme[scheme.name] for scheme in SCHEMES]
@@ -166,6 +174,7 @@ def comparison_from_raw(raw: dict) -> dict:
         "schemes": [item["scheme"] for item in ordered],
         "optimistic_gas_k": [item["optimistic_gas_k"] for item in ordered],
         "dispute_gas_k": [item["dispute_gas_k"] for item in ordered],
+        "protocols": ordered,
     }
 
 
@@ -214,6 +223,9 @@ def validate_data(data: dict) -> None:
     assert len(dispute) == len(SCHEMES) and all(v > 0 for v in dispute), "unexpected dispute gas comparison data"
     assert len(data["timeline"]["schemes"]) == len(SCHEMES), "unexpected timeline comparison data"
     assert all(item["total_time"] > 0 for item in data["timeline"]["schemes"]), "timeline values must be positive"
+    assert all(item.get("formula") for item in data["timeline"]["schemes"]), "timeline formulas missing"
+    for protocol in data["gas_comparison"]["protocols"]:
+        assert protocol["dispute_benchmark"]["gas_k"] == protocol["dispute_gas_k"], f"{protocol['scheme']} dispute gas is not benchmark-derived"
 
 
 def main() -> None:

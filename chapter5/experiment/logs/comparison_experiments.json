@@ -1,0 +1,364 @@
+{
+  "source": "scenario comparison experiment plus Foundry PoD gas parsed from chapter5/experiment/logs/raw_experiment_log.json",
+  "comparison_experiments": [
+    {
+      "scheme": "TrueBit",
+      "execution_environment": "WASM",
+      "online_audit": "no",
+      "semantic_diligence": "partial",
+      "unpredictable_audit": "-",
+      "external_network": "no",
+      "benchmark_mode": "local minimal benchmark faithful to solver/verifier verification-game flow",
+      "source_kind": "flow_benchmark_from_published_protocol_shape",
+      "reference_sources": [
+        {
+          "project": "TrueBitFoundation/truebit-eth",
+          "url": "https://github.com/TrueBitFoundation/truebit-eth",
+          "evidence": "TrueBit repository used to define the solver/verifier verification-game shape",
+          "used_for": "reference boundary for the local solver/verifier scenario in table 11"
+        },
+        {
+          "project": "Truebit documentation",
+          "url": "https://docs.truebit.io/v1docs",
+          "evidence": "TrueBit documentation used to confirm task and role workflow terminology",
+          "used_for": "reference boundary for the local TrueBit task and role workflow model"
+        }
+      ],
+      "scenarios": [
+        {
+          "name": "offline_validator",
+          "requirement": "detect online/offline state during execution",
+          "outcome": "not covered",
+          "evidence": "verification game starts after an explicit challenge; no periodic online heartbeat path is modeled"
+        },
+        {
+          "name": "lazy_semantic_report",
+          "requirement": "detect semantic diligence without rerunning the whole task",
+          "outcome": "partially covered",
+          "evidence": "interactive verification can isolate a disputed step, but routine semantic diligence sampling is not present"
+        },
+        {
+          "name": "unpredictable_audit_target",
+          "requirement": "hide sampled audit points before work is done",
+          "outcome": "not covered",
+          "evidence": "challenge targets are chosen after a dispute rather than by an in-execution sentinel trigger"
+        }
+      ],
+      "protocol_flow": [
+        {
+          "phase": "submit",
+          "action": "solver commits to task output and execution trace root",
+          "evidence": "comparison benchmark records solver commitment before any audit decision"
+        },
+        {
+          "phase": "challenge",
+          "action": "verifier challenges the solver claim after observing a mismatch",
+          "evidence": "no heartbeat or in-execution sentinel trigger is required"
+        },
+        {
+          "phase": "localize",
+          "action": "solver and verifier bisect the trace to one disputed instruction",
+          "evidence": "semantic diligence is partial because the game can isolate a disputed step only after challenge"
+        },
+        {
+          "phase": "adjudicate",
+          "action": "single-step judge decides the instruction transition",
+          "evidence": "final evidence is a post-execution fraud-proof verdict"
+        }
+      ],
+      "reproduce": "go run ./cmd/comparison-exp --raw logs/raw_experiment_log.json",
+      "validation_claim": "table 11 row is generated from explicit local scenario outcomes and the TrueBit protocol_flow model in comparisons.RunCapabilityExperiments"
+    },
+    {
+      "scheme": "Arbitrum",
+      "execution_environment": "AVM/WASM",
+      "online_audit": "no",
+      "semantic_diligence": "no",
+      "unpredictable_audit": "-",
+      "external_network": "no",
+      "benchmark_mode": "local minimal benchmark faithful to fraud-proof assertion/challenge flow",
+      "source_kind": "flow_benchmark_from_rollup_fraud_proof_shape",
+      "reference_sources": [
+        {
+          "project": "OffchainLabs/arbitrum-classic",
+          "url": "https://github.com/OffchainLabs/arbitrum-classic",
+          "evidence": "Arbitrum Classic repository used to define the assertion/challenge fraud-proof shape",
+          "used_for": "reference boundary for the local assertion/challenge scenario in table 11"
+        },
+        {
+          "project": "OffchainLabs/bold",
+          "url": "https://github.com/OffchainLabs/bold",
+          "evidence": "BoLD repository used as the current Arbitrum dispute-system reference",
+          "used_for": "reference boundary for the local Arbitrum dispute-system scenario"
+        }
+      ],
+      "scenarios": [
+        {
+          "name": "offline_validator",
+          "requirement": "detect online/offline state during execution",
+          "outcome": "not covered",
+          "evidence": "rollup challenge logic does not require a validator heartbeat during off-chain execution"
+        },
+        {
+          "name": "lazy_semantic_report",
+          "requirement": "detect semantic diligence without rerunning the whole task",
+          "outcome": "not covered",
+          "evidence": "fraud proof resolves a challenged state transition, not routine diligence during local work"
+        },
+        {
+          "name": "unpredictable_audit_target",
+          "requirement": "hide sampled audit points before work is done",
+          "outcome": "not covered",
+          "evidence": "audit target selection is tied to later disputes"
+        }
+      ],
+      "protocol_flow": [
+        {
+          "phase": "submit",
+          "action": "validator posts an assertion over the off-chain execution result",
+          "evidence": "comparison benchmark models the assertion root as the starting object"
+        },
+        {
+          "phase": "challenge",
+          "action": "opponent opens an interactive fraud-proof challenge",
+          "evidence": "challenge happens after execution, not as online-work audit"
+        },
+        {
+          "phase": "localize",
+          "action": "parties bisect the assertion interval to a single transition",
+          "evidence": "no routine opcode/rw sampling is performed during execution"
+        },
+        {
+          "phase": "adjudicate",
+          "action": "one-step proof confirms or rejects the challenged transition",
+          "evidence": "final evidence is a rollup dispute verdict"
+        }
+      ],
+      "reproduce": "go run ./cmd/comparison-exp --raw logs/raw_experiment_log.json",
+      "validation_claim": "table 11 row is generated from explicit local scenario outcomes and the Arbitrum fraud-proof protocol_flow model"
+    },
+    {
+      "scheme": "PoD",
+      "execution_environment": "independent network",
+      "online_audit": "yes",
+      "semantic_diligence": "no",
+      "unpredictable_audit": "limited",
+      "external_network": "yes",
+      "benchmark_mode": "Solidity MineBounty gas benchmark plus deterministic watchtower epoch trace",
+      "source_kind": "scenario_comparison_experiment_plus_solidity_pod_mine_bounty",
+      "reference_sources": [
+        {
+          "project": "witnesschain-com/diligencewatchtower-contracts",
+          "url": "https://github.com/witnesschain-com/diligencewatchtower-contracts",
+          "evidence": "Witness Chain contracts used to define the diligence watchtower and bounty-submission shape",
+          "used_for": "reference boundary for the local PoD watchtower and MineBounty benchmark context"
+        },
+        {
+          "project": "witnesschain-com/diligencewatchtower-client",
+          "url": "https://github.com/witnesschain-com/diligencewatchtower-client",
+          "evidence": "Witness Chain watchtower client used to confirm the recomputation workflow",
+          "used_for": "reference boundary for the local watchtower epoch trace"
+        },
+        {
+          "project": "Proof of Diligence paper",
+          "url": "https://eprint.iacr.org/2024/736",
+          "evidence": "Proof of Diligence: Cryptoeconomic Security for Rollups",
+          "used_for": "MineBounty normal-path gas baseline and watchtower incentive workflow"
+        }
+      ],
+      "scenarios": [
+        {
+          "name": "offline_validator",
+          "requirement": "detect online/offline state during execution",
+          "outcome": "covered by external watchtower pool",
+          "evidence": "PoD watchtowers recompute the assertion and execution trace root, then submit a VRF proof through podMineBounty"
+        },
+        {
+          "name": "lazy_semantic_report",
+          "requirement": "detect semantic diligence without rerunning the whole task",
+          "outcome": "not covered",
+          "evidence": "PoD proves rollup assertion checking and trace-root work, but does not include SenCk-style opcode/rw sentinel digest sampling"
+        },
+        {
+          "name": "unpredictable_audit_target",
+          "requirement": "hide sampled audit points before work is done",
+          "outcome": "limited",
+          "evidence": "VRF bounty eligibility is unpredictable, but audit targets are external watchtower bounty epochs rather than task-local Gamma triggers"
+        }
+      ],
+      "protocol_flow": [
+        {
+          "phase": "watchtower_recompute",
+          "action": "watchtower recomputes the asserted state root for each epoch",
+          "evidence": "gas_trace.pod_experiment_trace records honest and lazy watchtower roots"
+        },
+        {
+          "phase": "trace_root",
+          "action": "watchtower builds an execution trace Merkle-style root",
+          "evidence": "testPoDMineBountyGas submits a calibrated 260-leaf execution trace"
+        },
+        {
+          "phase": "vrf_bounty",
+          "action": "watchtower binds state root, trace root, epoch, identity, and VRF proof",
+          "evidence": "ValidatorAudit.podMineBounty verifies the digest and bounty threshold"
+        },
+        {
+          "phase": "detect_lazy",
+          "action": "other watchtowers reject mismatched recomputation or forged trace roots",
+          "evidence": "pod_experiment_trace.lazy_detected and invalid_proof_count provide raw evidence"
+        }
+      ],
+      "reproduce": "forge test --gas-report; parse testPoDMineBountyGas or run go run ./cmd/comparison-exp",
+      "validation_claim": "PoD row and monthly gas baseline are generated from the Solidity podMineBounty benchmark plus deterministic watchtower epoch traces"
+    },
+    {
+      "scheme": "RanCk+SenCk",
+      "execution_environment": "EVM",
+      "online_audit": "yes",
+      "semantic_diligence": "yes",
+      "unpredictable_audit": "yes",
+      "external_network": "no",
+      "benchmark_mode": "implemented protocol simulation and Solidity gas benchmark in this repository",
+      "source_kind": "project_protocol_implementation",
+      "reference_sources": [
+        {
+          "project": "paper-exp chapter5",
+          "url": "chapter5/experiment/audit/protocol.go",
+          "evidence": "local RanCk/SenCk protocol implementation and deterministic experiment traces",
+          "used_for": "online heartbeat, continuity audit, sentinel diligence, and gas benchmark rows"
+        },
+        {
+          "project": "paper-exp chapter5 Solidity",
+          "url": "chapter5/experiment/src/ValidatorAudit.sol",
+          "evidence": "local Solidity benchmark for TrackInit/HBRespond/ContAudit/SentReport/Dispute/SentProve",
+          "used_for": "table 10 and figures 30-31 gas measurement"
+        }
+      ],
+      "scenarios": [
+        {
+          "name": "offline_validator",
+          "requirement": "detect online/offline state during execution",
+          "outcome": "covered by RanCk",
+          "evidence": "Trigger(t,i)=H(bh_t||tid||i) mod M plus ContAudit detects missed or inconsistent heartbeat traces"
+        },
+        {
+          "name": "lazy_semantic_report",
+          "requirement": "detect semantic diligence without rerunning the whole task",
+          "outcome": "covered by SenCk",
+          "evidence": "Gamma(r,tid,k,t,rw_t) sentinel sampling checks local opcode/rw digests"
+        },
+        {
+          "name": "unpredictable_audit_target",
+          "requirement": "hide sampled audit points before work is done",
+          "outcome": "covered",
+          "evidence": "block-hash and runtime rw dependent Gamma triggers are computed during instrumented execution"
+        }
+      ],
+      "protocol_flow": [
+        {
+          "phase": "TrackInit",
+          "action": "validator commits seed/nonce and TC_0",
+          "evidence": "ranck_traces[].track_init and ValidatorAudit.trackInit"
+        },
+        {
+          "phase": "HBRespond",
+          "action": "Trigger(t,i)=H(bh_t||tid||i) mod M selects heartbeat points",
+          "evidence": "ranck_traces[].heartbeats records responses and misses"
+        },
+        {
+          "phase": "ContAudit",
+          "action": "opened credential chain and sampled single-step witnesses are checked",
+          "evidence": "ranck_traces[].cont_audit records pass/detection evidence"
+        },
+        {
+          "phase": "SentReport",
+          "action": "instrumented EVM hook emits opcode/rw sentinel digests",
+          "evidence": "senck_traces[].segment_reports and trace_sample record Gamma sampling"
+        },
+        {
+          "phase": "Dispute/VerSeg",
+          "action": "mismatched sentinel reports are replayed and adjudicated",
+          "evidence": "senck_traces[].sent_report.dispute_passed and ValidatorAudit.sentProve"
+        }
+      ],
+      "reproduce": "go test ./...; go run ./cmd/audit-exp --out logs/raw_experiment_log.json",
+      "validation_claim": "RanCk/SenCk row is generated from implemented protocol traces and explicit scenario outcomes"
+    }
+  ],
+  "comparison_table_11": [
+    {
+      "execution_environment": "WASM",
+      "external_network": "no",
+      "online_audit": "no",
+      "scheme": "TrueBit",
+      "semantic_diligence": "partial",
+      "unpredictable_audit": "-"
+    },
+    {
+      "execution_environment": "AVM/WASM",
+      "external_network": "no",
+      "online_audit": "no",
+      "scheme": "Arbitrum",
+      "semantic_diligence": "no",
+      "unpredictable_audit": "-"
+    },
+    {
+      "execution_environment": "independent network",
+      "external_network": "yes",
+      "online_audit": "yes",
+      "scheme": "PoD",
+      "semantic_diligence": "no",
+      "unpredictable_audit": "limited"
+    },
+    {
+      "execution_environment": "EVM",
+      "external_network": "no",
+      "online_audit": "yes",
+      "scheme": "RanCk+SenCk",
+      "semantic_diligence": "yes",
+      "unpredictable_audit": "yes"
+    }
+  ],
+  "pod_baseline": {
+    "scheme": "PoD",
+    "test": "testPoDMineBountyGas",
+    "function": "podMineBounty",
+    "gas_per_epoch": 382010,
+    "theta": 0.9,
+    "validator_count": 20,
+    "epochs_per_month": 4320,
+    "monthly_gas": 29705097600,
+    "formula": "epochs_per_month * theta * validator_count * PoD podMineBounty gas",
+    "paper_mine_bounty_average_gas": 380000,
+    "paper_source": "Proof of Diligence: Cryptoeconomic Security for Rollups, Section 6.2: MineBounty consumes about 380K gas on average",
+    "protocol_steps": [
+      "watchtower recomputes the asserted L2 state root",
+      "watchtower builds the execution trace Merkle root",
+      "watchtower computes a VRF proof bound to the trace root and its public key",
+      "BountyManager-style podMineBounty stores and verifies the proof for reward allocation"
+    ],
+    "reference_sources": [
+      {
+        "project": "witnesschain-com/diligencewatchtower-contracts",
+        "url": "https://github.com/witnesschain-com/diligencewatchtower-contracts",
+        "evidence": "Witness Chain contracts used to define the diligence watchtower and bounty-submission shape",
+        "used_for": "reference boundary for the local PoD watchtower and MineBounty benchmark context"
+      },
+      {
+        "project": "witnesschain-com/diligencewatchtower-client",
+        "url": "https://github.com/witnesschain-com/diligencewatchtower-client",
+        "evidence": "Witness Chain watchtower client used to confirm the recomputation workflow",
+        "used_for": "reference boundary for the local watchtower epoch trace"
+      },
+      {
+        "project": "Proof of Diligence paper",
+        "url": "https://eprint.iacr.org/2024/736",
+        "evidence": "Proof of Diligence: Cryptoeconomic Security for Rollups",
+        "used_for": "MineBounty normal-path gas baseline and watchtower incentive workflow"
+      }
+    ],
+    "source_kind": "solidity_pod_mine_bounty_benchmark_plus_paper_protocol_trace",
+    "reproduce": "forge test --gas-report; parse testPoDMineBountyGas from test/ValidatorAudit.t.sol",
+    "validation_claim": "PoD monthly gas plotted in figures 30/31 is derived from the podMineBounty Foundry benchmark; deterministic Go traces separately verify the watchtower recomputation/VRF workflow"
+  }
+}

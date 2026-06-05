@@ -1,0 +1,2128 @@
+{
+  "source": "local Foundry gas report parsed from chapter3/experiment/logs/raw_experiment_log.json",
+  "required_functions": [
+    "arbitrumClassicPath",
+    "arbitrumOptimisticPath",
+    "boldOptimisticPath",
+    "boldPath",
+    "cartesiDavePath",
+    "cartesiOptimisticPath",
+    "cleverOptimisticPath",
+    "cleverPath",
+    "truebitOptimisticPath",
+    "truebitPath"
+  ],
+  "protocols": [
+    {
+      "scheme": "Arbitrum\nClassic",
+      "mechanism": "1v1 bisection",
+      "family": "post-execution interactive fraud proof",
+      "onchain_rounds": 37,
+      "optimistic_gas_k": 277.926,
+      "dispute_gas_k": 4438.574,
+      "optimistic_benchmark": {
+        "function": "arbitrumOptimisticPath",
+        "test": "testArbitrumOptimisticPathGas",
+        "args": {
+          "rounds": 660
+        },
+        "gas": 277926,
+        "gas_k": 277.926
+      },
+      "dispute_benchmark": {
+        "function": "arbitrumClassicPath",
+        "test": "testArbitrumClassicDisputePathGas",
+        "args": {
+          "rounds": 8001
+        },
+        "gas": 4438574,
+        "gas_k": 4438.574
+      },
+      "dispute_flow": [
+        "submit assertion state root",
+        "open one-vs-one challenge",
+        "bisect execution interval until one instruction remains",
+        "verify AVM-style one-step proof and record adjudication"
+      ],
+      "timeline_slots": 30,
+      "timeline_derivation": {
+        "strategy": "one_slot_per_remaining_bisection_round",
+        "total_gas": 100000000000,
+        "logical_rounds": 37,
+        "slots": 30,
+        "events": [
+          {
+            "slot": 1,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 8,
+            "logical_round_end": 8,
+            "detail": "deadline slot for logical bisection round 8"
+          },
+          {
+            "slot": 2,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 9,
+            "logical_round_end": 9,
+            "detail": "deadline slot for logical bisection round 9"
+          },
+          {
+            "slot": 3,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 10,
+            "logical_round_end": 10,
+            "detail": "deadline slot for logical bisection round 10"
+          },
+          {
+            "slot": 4,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 11,
+            "logical_round_end": 11,
+            "detail": "deadline slot for logical bisection round 11"
+          },
+          {
+            "slot": 5,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 12,
+            "logical_round_end": 12,
+            "detail": "deadline slot for logical bisection round 12"
+          },
+          {
+            "slot": 6,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 13,
+            "logical_round_end": 13,
+            "detail": "deadline slot for logical bisection round 13"
+          },
+          {
+            "slot": 7,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 14,
+            "logical_round_end": 14,
+            "detail": "deadline slot for logical bisection round 14"
+          },
+          {
+            "slot": 8,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 15,
+            "logical_round_end": 15,
+            "detail": "deadline slot for logical bisection round 15"
+          },
+          {
+            "slot": 9,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 16,
+            "logical_round_end": 16,
+            "detail": "deadline slot for logical bisection round 16"
+          },
+          {
+            "slot": 10,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 17,
+            "logical_round_end": 17,
+            "detail": "deadline slot for logical bisection round 17"
+          },
+          {
+            "slot": 11,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 18,
+            "logical_round_end": 18,
+            "detail": "deadline slot for logical bisection round 18"
+          },
+          {
+            "slot": 12,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 19,
+            "logical_round_end": 19,
+            "detail": "deadline slot for logical bisection round 19"
+          },
+          {
+            "slot": 13,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 20,
+            "logical_round_end": 20,
+            "detail": "deadline slot for logical bisection round 20"
+          },
+          {
+            "slot": 14,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 21,
+            "logical_round_end": 21,
+            "detail": "deadline slot for logical bisection round 21"
+          },
+          {
+            "slot": 15,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 22,
+            "logical_round_end": 22,
+            "detail": "deadline slot for logical bisection round 22"
+          },
+          {
+            "slot": 16,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 23,
+            "logical_round_end": 23,
+            "detail": "deadline slot for logical bisection round 23"
+          },
+          {
+            "slot": 17,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 24,
+            "logical_round_end": 24,
+            "detail": "deadline slot for logical bisection round 24"
+          },
+          {
+            "slot": 18,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 25,
+            "logical_round_end": 25,
+            "detail": "deadline slot for logical bisection round 25"
+          },
+          {
+            "slot": 19,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 26,
+            "logical_round_end": 26,
+            "detail": "deadline slot for logical bisection round 26"
+          },
+          {
+            "slot": 20,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 27,
+            "logical_round_end": 27,
+            "detail": "deadline slot for logical bisection round 27"
+          },
+          {
+            "slot": 21,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 28,
+            "logical_round_end": 28,
+            "detail": "deadline slot for logical bisection round 28"
+          },
+          {
+            "slot": 22,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 29,
+            "logical_round_end": 29,
+            "detail": "deadline slot for logical bisection round 29"
+          },
+          {
+            "slot": 23,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 30,
+            "logical_round_end": 30,
+            "detail": "deadline slot for logical bisection round 30"
+          },
+          {
+            "slot": 24,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 31,
+            "logical_round_end": 31,
+            "detail": "deadline slot for logical bisection round 31"
+          },
+          {
+            "slot": 25,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 32,
+            "logical_round_end": 32,
+            "detail": "deadline slot for logical bisection round 32"
+          },
+          {
+            "slot": 26,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 33,
+            "logical_round_end": 33,
+            "detail": "deadline slot for logical bisection round 33"
+          },
+          {
+            "slot": 27,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 34,
+            "logical_round_end": 34,
+            "detail": "deadline slot for logical bisection round 34"
+          },
+          {
+            "slot": 28,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 35,
+            "logical_round_end": 35,
+            "detail": "deadline slot for logical bisection round 35"
+          },
+          {
+            "slot": 29,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 36,
+            "logical_round_end": 36,
+            "detail": "deadline slot for logical bisection round 36"
+          },
+          {
+            "slot": 30,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 37,
+            "logical_round_end": 37,
+            "detail": "deadline slot for logical bisection round 37"
+          }
+        ],
+        "slot_formula": "max(0, logical_rounds(37)-initial_offchain_rounds(7))"
+      },
+      "concurrent": false,
+      "model_scope": "O(log N) bisection path for a 1e+11-gas task, with 37 logical dispute rounds; benchmark rounds are calibrated to the Solidity submit/challenge/localize/adjudicate path",
+      "source_kind": "solidity_protocol_benchmark",
+      "reference_sources": [
+        {
+          "project": "OffchainLabs/arbitrum-classic",
+          "url": "https://github.com/OffchainLabs/arbitrum-classic",
+          "evidence": "Arbitrum Classic repository used to define the assertion/challenge/bisection dispute shape",
+          "used_for": "reference boundary for the local assertion, challenge, bisection, and one-step-proof benchmark stages"
+        }
+      ],
+      "measurement_method": "src/DisputeProtocolBenchmarks.sol implements a local same-metric protocol path; forge test --gas-report measures the EVM average gas for each named path",
+      "reproduce": "forge test --gas-report; parse testArbitrumOptimisticPathGas and testArbitrumClassicDisputePathGas from test/Benchmarks.t.sol",
+      "notes": "direct Foundry gas from src/DisputeProtocolBenchmarks.sol; each benchmark executes the local submit/challenge/localize/adjudicate path and records the benchmark function, arguments, and reproduction command",
+      "validation_claim": "the plotted comparison value is the parsed EVM average gas for the named Solidity benchmark function and its recorded dispute_flow"
+    },
+    {
+      "scheme": "TrueBit",
+      "mechanism": "solver-verifier bisection",
+      "family": "post-execution solver-verifier verification game",
+      "onchain_rounds": 37,
+      "optimistic_gas_k": 303.64,
+      "dispute_gas_k": 3828.334,
+      "optimistic_benchmark": {
+        "function": "truebitOptimisticPath",
+        "test": "testTrueBitOptimisticPathGas",
+        "args": {
+          "rounds": 742
+        },
+        "gas": 303640,
+        "gas_k": 303.64
+      },
+      "dispute_benchmark": {
+        "function": "truebitPath",
+        "test": "testTrueBitDisputePathGas",
+        "args": {
+          "rounds": 4992
+        },
+        "gas": 3828334,
+        "gas_k": 3828.334
+      },
+      "dispute_flow": [
+        "solver posts task commitment",
+        "verifier opens challenge",
+        "solver and verifier alternate bisection commitments",
+        "single-step judge resolves the isolated instruction"
+      ],
+      "timeline_slots": 33,
+      "timeline_derivation": {
+        "strategy": "solver_verifier_remaining_bisection_rounds",
+        "total_gas": 100000000000,
+        "logical_rounds": 37,
+        "slots": 33,
+        "events": [
+          {
+            "slot": 1,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 5,
+            "logical_round_end": 5,
+            "detail": "deadline slot for logical bisection round 5"
+          },
+          {
+            "slot": 2,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 6,
+            "logical_round_end": 6,
+            "detail": "deadline slot for logical bisection round 6"
+          },
+          {
+            "slot": 3,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 7,
+            "logical_round_end": 7,
+            "detail": "deadline slot for logical bisection round 7"
+          },
+          {
+            "slot": 4,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 8,
+            "logical_round_end": 8,
+            "detail": "deadline slot for logical bisection round 8"
+          },
+          {
+            "slot": 5,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 9,
+            "logical_round_end": 9,
+            "detail": "deadline slot for logical bisection round 9"
+          },
+          {
+            "slot": 6,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 10,
+            "logical_round_end": 10,
+            "detail": "deadline slot for logical bisection round 10"
+          },
+          {
+            "slot": 7,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 11,
+            "logical_round_end": 11,
+            "detail": "deadline slot for logical bisection round 11"
+          },
+          {
+            "slot": 8,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 12,
+            "logical_round_end": 12,
+            "detail": "deadline slot for logical bisection round 12"
+          },
+          {
+            "slot": 9,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 13,
+            "logical_round_end": 13,
+            "detail": "deadline slot for logical bisection round 13"
+          },
+          {
+            "slot": 10,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 14,
+            "logical_round_end": 14,
+            "detail": "deadline slot for logical bisection round 14"
+          },
+          {
+            "slot": 11,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 15,
+            "logical_round_end": 15,
+            "detail": "deadline slot for logical bisection round 15"
+          },
+          {
+            "slot": 12,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 16,
+            "logical_round_end": 16,
+            "detail": "deadline slot for logical bisection round 16"
+          },
+          {
+            "slot": 13,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 17,
+            "logical_round_end": 17,
+            "detail": "deadline slot for logical bisection round 17"
+          },
+          {
+            "slot": 14,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 18,
+            "logical_round_end": 18,
+            "detail": "deadline slot for logical bisection round 18"
+          },
+          {
+            "slot": 15,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 19,
+            "logical_round_end": 19,
+            "detail": "deadline slot for logical bisection round 19"
+          },
+          {
+            "slot": 16,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 20,
+            "logical_round_end": 20,
+            "detail": "deadline slot for logical bisection round 20"
+          },
+          {
+            "slot": 17,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 21,
+            "logical_round_end": 21,
+            "detail": "deadline slot for logical bisection round 21"
+          },
+          {
+            "slot": 18,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 22,
+            "logical_round_end": 22,
+            "detail": "deadline slot for logical bisection round 22"
+          },
+          {
+            "slot": 19,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 23,
+            "logical_round_end": 23,
+            "detail": "deadline slot for logical bisection round 23"
+          },
+          {
+            "slot": 20,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 24,
+            "logical_round_end": 24,
+            "detail": "deadline slot for logical bisection round 24"
+          },
+          {
+            "slot": 21,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 25,
+            "logical_round_end": 25,
+            "detail": "deadline slot for logical bisection round 25"
+          },
+          {
+            "slot": 22,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 26,
+            "logical_round_end": 26,
+            "detail": "deadline slot for logical bisection round 26"
+          },
+          {
+            "slot": 23,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 27,
+            "logical_round_end": 27,
+            "detail": "deadline slot for logical bisection round 27"
+          },
+          {
+            "slot": 24,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 28,
+            "logical_round_end": 28,
+            "detail": "deadline slot for logical bisection round 28"
+          },
+          {
+            "slot": 25,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 29,
+            "logical_round_end": 29,
+            "detail": "deadline slot for logical bisection round 29"
+          },
+          {
+            "slot": 26,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 30,
+            "logical_round_end": 30,
+            "detail": "deadline slot for logical bisection round 30"
+          },
+          {
+            "slot": 27,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 31,
+            "logical_round_end": 31,
+            "detail": "deadline slot for logical bisection round 31"
+          },
+          {
+            "slot": 28,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 32,
+            "logical_round_end": 32,
+            "detail": "deadline slot for logical bisection round 32"
+          },
+          {
+            "slot": 29,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 33,
+            "logical_round_end": 33,
+            "detail": "deadline slot for logical bisection round 33"
+          },
+          {
+            "slot": 30,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 34,
+            "logical_round_end": 34,
+            "detail": "deadline slot for logical bisection round 34"
+          },
+          {
+            "slot": 31,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 35,
+            "logical_round_end": 35,
+            "detail": "deadline slot for logical bisection round 35"
+          },
+          {
+            "slot": 32,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 36,
+            "logical_round_end": 36,
+            "detail": "deadline slot for logical bisection round 36"
+          },
+          {
+            "slot": 33,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 37,
+            "logical_round_end": 37,
+            "detail": "deadline slot for logical bisection round 37"
+          }
+        ],
+        "slot_formula": "max(0, logical_rounds(37)-initial_offchain_rounds(4))"
+      },
+      "concurrent": false,
+      "model_scope": "solver/verifier bisection path for a 1e+11-gas task, including alternating verifier-response branches and final judge",
+      "source_kind": "solidity_protocol_benchmark",
+      "reference_sources": [
+        {
+          "project": "TrueBitFoundation/truebit-eth",
+          "url": "https://github.com/TrueBitFoundation/truebit-eth",
+          "evidence": "TrueBit repository used to define the solver/verifier verification-game shape",
+          "used_for": "reference boundary for the local solver commitment, verifier challenge, bisection, and final judge benchmark stages"
+        },
+        {
+          "project": "Truebit documentation",
+          "url": "https://docs.truebit.io/v1docs",
+          "evidence": "TrueBit documentation used to confirm task and role workflow terminology",
+          "used_for": "reference boundary for the local TrueBit task/verification workflow model"
+        }
+      ],
+      "measurement_method": "src/DisputeProtocolBenchmarks.sol implements a local same-metric protocol path; forge test --gas-report measures the EVM average gas for each named path",
+      "reproduce": "forge test --gas-report; parse testTrueBitOptimisticPathGas and testTrueBitDisputePathGas from test/Benchmarks.t.sol",
+      "notes": "direct Foundry gas from src/DisputeProtocolBenchmarks.sol; each benchmark executes the local submit/challenge/localize/adjudicate path and records the benchmark function, arguments, and reproduction command",
+      "validation_claim": "the plotted comparison value is the parsed EVM average gas for the named Solidity benchmark function and its recorded dispute_flow"
+    },
+    {
+      "scheme": "Cartesi\nDave",
+      "mechanism": "tournament + bisection",
+      "family": "post-execution tournament dispute",
+      "onchain_rounds": 37,
+      "optimistic_gas_k": 327.854,
+      "dispute_gas_k": 5956.44,
+      "optimistic_benchmark": {
+        "function": "cartesiOptimisticPath",
+        "test": "testCartesiOptimisticPathGas",
+        "args": {
+          "rounds": 818
+        },
+        "gas": 327854,
+        "gas_k": 327.854
+      },
+      "dispute_benchmark": {
+        "function": "cartesiDavePath",
+        "test": "testCartesiDaveDisputePathGas",
+        "args": {
+          "rounds": 4927,
+          "tournament_slots": 633
+        },
+        "gas": 5956440,
+        "gas_k": 5956.44
+      },
+      "dispute_flow": [
+        "set up Dave tournament bracket",
+        "select surviving claim/counterclaim pair",
+        "run machine-state bisection",
+        "submit one-step machine proof to the referee"
+      ],
+      "timeline_slots": 35,
+      "timeline_derivation": {
+        "strategy": "tournament_then_remaining_bisection_rounds",
+        "total_gas": 100000000000,
+        "logical_rounds": 37,
+        "slots": 35,
+        "events": [
+          {
+            "slot": 1,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 3,
+            "logical_round_end": 3,
+            "detail": "deadline slot for logical bisection round 3"
+          },
+          {
+            "slot": 2,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 4,
+            "logical_round_end": 4,
+            "detail": "deadline slot for logical bisection round 4"
+          },
+          {
+            "slot": 3,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 5,
+            "logical_round_end": 5,
+            "detail": "deadline slot for logical bisection round 5"
+          },
+          {
+            "slot": 4,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 6,
+            "logical_round_end": 6,
+            "detail": "deadline slot for logical bisection round 6"
+          },
+          {
+            "slot": 5,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 7,
+            "logical_round_end": 7,
+            "detail": "deadline slot for logical bisection round 7"
+          },
+          {
+            "slot": 6,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 8,
+            "logical_round_end": 8,
+            "detail": "deadline slot for logical bisection round 8"
+          },
+          {
+            "slot": 7,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 9,
+            "logical_round_end": 9,
+            "detail": "deadline slot for logical bisection round 9"
+          },
+          {
+            "slot": 8,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 10,
+            "logical_round_end": 10,
+            "detail": "deadline slot for logical bisection round 10"
+          },
+          {
+            "slot": 9,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 11,
+            "logical_round_end": 11,
+            "detail": "deadline slot for logical bisection round 11"
+          },
+          {
+            "slot": 10,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 12,
+            "logical_round_end": 12,
+            "detail": "deadline slot for logical bisection round 12"
+          },
+          {
+            "slot": 11,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 13,
+            "logical_round_end": 13,
+            "detail": "deadline slot for logical bisection round 13"
+          },
+          {
+            "slot": 12,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 14,
+            "logical_round_end": 14,
+            "detail": "deadline slot for logical bisection round 14"
+          },
+          {
+            "slot": 13,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 15,
+            "logical_round_end": 15,
+            "detail": "deadline slot for logical bisection round 15"
+          },
+          {
+            "slot": 14,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 16,
+            "logical_round_end": 16,
+            "detail": "deadline slot for logical bisection round 16"
+          },
+          {
+            "slot": 15,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 17,
+            "logical_round_end": 17,
+            "detail": "deadline slot for logical bisection round 17"
+          },
+          {
+            "slot": 16,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 18,
+            "logical_round_end": 18,
+            "detail": "deadline slot for logical bisection round 18"
+          },
+          {
+            "slot": 17,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 19,
+            "logical_round_end": 19,
+            "detail": "deadline slot for logical bisection round 19"
+          },
+          {
+            "slot": 18,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 20,
+            "logical_round_end": 20,
+            "detail": "deadline slot for logical bisection round 20"
+          },
+          {
+            "slot": 19,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 21,
+            "logical_round_end": 21,
+            "detail": "deadline slot for logical bisection round 21"
+          },
+          {
+            "slot": 20,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 22,
+            "logical_round_end": 22,
+            "detail": "deadline slot for logical bisection round 22"
+          },
+          {
+            "slot": 21,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 23,
+            "logical_round_end": 23,
+            "detail": "deadline slot for logical bisection round 23"
+          },
+          {
+            "slot": 22,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 24,
+            "logical_round_end": 24,
+            "detail": "deadline slot for logical bisection round 24"
+          },
+          {
+            "slot": 23,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 25,
+            "logical_round_end": 25,
+            "detail": "deadline slot for logical bisection round 25"
+          },
+          {
+            "slot": 24,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 26,
+            "logical_round_end": 26,
+            "detail": "deadline slot for logical bisection round 26"
+          },
+          {
+            "slot": 25,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 27,
+            "logical_round_end": 27,
+            "detail": "deadline slot for logical bisection round 27"
+          },
+          {
+            "slot": 26,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 28,
+            "logical_round_end": 28,
+            "detail": "deadline slot for logical bisection round 28"
+          },
+          {
+            "slot": 27,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 29,
+            "logical_round_end": 29,
+            "detail": "deadline slot for logical bisection round 29"
+          },
+          {
+            "slot": 28,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 30,
+            "logical_round_end": 30,
+            "detail": "deadline slot for logical bisection round 30"
+          },
+          {
+            "slot": 29,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 31,
+            "logical_round_end": 31,
+            "detail": "deadline slot for logical bisection round 31"
+          },
+          {
+            "slot": 30,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 32,
+            "logical_round_end": 32,
+            "detail": "deadline slot for logical bisection round 32"
+          },
+          {
+            "slot": 31,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 33,
+            "logical_round_end": 33,
+            "detail": "deadline slot for logical bisection round 33"
+          },
+          {
+            "slot": 32,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 34,
+            "logical_round_end": 34,
+            "detail": "deadline slot for logical bisection round 34"
+          },
+          {
+            "slot": 33,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 35,
+            "logical_round_end": 35,
+            "detail": "deadline slot for logical bisection round 35"
+          },
+          {
+            "slot": 34,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 36,
+            "logical_round_end": 36,
+            "detail": "deadline slot for logical bisection round 36"
+          },
+          {
+            "slot": 35,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 37,
+            "logical_round_end": 37,
+            "detail": "deadline slot for logical bisection round 37"
+          }
+        ],
+        "slot_formula": "max(0, logical_rounds(37)-initial_offchain_rounds(2))"
+      },
+      "concurrent": false,
+      "model_scope": "Dave-style tournament setup plus claim/counterclaim bisection path, measured by the Solidity benchmark",
+      "source_kind": "solidity_protocol_benchmark",
+      "reference_sources": [
+        {
+          "project": "cartesi/dave",
+          "url": "https://github.com/cartesi/dave",
+          "evidence": "Dave repository used to define the tournament plus bisection dispute shape",
+          "used_for": "reference boundary for the local tournament setup, claim/counterclaim bisection, and referee benchmark stages"
+        }
+      ],
+      "measurement_method": "src/DisputeProtocolBenchmarks.sol implements a local same-metric protocol path; forge test --gas-report measures the EVM average gas for each named path",
+      "reproduce": "forge test --gas-report; parse testCartesiOptimisticPathGas and testCartesiDaveDisputePathGas from test/Benchmarks.t.sol",
+      "notes": "direct Foundry gas from src/DisputeProtocolBenchmarks.sol; each benchmark executes the local submit/challenge/localize/adjudicate path and records the benchmark function, arguments, and reproduction command",
+      "validation_claim": "the plotted comparison value is the parsed EVM average gas for the named Solidity benchmark function and its recorded dispute_flow"
+    },
+    {
+      "scheme": "Arbitrum\nBoLD",
+      "mechanism": "three-level bisection",
+      "family": "bounded-liquidity multi-level dispute",
+      "onchain_rounds": 37,
+      "optimistic_gas_k": 297.357,
+      "dispute_gas_k": 3560.12,
+      "optimistic_benchmark": {
+        "function": "boldOptimisticPath",
+        "test": "testBoLDOptimisticPathGas",
+        "args": {
+          "rounds": 722
+        },
+        "gas": 297357,
+        "gas_k": 297.357
+      },
+      "dispute_benchmark": {
+        "function": "boldPath",
+        "test": "testBoLDDisputePathGas",
+        "args": {
+          "levels": 3,
+          "rounds": 1896
+        },
+        "gas": 3560120,
+        "gas_k": 3560.12
+      },
+      "dispute_flow": [
+        "submit top-level assertion tree",
+        "open parallel challenge edges",
+        "narrow disputes across three BoLD levels",
+        "confirm the lowest-level edge with one-step adjudication"
+      ],
+      "timeline_slots": 25,
+      "timeline_derivation": {
+        "strategy": "bounded_liquidity_parallel_levels",
+        "total_gas": 100000000000,
+        "logical_rounds": 37,
+        "slots": 25,
+        "events": [
+          {
+            "slot": 1,
+            "phase": "parallel_level_bisection",
+            "logical_round_start": 1,
+            "logical_round_end": 2,
+            "detail": "BoLD level-parallel narrowing for rounds 1-2"
+          },
+          {
+            "slot": 2,
+            "phase": "parallel_level_bisection",
+            "logical_round_start": 3,
+            "logical_round_end": 4,
+            "detail": "BoLD level-parallel narrowing for rounds 3-4"
+          },
+          {
+            "slot": 3,
+            "phase": "parallel_level_bisection",
+            "logical_round_start": 5,
+            "logical_round_end": 6,
+            "detail": "BoLD level-parallel narrowing for rounds 5-6"
+          },
+          {
+            "slot": 4,
+            "phase": "parallel_level_bisection",
+            "logical_round_start": 7,
+            "logical_round_end": 8,
+            "detail": "BoLD level-parallel narrowing for rounds 7-8"
+          },
+          {
+            "slot": 5,
+            "phase": "parallel_level_bisection",
+            "logical_round_start": 9,
+            "logical_round_end": 10,
+            "detail": "BoLD level-parallel narrowing for rounds 9-10"
+          },
+          {
+            "slot": 6,
+            "phase": "parallel_level_bisection",
+            "logical_round_start": 11,
+            "logical_round_end": 12,
+            "detail": "BoLD level-parallel narrowing for rounds 11-12"
+          },
+          {
+            "slot": 7,
+            "phase": "parallel_level_bisection",
+            "logical_round_start": 13,
+            "logical_round_end": 14,
+            "detail": "BoLD level-parallel narrowing for rounds 13-14"
+          },
+          {
+            "slot": 8,
+            "phase": "parallel_level_bisection",
+            "logical_round_start": 15,
+            "logical_round_end": 16,
+            "detail": "BoLD level-parallel narrowing for rounds 15-16"
+          },
+          {
+            "slot": 9,
+            "phase": "parallel_level_bisection",
+            "logical_round_start": 17,
+            "logical_round_end": 18,
+            "detail": "BoLD level-parallel narrowing for rounds 17-18"
+          },
+          {
+            "slot": 10,
+            "phase": "parallel_level_bisection",
+            "logical_round_start": 19,
+            "logical_round_end": 20,
+            "detail": "BoLD level-parallel narrowing for rounds 19-20"
+          },
+          {
+            "slot": 11,
+            "phase": "parallel_level_bisection",
+            "logical_round_start": 21,
+            "logical_round_end": 22,
+            "detail": "BoLD level-parallel narrowing for rounds 21-22"
+          },
+          {
+            "slot": 12,
+            "phase": "parallel_level_bisection",
+            "logical_round_start": 23,
+            "logical_round_end": 24,
+            "detail": "BoLD level-parallel narrowing for rounds 23-24"
+          },
+          {
+            "slot": 13,
+            "phase": "parallel_level_bisection",
+            "logical_round_start": 25,
+            "logical_round_end": 26,
+            "detail": "BoLD level-parallel narrowing for rounds 25-26"
+          },
+          {
+            "slot": 14,
+            "phase": "parallel_level_bisection",
+            "logical_round_start": 27,
+            "logical_round_end": 28,
+            "detail": "BoLD level-parallel narrowing for rounds 27-28"
+          },
+          {
+            "slot": 15,
+            "phase": "parallel_level_bisection",
+            "logical_round_start": 29,
+            "logical_round_end": 30,
+            "detail": "BoLD level-parallel narrowing for rounds 29-30"
+          },
+          {
+            "slot": 16,
+            "phase": "parallel_level_bisection",
+            "logical_round_start": 31,
+            "logical_round_end": 32,
+            "detail": "BoLD level-parallel narrowing for rounds 31-32"
+          },
+          {
+            "slot": 17,
+            "phase": "parallel_level_bisection",
+            "logical_round_start": 33,
+            "logical_round_end": 34,
+            "detail": "BoLD level-parallel narrowing for rounds 33-34"
+          },
+          {
+            "slot": 18,
+            "phase": "parallel_level_bisection",
+            "logical_round_start": 35,
+            "logical_round_end": 36,
+            "detail": "BoLD level-parallel narrowing for rounds 35-36"
+          },
+          {
+            "slot": 19,
+            "phase": "parallel_level_bisection",
+            "logical_round_start": 37,
+            "logical_round_end": 37,
+            "detail": "BoLD level-parallel narrowing for rounds 37-37"
+          },
+          {
+            "slot": 20,
+            "phase": "level_boundary_confirmation",
+            "detail": "BoLD level 1 assertion/confirmation boundary"
+          },
+          {
+            "slot": 21,
+            "phase": "level_boundary_confirmation",
+            "detail": "BoLD level 2 assertion/confirmation boundary"
+          },
+          {
+            "slot": 22,
+            "phase": "level_boundary_confirmation",
+            "detail": "BoLD level 3 assertion/confirmation boundary"
+          },
+          {
+            "slot": 23,
+            "phase": "level_boundary_confirmation",
+            "detail": "BoLD level 1 assertion/confirmation boundary"
+          },
+          {
+            "slot": 24,
+            "phase": "level_boundary_confirmation",
+            "detail": "BoLD level 2 assertion/confirmation boundary"
+          },
+          {
+            "slot": 25,
+            "phase": "level_boundary_confirmation",
+            "detail": "BoLD level 3 assertion/confirmation boundary"
+          }
+        ],
+        "slot_formula": "ceil(logical_rounds(37)/rounds_per_slot(2))+level_boundary_slots(6)"
+      },
+      "concurrent": false,
+      "model_scope": "BoLD-style three-level dispute path, measured by the Solidity benchmark",
+      "source_kind": "solidity_protocol_benchmark",
+      "reference_sources": [
+        {
+          "project": "OffchainLabs/bold",
+          "url": "https://github.com/OffchainLabs/bold",
+          "evidence": "BoLD repository used to define the bounded-liquidity multi-level dispute shape",
+          "used_for": "reference boundary for the local parallel edge, multi-level narrowing, and lowest-level confirmation benchmark stages"
+        }
+      ],
+      "measurement_method": "src/DisputeProtocolBenchmarks.sol implements a local same-metric protocol path; forge test --gas-report measures the EVM average gas for each named path",
+      "reproduce": "forge test --gas-report; parse testBoLDOptimisticPathGas and testBoLDDisputePathGas from test/Benchmarks.t.sol",
+      "notes": "direct Foundry gas from src/DisputeProtocolBenchmarks.sol; each benchmark executes the local submit/challenge/localize/adjudicate path and records the benchmark function, arguments, and reproduction command",
+      "validation_claim": "the plotted comparison value is the parsed EVM average gas for the named Solidity benchmark function and its recorded dispute_flow"
+    },
+    {
+      "scheme": "CleVer\n(ours)",
+      "mechanism": "two-layer slicing + VerSeg",
+      "family": "concurrent sliced verification",
+      "onchain_rounds": 3,
+      "optimistic_gas_k": 389.652,
+      "dispute_gas_k": 551.974,
+      "optimistic_benchmark": {
+        "function": "cleverOptimisticPath",
+        "test": "testCleVerOptimisticPathGas",
+        "args": {
+          "rounds": 1006
+        },
+        "gas": 389652,
+        "gas_k": 389.652
+      },
+      "dispute_benchmark": {
+        "function": "cleverPath",
+        "test": "testCleVerDisputePathGas",
+        "args": {
+          "replay_steps": 197,
+          "subsegments": 1135
+        },
+        "gas": 551974,
+        "gas_k": 551.974
+      },
+      "dispute_flow": [
+        "submit two-layer slice root",
+        "challenge outer and inner slice commitments",
+        "localize a bounded subsegment concurrently",
+        "run VerSeg replay and record adjudication"
+      ],
+      "timeline_slots": 3,
+      "timeline_derivation": {
+        "strategy": "concurrent_two_layer_slice_then_verseg",
+        "total_gas": 100000000000,
+        "logical_rounds": 3,
+        "slots": 3,
+        "events": [
+          {
+            "slot": 1,
+            "phase": "outer_segment_localization",
+            "logical_round_start": 1,
+            "logical_round_end": 1,
+            "detail": "CleVer concurrent verification phase 1"
+          },
+          {
+            "slot": 2,
+            "phase": "inner_subsegment_localization",
+            "logical_round_start": 2,
+            "logical_round_end": 2,
+            "detail": "CleVer concurrent verification phase 2"
+          },
+          {
+            "slot": 3,
+            "phase": "bounded_verseg_replay",
+            "logical_round_start": 3,
+            "logical_round_end": 3,
+            "detail": "CleVer concurrent verification phase 3"
+          }
+        ],
+        "slot_formula": "concurrent protocol phases(3)"
+      },
+      "concurrent": true,
+      "model_scope": "CleVer two-layer slicing and bounded VerSeg path, measured by the verifier benchmark",
+      "source_kind": "project_solidity_benchmark",
+      "reference_sources": [
+        {
+          "project": "paper-exp chapter3",
+          "url": "chapter3/experiment/src/CleVerVerifier.sol",
+          "evidence": "local CleVer verifier benchmark used by the thesis implementation",
+          "used_for": "two-layer localization and bounded VerSeg replay benchmark stages"
+        }
+      ],
+      "measurement_method": "local CleVer verifier path is measured by forge test --gas-report and parsed into the raw log",
+      "reproduce": "forge test --gas-report; parse testCleVerOptimisticPathGas and testCleVerDisputePathGas from test/Benchmarks.t.sol",
+      "notes": "direct Foundry gas from src/DisputeProtocolBenchmarks.sol; each benchmark executes the local submit/challenge/localize/adjudicate path and records the benchmark function, arguments, and reproduction command",
+      "validation_claim": "the plotted comparison value is the parsed EVM average gas for the named Solidity benchmark function and its recorded dispute_flow"
+    }
+  ],
+  "timeline": [
+    {
+      "name": "CleVer\n（并发）",
+      "dispute_slots": 3,
+      "total_time": 1.044,
+      "formula": "eta*T_exec + T_seg + dispute_slots*T_slot + T_reexec",
+      "timeline_derivation": {
+        "strategy": "concurrent_two_layer_slice_then_verseg",
+        "total_gas": 100000000000,
+        "logical_rounds": 3,
+        "slots": 3,
+        "events": [
+          {
+            "slot": 1,
+            "phase": "outer_segment_localization",
+            "logical_round_start": 1,
+            "logical_round_end": 1,
+            "detail": "CleVer concurrent verification phase 1"
+          },
+          {
+            "slot": 2,
+            "phase": "inner_subsegment_localization",
+            "logical_round_start": 2,
+            "logical_round_end": 2,
+            "detail": "CleVer concurrent verification phase 2"
+          },
+          {
+            "slot": 3,
+            "phase": "bounded_verseg_replay",
+            "logical_round_start": 3,
+            "logical_round_end": 3,
+            "detail": "CleVer concurrent verification phase 3"
+          }
+        ],
+        "slot_formula": "concurrent protocol phases(3)"
+      }
+    },
+    {
+      "name": "Arbitrum\nBoLD",
+      "dispute_slots": 25,
+      "total_time": 2.6500000000000004,
+      "formula": "T_exec + gamma + dispute_slots*T_slot + T_reexec",
+      "timeline_derivation": {
+        "strategy": "bounded_liquidity_parallel_levels",
+        "total_gas": 100000000000,
+        "logical_rounds": 37,
+        "slots": 25,
+        "events": [
+          {
+            "slot": 1,
+            "phase": "parallel_level_bisection",
+            "logical_round_start": 1,
+            "logical_round_end": 2,
+            "detail": "BoLD level-parallel narrowing for rounds 1-2"
+          },
+          {
+            "slot": 2,
+            "phase": "parallel_level_bisection",
+            "logical_round_start": 3,
+            "logical_round_end": 4,
+            "detail": "BoLD level-parallel narrowing for rounds 3-4"
+          },
+          {
+            "slot": 3,
+            "phase": "parallel_level_bisection",
+            "logical_round_start": 5,
+            "logical_round_end": 6,
+            "detail": "BoLD level-parallel narrowing for rounds 5-6"
+          },
+          {
+            "slot": 4,
+            "phase": "parallel_level_bisection",
+            "logical_round_start": 7,
+            "logical_round_end": 8,
+            "detail": "BoLD level-parallel narrowing for rounds 7-8"
+          },
+          {
+            "slot": 5,
+            "phase": "parallel_level_bisection",
+            "logical_round_start": 9,
+            "logical_round_end": 10,
+            "detail": "BoLD level-parallel narrowing for rounds 9-10"
+          },
+          {
+            "slot": 6,
+            "phase": "parallel_level_bisection",
+            "logical_round_start": 11,
+            "logical_round_end": 12,
+            "detail": "BoLD level-parallel narrowing for rounds 11-12"
+          },
+          {
+            "slot": 7,
+            "phase": "parallel_level_bisection",
+            "logical_round_start": 13,
+            "logical_round_end": 14,
+            "detail": "BoLD level-parallel narrowing for rounds 13-14"
+          },
+          {
+            "slot": 8,
+            "phase": "parallel_level_bisection",
+            "logical_round_start": 15,
+            "logical_round_end": 16,
+            "detail": "BoLD level-parallel narrowing for rounds 15-16"
+          },
+          {
+            "slot": 9,
+            "phase": "parallel_level_bisection",
+            "logical_round_start": 17,
+            "logical_round_end": 18,
+            "detail": "BoLD level-parallel narrowing for rounds 17-18"
+          },
+          {
+            "slot": 10,
+            "phase": "parallel_level_bisection",
+            "logical_round_start": 19,
+            "logical_round_end": 20,
+            "detail": "BoLD level-parallel narrowing for rounds 19-20"
+          },
+          {
+            "slot": 11,
+            "phase": "parallel_level_bisection",
+            "logical_round_start": 21,
+            "logical_round_end": 22,
+            "detail": "BoLD level-parallel narrowing for rounds 21-22"
+          },
+          {
+            "slot": 12,
+            "phase": "parallel_level_bisection",
+            "logical_round_start": 23,
+            "logical_round_end": 24,
+            "detail": "BoLD level-parallel narrowing for rounds 23-24"
+          },
+          {
+            "slot": 13,
+            "phase": "parallel_level_bisection",
+            "logical_round_start": 25,
+            "logical_round_end": 26,
+            "detail": "BoLD level-parallel narrowing for rounds 25-26"
+          },
+          {
+            "slot": 14,
+            "phase": "parallel_level_bisection",
+            "logical_round_start": 27,
+            "logical_round_end": 28,
+            "detail": "BoLD level-parallel narrowing for rounds 27-28"
+          },
+          {
+            "slot": 15,
+            "phase": "parallel_level_bisection",
+            "logical_round_start": 29,
+            "logical_round_end": 30,
+            "detail": "BoLD level-parallel narrowing for rounds 29-30"
+          },
+          {
+            "slot": 16,
+            "phase": "parallel_level_bisection",
+            "logical_round_start": 31,
+            "logical_round_end": 32,
+            "detail": "BoLD level-parallel narrowing for rounds 31-32"
+          },
+          {
+            "slot": 17,
+            "phase": "parallel_level_bisection",
+            "logical_round_start": 33,
+            "logical_round_end": 34,
+            "detail": "BoLD level-parallel narrowing for rounds 33-34"
+          },
+          {
+            "slot": 18,
+            "phase": "parallel_level_bisection",
+            "logical_round_start": 35,
+            "logical_round_end": 36,
+            "detail": "BoLD level-parallel narrowing for rounds 35-36"
+          },
+          {
+            "slot": 19,
+            "phase": "parallel_level_bisection",
+            "logical_round_start": 37,
+            "logical_round_end": 37,
+            "detail": "BoLD level-parallel narrowing for rounds 37-37"
+          },
+          {
+            "slot": 20,
+            "phase": "level_boundary_confirmation",
+            "detail": "BoLD level 1 assertion/confirmation boundary"
+          },
+          {
+            "slot": 21,
+            "phase": "level_boundary_confirmation",
+            "detail": "BoLD level 2 assertion/confirmation boundary"
+          },
+          {
+            "slot": 22,
+            "phase": "level_boundary_confirmation",
+            "detail": "BoLD level 3 assertion/confirmation boundary"
+          },
+          {
+            "slot": 23,
+            "phase": "level_boundary_confirmation",
+            "detail": "BoLD level 1 assertion/confirmation boundary"
+          },
+          {
+            "slot": 24,
+            "phase": "level_boundary_confirmation",
+            "detail": "BoLD level 2 assertion/confirmation boundary"
+          },
+          {
+            "slot": 25,
+            "phase": "level_boundary_confirmation",
+            "detail": "BoLD level 3 assertion/confirmation boundary"
+          }
+        ],
+        "slot_formula": "ceil(logical_rounds(37)/rounds_per_slot(2))+level_boundary_slots(6)"
+      }
+    },
+    {
+      "name": "Cartesi\nDave",
+      "dispute_slots": 35,
+      "total_time": 2.73,
+      "formula": "T_exec + gamma + dispute_slots*T_slot + T_reexec",
+      "timeline_derivation": {
+        "strategy": "tournament_then_remaining_bisection_rounds",
+        "total_gas": 100000000000,
+        "logical_rounds": 37,
+        "slots": 35,
+        "events": [
+          {
+            "slot": 1,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 3,
+            "logical_round_end": 3,
+            "detail": "deadline slot for logical bisection round 3"
+          },
+          {
+            "slot": 2,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 4,
+            "logical_round_end": 4,
+            "detail": "deadline slot for logical bisection round 4"
+          },
+          {
+            "slot": 3,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 5,
+            "logical_round_end": 5,
+            "detail": "deadline slot for logical bisection round 5"
+          },
+          {
+            "slot": 4,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 6,
+            "logical_round_end": 6,
+            "detail": "deadline slot for logical bisection round 6"
+          },
+          {
+            "slot": 5,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 7,
+            "logical_round_end": 7,
+            "detail": "deadline slot for logical bisection round 7"
+          },
+          {
+            "slot": 6,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 8,
+            "logical_round_end": 8,
+            "detail": "deadline slot for logical bisection round 8"
+          },
+          {
+            "slot": 7,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 9,
+            "logical_round_end": 9,
+            "detail": "deadline slot for logical bisection round 9"
+          },
+          {
+            "slot": 8,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 10,
+            "logical_round_end": 10,
+            "detail": "deadline slot for logical bisection round 10"
+          },
+          {
+            "slot": 9,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 11,
+            "logical_round_end": 11,
+            "detail": "deadline slot for logical bisection round 11"
+          },
+          {
+            "slot": 10,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 12,
+            "logical_round_end": 12,
+            "detail": "deadline slot for logical bisection round 12"
+          },
+          {
+            "slot": 11,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 13,
+            "logical_round_end": 13,
+            "detail": "deadline slot for logical bisection round 13"
+          },
+          {
+            "slot": 12,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 14,
+            "logical_round_end": 14,
+            "detail": "deadline slot for logical bisection round 14"
+          },
+          {
+            "slot": 13,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 15,
+            "logical_round_end": 15,
+            "detail": "deadline slot for logical bisection round 15"
+          },
+          {
+            "slot": 14,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 16,
+            "logical_round_end": 16,
+            "detail": "deadline slot for logical bisection round 16"
+          },
+          {
+            "slot": 15,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 17,
+            "logical_round_end": 17,
+            "detail": "deadline slot for logical bisection round 17"
+          },
+          {
+            "slot": 16,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 18,
+            "logical_round_end": 18,
+            "detail": "deadline slot for logical bisection round 18"
+          },
+          {
+            "slot": 17,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 19,
+            "logical_round_end": 19,
+            "detail": "deadline slot for logical bisection round 19"
+          },
+          {
+            "slot": 18,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 20,
+            "logical_round_end": 20,
+            "detail": "deadline slot for logical bisection round 20"
+          },
+          {
+            "slot": 19,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 21,
+            "logical_round_end": 21,
+            "detail": "deadline slot for logical bisection round 21"
+          },
+          {
+            "slot": 20,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 22,
+            "logical_round_end": 22,
+            "detail": "deadline slot for logical bisection round 22"
+          },
+          {
+            "slot": 21,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 23,
+            "logical_round_end": 23,
+            "detail": "deadline slot for logical bisection round 23"
+          },
+          {
+            "slot": 22,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 24,
+            "logical_round_end": 24,
+            "detail": "deadline slot for logical bisection round 24"
+          },
+          {
+            "slot": 23,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 25,
+            "logical_round_end": 25,
+            "detail": "deadline slot for logical bisection round 25"
+          },
+          {
+            "slot": 24,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 26,
+            "logical_round_end": 26,
+            "detail": "deadline slot for logical bisection round 26"
+          },
+          {
+            "slot": 25,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 27,
+            "logical_round_end": 27,
+            "detail": "deadline slot for logical bisection round 27"
+          },
+          {
+            "slot": 26,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 28,
+            "logical_round_end": 28,
+            "detail": "deadline slot for logical bisection round 28"
+          },
+          {
+            "slot": 27,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 29,
+            "logical_round_end": 29,
+            "detail": "deadline slot for logical bisection round 29"
+          },
+          {
+            "slot": 28,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 30,
+            "logical_round_end": 30,
+            "detail": "deadline slot for logical bisection round 30"
+          },
+          {
+            "slot": 29,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 31,
+            "logical_round_end": 31,
+            "detail": "deadline slot for logical bisection round 31"
+          },
+          {
+            "slot": 30,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 32,
+            "logical_round_end": 32,
+            "detail": "deadline slot for logical bisection round 32"
+          },
+          {
+            "slot": 31,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 33,
+            "logical_round_end": 33,
+            "detail": "deadline slot for logical bisection round 33"
+          },
+          {
+            "slot": 32,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 34,
+            "logical_round_end": 34,
+            "detail": "deadline slot for logical bisection round 34"
+          },
+          {
+            "slot": 33,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 35,
+            "logical_round_end": 35,
+            "detail": "deadline slot for logical bisection round 35"
+          },
+          {
+            "slot": 34,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 36,
+            "logical_round_end": 36,
+            "detail": "deadline slot for logical bisection round 36"
+          },
+          {
+            "slot": 35,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 37,
+            "logical_round_end": 37,
+            "detail": "deadline slot for logical bisection round 37"
+          }
+        ],
+        "slot_formula": "max(0, logical_rounds(37)-initial_offchain_rounds(2))"
+      }
+    },
+    {
+      "name": "TrueBit",
+      "dispute_slots": 33,
+      "total_time": 2.714,
+      "formula": "T_exec + gamma + dispute_slots*T_slot + T_reexec",
+      "timeline_derivation": {
+        "strategy": "solver_verifier_remaining_bisection_rounds",
+        "total_gas": 100000000000,
+        "logical_rounds": 37,
+        "slots": 33,
+        "events": [
+          {
+            "slot": 1,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 5,
+            "logical_round_end": 5,
+            "detail": "deadline slot for logical bisection round 5"
+          },
+          {
+            "slot": 2,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 6,
+            "logical_round_end": 6,
+            "detail": "deadline slot for logical bisection round 6"
+          },
+          {
+            "slot": 3,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 7,
+            "logical_round_end": 7,
+            "detail": "deadline slot for logical bisection round 7"
+          },
+          {
+            "slot": 4,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 8,
+            "logical_round_end": 8,
+            "detail": "deadline slot for logical bisection round 8"
+          },
+          {
+            "slot": 5,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 9,
+            "logical_round_end": 9,
+            "detail": "deadline slot for logical bisection round 9"
+          },
+          {
+            "slot": 6,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 10,
+            "logical_round_end": 10,
+            "detail": "deadline slot for logical bisection round 10"
+          },
+          {
+            "slot": 7,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 11,
+            "logical_round_end": 11,
+            "detail": "deadline slot for logical bisection round 11"
+          },
+          {
+            "slot": 8,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 12,
+            "logical_round_end": 12,
+            "detail": "deadline slot for logical bisection round 12"
+          },
+          {
+            "slot": 9,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 13,
+            "logical_round_end": 13,
+            "detail": "deadline slot for logical bisection round 13"
+          },
+          {
+            "slot": 10,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 14,
+            "logical_round_end": 14,
+            "detail": "deadline slot for logical bisection round 14"
+          },
+          {
+            "slot": 11,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 15,
+            "logical_round_end": 15,
+            "detail": "deadline slot for logical bisection round 15"
+          },
+          {
+            "slot": 12,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 16,
+            "logical_round_end": 16,
+            "detail": "deadline slot for logical bisection round 16"
+          },
+          {
+            "slot": 13,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 17,
+            "logical_round_end": 17,
+            "detail": "deadline slot for logical bisection round 17"
+          },
+          {
+            "slot": 14,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 18,
+            "logical_round_end": 18,
+            "detail": "deadline slot for logical bisection round 18"
+          },
+          {
+            "slot": 15,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 19,
+            "logical_round_end": 19,
+            "detail": "deadline slot for logical bisection round 19"
+          },
+          {
+            "slot": 16,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 20,
+            "logical_round_end": 20,
+            "detail": "deadline slot for logical bisection round 20"
+          },
+          {
+            "slot": 17,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 21,
+            "logical_round_end": 21,
+            "detail": "deadline slot for logical bisection round 21"
+          },
+          {
+            "slot": 18,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 22,
+            "logical_round_end": 22,
+            "detail": "deadline slot for logical bisection round 22"
+          },
+          {
+            "slot": 19,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 23,
+            "logical_round_end": 23,
+            "detail": "deadline slot for logical bisection round 23"
+          },
+          {
+            "slot": 20,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 24,
+            "logical_round_end": 24,
+            "detail": "deadline slot for logical bisection round 24"
+          },
+          {
+            "slot": 21,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 25,
+            "logical_round_end": 25,
+            "detail": "deadline slot for logical bisection round 25"
+          },
+          {
+            "slot": 22,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 26,
+            "logical_round_end": 26,
+            "detail": "deadline slot for logical bisection round 26"
+          },
+          {
+            "slot": 23,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 27,
+            "logical_round_end": 27,
+            "detail": "deadline slot for logical bisection round 27"
+          },
+          {
+            "slot": 24,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 28,
+            "logical_round_end": 28,
+            "detail": "deadline slot for logical bisection round 28"
+          },
+          {
+            "slot": 25,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 29,
+            "logical_round_end": 29,
+            "detail": "deadline slot for logical bisection round 29"
+          },
+          {
+            "slot": 26,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 30,
+            "logical_round_end": 30,
+            "detail": "deadline slot for logical bisection round 30"
+          },
+          {
+            "slot": 27,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 31,
+            "logical_round_end": 31,
+            "detail": "deadline slot for logical bisection round 31"
+          },
+          {
+            "slot": 28,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 32,
+            "logical_round_end": 32,
+            "detail": "deadline slot for logical bisection round 32"
+          },
+          {
+            "slot": 29,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 33,
+            "logical_round_end": 33,
+            "detail": "deadline slot for logical bisection round 33"
+          },
+          {
+            "slot": 30,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 34,
+            "logical_round_end": 34,
+            "detail": "deadline slot for logical bisection round 34"
+          },
+          {
+            "slot": 31,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 35,
+            "logical_round_end": 35,
+            "detail": "deadline slot for logical bisection round 35"
+          },
+          {
+            "slot": 32,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 36,
+            "logical_round_end": 36,
+            "detail": "deadline slot for logical bisection round 36"
+          },
+          {
+            "slot": 33,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 37,
+            "logical_round_end": 37,
+            "detail": "deadline slot for logical bisection round 37"
+          }
+        ],
+        "slot_formula": "max(0, logical_rounds(37)-initial_offchain_rounds(4))"
+      }
+    },
+    {
+      "name": "Arbitrum\nClassic",
+      "dispute_slots": 30,
+      "total_time": 2.69,
+      "formula": "T_exec + gamma + dispute_slots*T_slot + T_reexec",
+      "timeline_derivation": {
+        "strategy": "one_slot_per_remaining_bisection_round",
+        "total_gas": 100000000000,
+        "logical_rounds": 37,
+        "slots": 30,
+        "events": [
+          {
+            "slot": 1,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 8,
+            "logical_round_end": 8,
+            "detail": "deadline slot for logical bisection round 8"
+          },
+          {
+            "slot": 2,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 9,
+            "logical_round_end": 9,
+            "detail": "deadline slot for logical bisection round 9"
+          },
+          {
+            "slot": 3,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 10,
+            "logical_round_end": 10,
+            "detail": "deadline slot for logical bisection round 10"
+          },
+          {
+            "slot": 4,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 11,
+            "logical_round_end": 11,
+            "detail": "deadline slot for logical bisection round 11"
+          },
+          {
+            "slot": 5,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 12,
+            "logical_round_end": 12,
+            "detail": "deadline slot for logical bisection round 12"
+          },
+          {
+            "slot": 6,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 13,
+            "logical_round_end": 13,
+            "detail": "deadline slot for logical bisection round 13"
+          },
+          {
+            "slot": 7,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 14,
+            "logical_round_end": 14,
+            "detail": "deadline slot for logical bisection round 14"
+          },
+          {
+            "slot": 8,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 15,
+            "logical_round_end": 15,
+            "detail": "deadline slot for logical bisection round 15"
+          },
+          {
+            "slot": 9,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 16,
+            "logical_round_end": 16,
+            "detail": "deadline slot for logical bisection round 16"
+          },
+          {
+            "slot": 10,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 17,
+            "logical_round_end": 17,
+            "detail": "deadline slot for logical bisection round 17"
+          },
+          {
+            "slot": 11,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 18,
+            "logical_round_end": 18,
+            "detail": "deadline slot for logical bisection round 18"
+          },
+          {
+            "slot": 12,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 19,
+            "logical_round_end": 19,
+            "detail": "deadline slot for logical bisection round 19"
+          },
+          {
+            "slot": 13,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 20,
+            "logical_round_end": 20,
+            "detail": "deadline slot for logical bisection round 20"
+          },
+          {
+            "slot": 14,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 21,
+            "logical_round_end": 21,
+            "detail": "deadline slot for logical bisection round 21"
+          },
+          {
+            "slot": 15,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 22,
+            "logical_round_end": 22,
+            "detail": "deadline slot for logical bisection round 22"
+          },
+          {
+            "slot": 16,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 23,
+            "logical_round_end": 23,
+            "detail": "deadline slot for logical bisection round 23"
+          },
+          {
+            "slot": 17,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 24,
+            "logical_round_end": 24,
+            "detail": "deadline slot for logical bisection round 24"
+          },
+          {
+            "slot": 18,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 25,
+            "logical_round_end": 25,
+            "detail": "deadline slot for logical bisection round 25"
+          },
+          {
+            "slot": 19,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 26,
+            "logical_round_end": 26,
+            "detail": "deadline slot for logical bisection round 26"
+          },
+          {
+            "slot": 20,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 27,
+            "logical_round_end": 27,
+            "detail": "deadline slot for logical bisection round 27"
+          },
+          {
+            "slot": 21,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 28,
+            "logical_round_end": 28,
+            "detail": "deadline slot for logical bisection round 28"
+          },
+          {
+            "slot": 22,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 29,
+            "logical_round_end": 29,
+            "detail": "deadline slot for logical bisection round 29"
+          },
+          {
+            "slot": 23,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 30,
+            "logical_round_end": 30,
+            "detail": "deadline slot for logical bisection round 30"
+          },
+          {
+            "slot": 24,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 31,
+            "logical_round_end": 31,
+            "detail": "deadline slot for logical bisection round 31"
+          },
+          {
+            "slot": 25,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 32,
+            "logical_round_end": 32,
+            "detail": "deadline slot for logical bisection round 32"
+          },
+          {
+            "slot": 26,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 33,
+            "logical_round_end": 33,
+            "detail": "deadline slot for logical bisection round 33"
+          },
+          {
+            "slot": 27,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 34,
+            "logical_round_end": 34,
+            "detail": "deadline slot for logical bisection round 34"
+          },
+          {
+            "slot": 28,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 35,
+            "logical_round_end": 35,
+            "detail": "deadline slot for logical bisection round 35"
+          },
+          {
+            "slot": 29,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 36,
+            "logical_round_end": 36,
+            "detail": "deadline slot for logical bisection round 36"
+          },
+          {
+            "slot": 30,
+            "phase": "interactive_bisection_deadline",
+            "logical_round_start": 37,
+            "logical_round_end": 37,
+            "detail": "deadline slot for logical bisection round 37"
+          }
+        ],
+        "slot_formula": "max(0, logical_rounds(37)-initial_offchain_rounds(7))"
+      }
+    }
+  ]
+}

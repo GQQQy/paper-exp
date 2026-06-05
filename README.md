@@ -2,7 +2,22 @@
 
 `paper-exp` 保存论文第三、四、五章的实验工程、原始实验日志、结构化可视化数据和论文图片。根目录 README 作为仓库地图；具体复现实验命令请进入各章 README。
 
-本仓库不生成额外的检测或审计报告。论文文字与实验结果的核对在会话和人工检查中完成，工程脚本只负责运行实验、生成数据和绘图。
+本仓库包含一个总覆盖检查脚本，用于确认论文实验图表和表格都有可运行代码、raw log 和结构化实验产物支撑：
+
+```bash
+python3 scripts/check_experiment_coverage.py
+```
+
+该脚本会检查第三章图 7-12、第四章图 14-22、第五章图 24-31/表 9-11，并验证关键结果是否能从实验入口生成的 raw log 对齐到结构化 JSON 和最终图片。
+
+## 验收流程
+
+建议按章节复现，再运行总检查：
+
+1. 进入 `chapter3`、`chapter4`、`chapter5`，按各章 README 的“运行完整实验”执行测试、benchmark、raw log 生成和绘图。
+2. 查看各章 `experiment/logs/raw_experiment_log.json`，确认实验入口重新写入了原始日志。
+3. 查看各章 `visualization/*_experiment_data.json` 与 `visualization/正确图片输出/`，确认结构化数据和图片已刷新。
+4. 回到仓库根目录运行 `python3 scripts/check_experiment_coverage.py`，做跨章节一致性检查。
 
 ## 章节索引
 
@@ -15,6 +30,8 @@
 ```text
 paper-exp/
   README.md
+  scripts/
+    check_experiment_coverage.py
   chapter3/
     README.md
     experiment/
@@ -39,6 +56,11 @@ paper-exp/
 | chapter3 | `chapter3/README.md` | `chapter3/experiment/logs/raw_experiment_log.json` | `chapter3/visualization/chapter3_experiment_data.json` | `chapter3/visualization/正确图片输出/` |
 | chapter4 | `chapter4/README.md` | `chapter4/experiment/logs/raw_experiment_log.json` | `chapter4/visualization/chapter4_experiment_data.json` | `chapter4/visualization/正确图片输出/` |
 | chapter5 | `chapter5/README.md` | `chapter5/experiment/logs/raw_experiment_log.json` | `chapter5/visualization/chapter5_experiment_data.json` | `chapter5/visualization/正确图片输出/` |
+
+第三章和第五章还提供独立对比实验报告，便于验收时单独查看对比项如何由本地 benchmark 或场景 trace 生成：
+
+- `chapter3/experiment/logs/comparison_protocols.json`：Arbitrum Classic、TrueBit、Cartesi Dave、Arbitrum BoLD、CleVer 的 Foundry 对比基准实验报告。
+- `chapter5/experiment/logs/comparison_experiments.json`：TrueBit、Arbitrum、PoD、RanCk+SenCk 的场景对比实验和 PoD gas baseline 报告。
 
 ## 依赖概览
 
