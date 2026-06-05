@@ -61,14 +61,29 @@ func TestBuildResultsCoversPaperComparisonProtocols(t *testing.T) {
 		if result.Timeline.Formula == "" || result.Timeline.Strategy == "" {
 			t.Fatalf("%s missing timeline derivation metadata", result.Scheme)
 		}
+		if result.Timeline.SimulationKind != "local_dispute_timeline_state_machine" || !result.Timeline.Resolved {
+			t.Fatalf("%s timeline was not produced by the local state-machine simulation: %+v", result.Scheme, result.Timeline)
+		}
+		if result.Timeline.Inputs.LogicalRounds != result.OnchainRounds {
+			t.Fatalf("%s simulation logical rounds = %d, want %d", result.Scheme, result.Timeline.Inputs.LogicalRounds, result.OnchainRounds)
+		}
+		for _, event := range result.Timeline.Events {
+			if event.Transition == "" || event.StateBefore == nil || event.StateAfter == nil {
+				t.Fatalf("%s timeline event is missing state transition evidence: %+v", result.Scheme, event)
+			}
+		}
 	}
 }
 
 func TestBuildTimelineMatchesFigure12OrderingAndValues(t *testing.T) {
 	params := TimelineParams{TExec: 1, TSlot: 0.008, Gamma: 0.85, TSeg: 0.02, Eta: 0.4}
-	timeline := BuildTimeline(params, 1e11)
+	report := RunTimelineExperiment(1e11, params)
+	timelineByScheme := TimelineDerivationsByScheme(report)
+	timeline, err := BuildTimelineWithTimelines(params, report.TotalGas, timelineByScheme)
+	if err != nil {
+		t.Fatalf("BuildTimelineWithTimelines returned error: %v", err)
+	}
 	wantNames := []string{"CleVer\n（并发）", "Arbitrum\nBoLD", "Cartesi\nDave", "TrueBit", "Arbitrum\nClassic"}
-	wantTotals := []float64{1.044, 2.65, 2.73, 2.714, 2.69}
 	if len(timeline) != len(wantNames) {
 		t.Fatalf("timeline length = %d, want %d", len(timeline), len(wantNames))
 	}
@@ -76,8 +91,20 @@ func TestBuildTimelineMatchesFigure12OrderingAndValues(t *testing.T) {
 		if timeline[i].Name != wantNames[i] {
 			t.Fatalf("timeline[%d] name = %q, want %q", i, timeline[i].Name, wantNames[i])
 		}
-		if math.Abs(timeline[i].TotalTime-wantTotals[i]) > 1e-9 {
-			t.Fatalf("timeline[%d] total = %.3f, want %.3f", i, timeline[i].TotalTime, wantTotals[i])
+		sourceScheme := timeline[i].Name
+		if sourceScheme == "CleVer\n（并发）" {
+			sourceScheme = "CleVer\n(ours)"
+		}
+		source := timelineByScheme[sourceScheme]
+		if timeline[i].DisputeSlots != source.Slots {
+			t.Fatalf("timeline[%d] slots = %d, simulation slots = %d", i, timeline[i].DisputeSlots, source.Slots)
+		}
+		expectedTotal := params.TExec + params.Gamma + float64(source.Slots)*params.TSlot + (1 - params.Eta)
+		if sourceScheme == "CleVer\n(ours)" {
+			expectedTotal = params.Eta*params.TExec + params.TSeg + float64(source.Slots)*params.TSlot + (1 - params.Eta)
+		}
+		if math.Abs(timeline[i].TotalTime-expectedTotal) > 1e-9 {
+			t.Fatalf("timeline[%d] total = %.3f, want formula-derived %.3f", i, timeline[i].TotalTime, expectedTotal)
 		}
 		if timeline[i].Formula == "" {
 			t.Fatalf("timeline[%d] missing formula", i)
@@ -87,6 +114,36 @@ func TestBuildTimelineMatchesFigure12OrderingAndValues(t *testing.T) {
 		}
 		if len(timeline[i].Derivation.Events) != timeline[i].DisputeSlots {
 			t.Fatalf("timeline[%d] event count = %d, want %d", i, len(timeline[i].Derivation.Events), timeline[i].DisputeSlots)
+		}
+		if timeline[i].Derivation.SimulationKind != "local_dispute_timeline_state_machine" || !timeline[i].Derivation.Resolved {
+			t.Fatalf("timeline[%d] missing state-machine simulation evidence", i)
+		}
+	}
+}
+
+func TestRunTimelineSimulationProducesStateTransitions(t *testing.T) {
+	specs := Specs(1e11)
+	for _, spec := range specs {
+		sim := RunTimelineSimulation(spec, 1e11)
+		if sim.Slots == 0 || len(sim.Events) != sim.Slots {
+			t.Fatalf("%s simulation slots/events mismatch: %+v", spec.Scheme, sim)
+		}
+		last := sim.Events[len(sim.Events)-1]
+		switch spec.Timeline.Strategy {
+		case "one_slot_per_remaining_bisection_round", "solver_verifier_remaining_bisection_rounds", "tournament_then_remaining_bisection_rounds":
+			if last.StateAfter["remaining_onchain_rounds"] != 0 {
+				t.Fatalf("%s simulation did not consume all bisection rounds: %+v", spec.Scheme, last)
+			}
+		case "bounded_liquidity_parallel_levels":
+			if last.Phase != "level_boundary_confirmation" || last.StateAfter["boundary_slots_remaining"] != 0 {
+				t.Fatalf("%s simulation did not consume BoLD boundary confirmations: %+v", spec.Scheme, last)
+			}
+		case "concurrent_two_layer_slice_then_verseg":
+			if last.StateAfter["remaining_phases"] != 0 {
+				t.Fatalf("%s simulation did not consume all CleVer phases: %+v", spec.Scheme, last)
+			}
+		default:
+			t.Fatalf("unexpected timeline strategy %s", spec.Timeline.Strategy)
 		}
 	}
 }

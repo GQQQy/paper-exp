@@ -147,13 +147,16 @@ type StakingAnalysisEvidence struct {
 }
 
 type TimelineEvidence struct {
-	TExec   float64         `json:"t_exec"`
-	TSlot   float64         `json:"t_slot"`
-	Gamma   float64         `json:"gamma"`
-	TSeg    float64         `json:"t_seg"`
-	Eta     float64         `json:"eta"`
-	TReexec float64         `json:"t_reexec"`
-	Schemes []TimelineEntry `json:"schemes"`
+	TExec               float64         `json:"t_exec"`
+	TSlot               float64         `json:"t_slot"`
+	Gamma               float64         `json:"gamma"`
+	TSeg                float64         `json:"t_seg"`
+	Eta                 float64         `json:"eta"`
+	TReexec             float64         `json:"t_reexec"`
+	SimulationLog       string          `json:"simulation_log"`
+	SimulationSource    string          `json:"simulation_source"`
+	SimulationReproduce string          `json:"simulation_reproduce"`
+	Schemes             []TimelineEntry `json:"schemes"`
 }
 
 type TimelineEntry struct {
@@ -219,6 +222,7 @@ var params = Params{
 
 func main() {
 	out := flag.String("out", filepath.Join("logs", "raw_experiment_log.json"), "output raw experiment JSON path")
+	timelineOut := flag.String("timeline-out", "", "timeline simulation JSON path; defaults to raw log directory/timeline_simulation.json")
 	quick := flag.Bool("quick", true, "run short physical samples")
 	full := flag.Bool("full", false, "run larger local samples but still stop at max-seconds")
 	maxSeconds := flag.Float64("max-seconds", 5, "maximum seconds per task sample")
@@ -228,11 +232,16 @@ func main() {
 		*quick = false
 	}
 	start := time.Now()
+	timelinePath := *timelineOut
+	if timelinePath == "" {
+		timelinePath = filepath.Join(filepath.Dir(*out), "timeline_simulation.json")
+	}
+	timelineReport := writeTimelineExperiment(timelinePath, 1e11, defaultTimelineParams())
 	foundryGas := runFoundryGasReport()
 	log := RawExperimentLog{
 		Metadata: map[string]any{
 			"chapter":     "第三章 基于有状态任务切片的链下计算验证",
-			"source":      "Go physical task runner: execution, snapshot serialization, commitment",
+			"source":      "Go physical task runner: execution, snapshot serialization, commitment, and timeline simulation",
 			"created_at":  time.Now().Format(time.RFC3339),
 			"quick_mode":  *quick,
 			"elapsed_sec": 0,
@@ -241,8 +250,8 @@ func main() {
 		Samples:       runPhysicalSamples(*quick, time.Duration(*maxSeconds*float64(time.Second))),
 		EVMSamples:    runGethEVMSamples(),
 		FoundryGas:    foundryGas,
-		Comparisons:   runComparisonProtocols(foundryGas),
-		PaperEvidence: runPaperEvidence(),
+		Comparisons:   runComparisonProtocols(foundryGas, timelineReport),
+		PaperEvidence: runPaperEvidence(timelinePath, timelineReport),
 		Foundry: map[string]any{
 			"command": "forge test --gas-report",
 			"purpose": "collect Solidity benchmark task gas and VerSeg gas in a local EVM; geth evm --bench is also called by this Go runner",
@@ -284,6 +293,7 @@ func main() {
 	for _, comparison := range log.Comparisons {
 		fmt.Printf("[compare] %-16s rounds=%d optimistic=%.0fK dispute=%.0fK\n", strings.ReplaceAll(comparison.Scheme, "\n", " "), comparison.OnchainRounds, comparison.OptimisticGasK, comparison.DisputeGasK)
 	}
+	fmt.Printf("[timeline] simulation log=%s\n", timelinePath)
 	fmt.Printf("[paper] figure9 default snapshots=%d storage=%.1fMB L=%d VerSeg=%.0fK\n",
 		log.PaperEvidence.ParameterSensitivity.SnapshotCount[2],
 		log.PaperEvidence.ParameterSensitivity.StorageMB[2],
@@ -430,7 +440,41 @@ func runSingleEVM(task, code string) EVMRunSample {
 	}
 }
 
-func runComparisonProtocols(foundryGas []FoundryGasRun) []ComparisonRun {
+func defaultTimelineParams() comparisons.TimelineParams {
+	return comparisons.TimelineParams{TExec: 1.0, TSlot: 0.008, Gamma: 0.85, TSeg: 0.02, Eta: 0.4}
+}
+
+func writeTimelineExperiment(path string, totalGas float64, params comparisons.TimelineParams) comparisons.TimelineExperimentReport {
+	report := comparisons.RunTimelineExperiment(totalGas, params)
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+		panic(err)
+	}
+	encoded, err := json.MarshalIndent(report, "", "  ")
+	if err != nil {
+		panic(err)
+	}
+	if err := os.WriteFile(path, append(encoded, '\n'), 0o644); err != nil {
+		panic(err)
+	}
+	return readTimelineExperiment(path)
+}
+
+func readTimelineExperiment(path string) comparisons.TimelineExperimentReport {
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		panic(fmt.Sprintf("read timeline simulation log: %v", err))
+	}
+	var report comparisons.TimelineExperimentReport
+	if err := json.Unmarshal(raw, &report); err != nil {
+		panic(fmt.Sprintf("parse timeline simulation log: %v", err))
+	}
+	if len(report.Protocols) == 0 {
+		panic("timeline simulation log has no protocol traces")
+	}
+	return report
+}
+
+func runComparisonProtocols(foundryGas []FoundryGasRun, timelineReport comparisons.TimelineExperimentReport) []ComparisonRun {
 	totalGas := 1e11
 	gasByFunction := map[string]uint64{}
 	for _, run := range foundryGas {
@@ -439,7 +483,7 @@ func runComparisonProtocols(foundryGas []FoundryGasRun) []ComparisonRun {
 	if len(gasByFunction) == 0 {
 		panic("missing Foundry dispute path gas; run forge test --gas-report successfully")
 	}
-	results, err := comparisons.BuildResults(gasByFunction, totalGas)
+	results, err := comparisons.BuildResultsWithTimelines(gasByFunction, totalGas, comparisons.TimelineDerivationsByScheme(timelineReport))
 	if err != nil {
 		panic(err)
 	}
@@ -470,7 +514,7 @@ func runComparisonProtocols(foundryGas []FoundryGasRun) []ComparisonRun {
 	return out
 }
 
-func runPaperEvidence() PaperEvidence {
+func runPaperEvidence(timelinePath string, timelineReport comparisons.TimelineExperimentReport) PaperEvidence {
 	bValues := []float64{1e6, 1e7, 1e8, 1e9}
 	thresholds := []float64{1e4, 1e5, 1e6, 1e7}
 	workloads := []PaperWorkload{
@@ -501,10 +545,10 @@ func runPaperEvidence() PaperEvidence {
 	}
 	parameterSensitivity, parameterRuns := deriveParameterSensitivity(1e11, bValues, thresholds)
 	stakingAnalysis := deriveStakingAnalysis()
-	timeline := deriveTimeline()
+	timeline := deriveTimeline(timelinePath, timelineReport)
 
 	return PaperEvidence{
-		Source:    "instrumented EVM-loop experiment branch: SafeCut, snapshot, commitment, dispute, staking, and timeline traces are computed before visualization",
+		Source:    "instrumented EVM-loop experiment branch: SafeCut, snapshot, commitment, dispute, staking, and timeline traces are computed before visualization; timeline slots are loaded from logs/timeline_simulation.json",
 		Workloads: workloads,
 		InstrumentationTrace: InstrumentationTrace{
 			Mode:          "paper-scale-instrumented-evm-loop",
@@ -696,11 +740,25 @@ func deriveStakingAnalysis() StakingAnalysisEvidence {
 	}
 }
 
-func deriveTimeline() TimelineEvidence {
-	tExec, tSlot, gamma, tSeg, eta := 1.0, 0.008, 0.85, 0.02, 0.4
-	tReexec := 1 - eta
-	timeline := TimelineEvidence{TExec: tExec, TSlot: tSlot, Gamma: gamma, TSeg: tSeg, Eta: eta, TReexec: tReexec}
-	for _, item := range comparisons.BuildTimeline(comparisons.TimelineParams{TExec: tExec, TSlot: tSlot, Gamma: gamma, TSeg: tSeg, Eta: eta}, 1e11) {
+func deriveTimeline(timelinePath string, timelineReport comparisons.TimelineExperimentReport) TimelineEvidence {
+	params := timelineReport.Params
+	tReexec := 1 - params.Eta
+	timeline := TimelineEvidence{
+		TExec:               params.TExec,
+		TSlot:               params.TSlot,
+		Gamma:               params.Gamma,
+		TSeg:                params.TSeg,
+		Eta:                 params.Eta,
+		TReexec:             tReexec,
+		SimulationLog:       timelinePath,
+		SimulationSource:    timelineReport.Source,
+		SimulationReproduce: timelineReport.Reproduce,
+	}
+	items, err := comparisons.BuildTimelineWithTimelines(params, timelineReport.TotalGas, comparisons.TimelineDerivationsByScheme(timelineReport))
+	if err != nil {
+		panic(err)
+	}
+	for _, item := range items {
 		timeline.Schemes = append(timeline.Schemes, TimelineEntry{Name: item.Name, DisputeSlots: item.DisputeSlots, TotalTime: item.TotalTime, Formula: item.Formula, Derivation: item.Derivation})
 	}
 	return timeline

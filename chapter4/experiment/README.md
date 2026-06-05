@@ -9,6 +9,12 @@
 - 链上 Gas 测量：调用 Foundry `forge test --gas-report`，统计公开注册/质押/声明与匿名注册/质押/凭证展示/CTWR 选举的 Gas 开销。
 - 参数实验：按照第四章 4.5 节参数生成 CTWR 捕获概率、委员会规模、女巫拆分、诚实收益、参数敏感性和工程开销相关 trace。
 
+关键结果均由可复现实验产物生成，而不是以常数写入图表：
+
+- CTWR 捕获概率、委员会规模、拆分身份、诚实收益和非比例权重对比由公式 trace 与固定候选样本形成，并写入 `../visualization/chapter4_experiment_data.json` 的 `figures.fig14` 至 `figures.fig21`。
+- Gas 数值由 `forge test --gas-report` 的函数级 benchmark 形成，并写入 `foundry_gas_runs` 与 `figures.fig22.single_call`。
+- 电路约束数与 witness 状态由 Circom/snarkjs 产物形成，并写入 `zk_circuits` 与 `figures.fig22.circuit_stats`。
+
 ## 目录说明
 
 - `circuits/anost_register.circom`：匿名注册电路，输出注册承诺、存款承诺和注册 nullifier。
@@ -88,6 +94,8 @@ testPresentCred()
 testElectCTWR()
 ```
 
+该命令生成公开基线、匿名接口和 CTWR 选举的函数级 Gas 证据。主脚本会将这些数值汇总为 `foundry_gas_runs`，并用于图 22 的 Gas 子图。
+
 ## 生成可视化
 
 回到 `chapter4` 目录运行：
@@ -102,7 +110,7 @@ python3 visualization/chapter4_all_figures.py
 - `forge test --gas-report`
 - `node experiment/scripts/verify_circuits.js`
 - `snarkjs r1cs info`
-- CTWR 解析计算和 Monte Carlo 选举仿真
+- CTWR 解析公式、固定预算激励扫描和非比例权重对比
 - 图 14-22 绘制
 
 输出：
@@ -110,6 +118,25 @@ python3 visualization/chapter4_all_figures.py
 - `experiment/logs/raw_experiment_log.json`
 - `visualization/chapter4_experiment_data.json`
 - `visualization/正确图片输出/fig14.png` 到 `fig22.png`
+
+命令与产物对应关系：
+
+| 命令 | 实验内容 | 产物 | 支撑论文结果 |
+| --- | --- | --- | --- |
+| Circom 编译命令 | 生成三个 AnoSt 电路的 R1CS、WASM 和符号文件 | `build/circuits/*.r1cs`、`build/circuits/*_js/*.wasm` | 图 22 电路约束统计 |
+| `node scripts/verify_circuits.js` | witness 生成、`snarkjs wtns check`、公开输出校验 | `build/witness/*.wtns`、`build/witness/circuit_verification_summary.json` | 图 22 witness `PASS` 状态 |
+| `forge test --gas-report` | 公开注册/质押/声明、匿名注册/质押/凭证展示、CTWR 选举 Gas | Foundry gas report | 图 22 Gas 与链上 Gas 表 |
+| `python3 visualization/chapter4_all_figures.py` | CTWR 公式 trace、固定预算激励扫描、Foundry Gas、电路 witness/R1CS 约束汇总 | `logs/raw_experiment_log.json`、`../visualization/chapter4_experiment_data.json`、`../visualization/正确图片输出/fig14.png` 至 `fig22.png` | 图 14-22、表 5、表 6 |
+
+结构化产物与图表对应关系：
+
+| 字段 | 证据来源 | 输出 |
+| --- | --- | --- |
+| `figures.fig14`、`figures.fig15` | CTWR 捕获概率和委员会规模公式 trace | 图 14、图 15 |
+| `figures.fig16_17` | 固定预算拆分身份与 CTWR 有效权重 trace | 图 16、图 17 |
+| `figures.fig18`、`figures.fig19`、`figures.fig20` | 女巫收益、截断上限、注册成本、激励池和运营成本扫描 | 图 18、图 19、图 20 |
+| `figures.fig21` | CTWR 与 Sqrt-WoR 非比例权重对比 trace | 图 21 |
+| `foundry_gas_runs`、`zk_circuits`、`figures.fig22` | Foundry Gas、Circom witness check、R1CS info | 图 22 |
 
 ## 可选 Groth16 Smoke Test
 

@@ -25,10 +25,29 @@ def require_close(a: float, b: float, message: str, tol: float = 1e-9) -> None:
     assert close(float(a), float(b), tol), f"{message}: got {a}, want {b}"
 
 
+def timeline_scheme_key(name: str) -> str:
+    return "CleVer\n(ours)" if name == "CleVer\n（并发）" else name
+
+
+def require_timeline_from_simulation(scheme: str, observed: dict, simulation: dict) -> None:
+    assert observed.get("simulation_kind") == "local_dispute_timeline_state_machine", f"chapter3 {scheme} timeline is not simulated"
+    assert observed.get("resolved") is True, f"chapter3 {scheme} timeline simulation unresolved"
+    assert observed.get("strategy") == simulation.get("strategy"), f"chapter3 {scheme} timeline strategy mismatch"
+    assert observed.get("slots") == simulation.get("slots"), f"chapter3 {scheme} timeline slots not simulation-derived"
+    assert observed.get("slot_formula") == simulation.get("slot_formula"), f"chapter3 {scheme} timeline formula mismatch"
+    assert observed.get("simulation_inputs") == simulation.get("simulation_inputs"), f"chapter3 {scheme} timeline inputs mismatch"
+    assert observed.get("events") == simulation.get("events"), f"chapter3 {scheme} timeline event trace mismatch"
+    assert len(observed.get("events", [])) == observed.get("slots"), f"chapter3 {scheme} timeline event count mismatch"
+    for event in observed.get("events", []):
+        assert event.get("transition"), f"chapter3 {scheme} timeline event missing transition"
+        assert event.get("state_before") is not None and event.get("state_after") is not None, f"chapter3 {scheme} timeline event missing states"
+
+
 def check_chapter3() -> list[str]:
     raw = load_json(ROOT / "chapter3/experiment/logs/raw_experiment_log.json")
     data = load_json(ROOT / "chapter3/visualization/chapter3_experiment_data.json")
     standalone = load_json(ROOT / "chapter3/experiment/logs/comparison_protocols.json")
+    timeline_sim = load_json(ROOT / "chapter3/experiment/logs/timeline_simulation.json")
     messages: list[str] = []
 
     assert len(raw.get("samples", [])) == 4, "chapter3 raw log must contain four runnable task samples"
@@ -49,6 +68,10 @@ def check_chapter3() -> list[str]:
     }
     by_scheme = {item["scheme"]: item for item in raw.get("comparison_protocols", [])}
     foundry_by_function = {item["function"]: item["gas"] for item in raw.get("foundry_gas_runs", [])}
+    timeline_by_scheme = {item["scheme"]: item["timeline_derivation"] for item in timeline_sim.get("protocols", [])}
+    assert set(timeline_by_scheme) == set(required_schemes), "chapter3 timeline simulation schemes mismatch"
+    assert timeline_sim.get("source"), "chapter3 timeline simulation source missing"
+    assert timeline_sim.get("reproduce"), "chapter3 timeline simulation reproduction command missing"
     for scheme, function in required_schemes.items():
         item = by_scheme.get(scheme)
         assert item, f"chapter3 missing comparison protocol: {scheme}"
@@ -66,30 +89,51 @@ def check_chapter3() -> list[str]:
         assert "official source binding" not in item.get("notes", ""), f"chapter3 {scheme} still uses source-binding wording"
         assert "official protocol flow" not in item.get("measurement_method", ""), f"chapter3 {scheme} still describes source material as the measurement"
         assert len(item.get("dispute_flow", [])) >= 4, f"chapter3 {scheme} missing submit/challenge/localize/adjudicate flow"
+        require_timeline_from_simulation(scheme, item["timeline_derivation"], timeline_by_scheme[scheme])
+        assert item["timeline_slots"] == timeline_by_scheme[scheme]["slots"], f"chapter3 {scheme} timeline_slots not simulation-derived"
 
     gas_comparison = data.get("gas_comparison", {})
     assert len(gas_comparison.get("schemes", [])) == 5, "chapter3 figure 10 data missing comparison schemes"
     assert len(gas_comparison.get("protocols", [])) == 5, "chapter3 structured data missing protocol provenance"
+    assert data.get("timeline_simulation") == timeline_sim, "chapter3 structured data does not embed timeline simulation log"
     assert len(standalone.get("protocols", [])) == 5, "chapter3 standalone comparison report missing protocols"
+    assert standalone.get("timeline_simulation") == timeline_sim, "chapter3 standalone report does not embed timeline simulation log"
     standalone_by_scheme = {item["scheme"]: item for item in standalone["protocols"]}
     for scheme, raw_item in by_scheme.items():
         report_item = standalone_by_scheme[scheme]
         assert report_item["dispute_benchmark"]["gas"] == raw_item["dispute_benchmark"]["gas"], f"chapter3 {scheme} standalone report gas mismatch"
         assert report_item["optimistic_benchmark"]["gas"] == raw_item["optimistic_benchmark"]["gas"], f"chapter3 {scheme} standalone optimistic gas mismatch"
+        require_timeline_from_simulation(scheme, report_item["timeline_derivation"], timeline_by_scheme[scheme])
+        assert report_item["timeline_slots"] == raw_item["timeline_slots"], f"chapter3 {scheme} standalone timeline slot mismatch"
     avg_others = sum(by_scheme[name]["dispute_gas_k"] for name in list(required_schemes)[:4]) / 4
     reduction = (1 - by_scheme["CleVer\n(ours)"]["dispute_gas_k"] / avg_others) * 100
     require_close(avg_others, 4445.867, "chapter3 figure 10 comparison average")
     require_close(round(reduction, 2), 87.58, "chapter3 figure 10 reduction")
 
-    timeline = raw["paper_evidence"]["timeline"]["schemes"]
+    paper_timeline = raw["paper_evidence"]["timeline"]
+    assert paper_timeline.get("simulation_source") == timeline_sim["source"], "chapter3 paper timeline source not simulation-derived"
+    assert paper_timeline.get("simulation_reproduce") == timeline_sim["reproduce"], "chapter3 paper timeline reproduce command mismatch"
+    timeline = paper_timeline["schemes"]
     assert len(timeline) == 5, "chapter3 timeline missing comparison schemes"
     for item in timeline:
         assert item.get("formula"), f"chapter3 timeline formula missing for {item['name']}"
         assert float(item["total_time"]) > 0, f"chapter3 timeline not positive for {item['name']}"
+        scheme = timeline_scheme_key(item["name"])
+        require_timeline_from_simulation(scheme, item["timeline_derivation"], timeline_by_scheme[scheme])
+        assert item["dispute_slots"] == timeline_by_scheme[scheme]["slots"], f"chapter3 {item['name']} dispute slots not simulation-derived"
+        params = timeline_sim["timeline_params"]
+        expected_total = params["t_exec"] + params["gamma"] + item["dispute_slots"] * params["t_slot"] + (1 - params["eta"])
+        if scheme == "CleVer\n(ours)":
+            expected_total = params["eta"] * params["t_exec"] + params["t_seg"] + item["dispute_slots"] * params["t_slot"] + (1 - params["eta"])
+        require_close(item["total_time"], expected_total, f"chapter3 {item['name']} timeline total formula")
     clever_total = next(item["total_time"] for item in timeline if item["name"] == "CleVer\n（并发）")
     other_totals = [item["total_time"] for item in timeline if item["name"] != "CleVer\n（并发）"]
     assert all(clever_total < value for value in other_totals), "chapter3 timeline ordering does not show CleVer lower than post-execution schemes"
-    require_close(clever_total, 1.044, "chapter3 figure 12 CleVer timeline")
+    standalone_timeline = {timeline_scheme_key(item["name"]): item for item in standalone.get("timeline", [])}
+    for item in timeline:
+        scheme = timeline_scheme_key(item["name"])
+        assert standalone_timeline[scheme]["dispute_slots"] == item["dispute_slots"], f"chapter3 standalone timeline slots mismatch for {item['name']}"
+        require_close(standalone_timeline[scheme]["total_time"], item["total_time"], f"chapter3 standalone timeline total for {item['name']}")
 
     evidence = raw["paper_evidence"]
     overhead = [round(value * 100, 1) for value in evidence["slicing_overhead"]["overhead_ratios"]]

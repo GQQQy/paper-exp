@@ -91,20 +91,54 @@ type TimelineResult struct {
 }
 
 type TimelineEvent struct {
-	Slot              int    `json:"slot"`
-	Phase             string `json:"phase"`
-	LogicalRoundStart int    `json:"logical_round_start,omitempty"`
-	LogicalRoundEnd   int    `json:"logical_round_end,omitempty"`
-	Detail            string `json:"detail"`
+	Slot              int            `json:"slot"`
+	Phase             string         `json:"phase"`
+	LogicalRoundStart int            `json:"logical_round_start,omitempty"`
+	LogicalRoundEnd   int            `json:"logical_round_end,omitempty"`
+	Detail            string         `json:"detail"`
+	StateBefore       map[string]int `json:"state_before,omitempty"`
+	StateAfter        map[string]int `json:"state_after,omitempty"`
+	Transition        string         `json:"transition,omitempty"`
+}
+
+type TimelineSimulationInput struct {
+	TotalGas              float64 `json:"total_gas"`
+	LogicalRounds         int     `json:"logical_rounds"`
+	Strategy              string  `json:"strategy"`
+	InitialOffchainRounds int     `json:"initial_offchain_rounds,omitempty"`
+	RoundsPerSlot         int     `json:"rounds_per_slot,omitempty"`
+	Levels                int     `json:"levels,omitempty"`
+	LevelBoundarySlots    int     `json:"level_boundary_slots,omitempty"`
+	ConcurrentSlots       int     `json:"concurrent_slots,omitempty"`
 }
 
 type TimelineDerivation struct {
-	Strategy      string          `json:"strategy"`
-	TotalGas      float64         `json:"total_gas"`
-	LogicalRounds int             `json:"logical_rounds"`
-	Slots         int             `json:"slots"`
-	Events        []TimelineEvent `json:"events"`
-	Formula       string          `json:"slot_formula"`
+	Strategy       string                  `json:"strategy"`
+	TotalGas       float64                 `json:"total_gas"`
+	LogicalRounds  int                     `json:"logical_rounds"`
+	Slots          int                     `json:"slots"`
+	Events         []TimelineEvent         `json:"events"`
+	Formula        string                  `json:"slot_formula"`
+	SimulationKind string                  `json:"simulation_kind"`
+	Inputs         TimelineSimulationInput `json:"simulation_inputs"`
+	Resolved       bool                    `json:"resolved"`
+}
+
+type TimelineExperimentReport struct {
+	Source    string                       `json:"source"`
+	Reproduce string                       `json:"reproduce"`
+	TotalGas  float64                      `json:"total_gas"`
+	Params    TimelineParams               `json:"timeline_params"`
+	Protocols []TimelineExperimentProtocol `json:"protocols"`
+}
+
+type TimelineExperimentProtocol struct {
+	Scheme             string             `json:"scheme"`
+	Mechanism          string             `json:"mechanism"`
+	Family             string             `json:"family"`
+	DisputeBenchmark   PathSpec           `json:"dispute_benchmark"`
+	TimelineModel      TimelineModel      `json:"timeline_model"`
+	TimelineDerivation TimelineDerivation `json:"timeline_derivation"`
 }
 
 func Specs(totalGas float64) []ProtocolSpec {
@@ -251,7 +285,41 @@ func Specs(totalGas float64) []ProtocolSpec {
 	}
 }
 
+func RunTimelineExperiment(totalGas float64, params TimelineParams) TimelineExperimentReport {
+	specs := Specs(totalGas)
+	protocols := make([]TimelineExperimentProtocol, 0, len(specs))
+	for _, spec := range specs {
+		protocols = append(protocols, TimelineExperimentProtocol{
+			Scheme:             spec.Scheme,
+			Mechanism:          spec.Mechanism,
+			Family:             spec.Family,
+			DisputeBenchmark:   spec.Dispute,
+			TimelineModel:      spec.Timeline,
+			TimelineDerivation: RunTimelineSimulation(spec, totalGas),
+		})
+	}
+	return TimelineExperimentReport{
+		Source:    "local dispute timeline state-machine simulation; slots are counted from emitted state-transition events",
+		Reproduce: "go run ./cmd/timeline-exp --total-gas 1e11 --out logs/timeline_simulation.json",
+		TotalGas:  totalGas,
+		Params:    params,
+		Protocols: protocols,
+	}
+}
+
+func TimelineDerivationsByScheme(report TimelineExperimentReport) map[string]TimelineDerivation {
+	out := make(map[string]TimelineDerivation, len(report.Protocols))
+	for _, protocol := range report.Protocols {
+		out[protocol.Scheme] = protocol.TimelineDerivation
+	}
+	return out
+}
+
 func BuildResults(gasByFunction map[string]uint64, totalGas float64) ([]ProtocolResult, error) {
+	return BuildResultsWithTimelines(gasByFunction, totalGas, nil)
+}
+
+func BuildResultsWithTimelines(gasByFunction map[string]uint64, totalGas float64, timelines map[string]TimelineDerivation) ([]ProtocolResult, error) {
 	specs := Specs(totalGas)
 	missing := missingFunctions(specs, gasByFunction)
 	if len(missing) > 0 {
@@ -261,7 +329,10 @@ func BuildResults(gasByFunction map[string]uint64, totalGas float64) ([]Protocol
 	for _, spec := range specs {
 		optimistic := pathResult(spec.Optimistic, gasByFunction[spec.Optimistic.Function])
 		dispute := pathResult(spec.Dispute, gasByFunction[spec.Dispute.Function])
-		timeline := DeriveTimeline(spec, totalGas)
+		timeline, err := resolveTimeline(spec, totalGas, timelines)
+		if err != nil {
+			return nil, err
+		}
 		out = append(out, ProtocolResult{
 			Scheme:            spec.Scheme,
 			Mechanism:         spec.Mechanism,
@@ -288,6 +359,14 @@ func BuildResults(gasByFunction map[string]uint64, totalGas float64) ([]Protocol
 }
 
 func BuildTimeline(p TimelineParams, totalGas float64) []TimelineResult {
+	out, err := BuildTimelineWithTimelines(p, totalGas, nil)
+	if err != nil {
+		panic(err)
+	}
+	return out
+}
+
+func BuildTimelineWithTimelines(p TimelineParams, totalGas float64, timelines map[string]TimelineDerivation) ([]TimelineResult, error) {
 	tReexec := 1 - p.Eta
 	byScheme := map[string]ProtocolSpec{}
 	for _, spec := range Specs(totalGas) {
@@ -297,7 +376,10 @@ func BuildTimeline(p TimelineParams, totalGas float64) []TimelineResult {
 	out := make([]TimelineResult, 0, len(order))
 	for _, scheme := range order {
 		spec := byScheme[scheme]
-		derivation := DeriveTimeline(spec, totalGas)
+		derivation, err := resolveTimeline(spec, totalGas, timelines)
+		if err != nil {
+			return nil, err
+		}
 		name := spec.Scheme
 		total := p.TExec + p.Gamma + float64(derivation.Slots)*p.TSlot + tReexec
 		formula := "T_exec + gamma + dispute_slots*T_slot + T_reexec"
@@ -308,34 +390,99 @@ func BuildTimeline(p TimelineParams, totalGas float64) []TimelineResult {
 		}
 		out = append(out, TimelineResult{Name: name, DisputeSlots: derivation.Slots, TotalTime: total, Formula: formula, Derivation: derivation})
 	}
-	return out
+	return out, nil
 }
 
 func DeriveTimeline(spec ProtocolSpec, totalGas float64) TimelineDerivation {
+	return RunTimelineSimulation(spec, totalGas)
+}
+
+func resolveTimeline(spec ProtocolSpec, totalGas float64, timelines map[string]TimelineDerivation) (TimelineDerivation, error) {
+	if timelines == nil {
+		return DeriveTimeline(spec, totalGas), nil
+	}
+	timeline, ok := timelines[spec.Scheme]
+	if !ok {
+		return TimelineDerivation{}, fmt.Errorf("missing timeline simulation result for %s", spec.Scheme)
+	}
+	if err := validateTimelineDerivation(spec, totalGas, timeline); err != nil {
+		return TimelineDerivation{}, err
+	}
+	return timeline, nil
+}
+
+func validateTimelineDerivation(spec ProtocolSpec, totalGas float64, timeline TimelineDerivation) error {
+	if timeline.SimulationKind != "local_dispute_timeline_state_machine" || !timeline.Resolved {
+		return fmt.Errorf("%s timeline is not a resolved local simulation", spec.Scheme)
+	}
+	if timeline.Strategy != spec.Timeline.Strategy {
+		return fmt.Errorf("%s timeline strategy = %s, want %s", spec.Scheme, timeline.Strategy, spec.Timeline.Strategy)
+	}
+	if timeline.LogicalRounds != spec.OnchainRounds {
+		return fmt.Errorf("%s timeline logical rounds = %d, want %d", spec.Scheme, timeline.LogicalRounds, spec.OnchainRounds)
+	}
+	if math.Abs(timeline.TotalGas-totalGas) > 1e-6 {
+		return fmt.Errorf("%s timeline total gas = %.0f, want %.0f", spec.Scheme, timeline.TotalGas, totalGas)
+	}
+	if timeline.Slots <= 0 || len(timeline.Events) != timeline.Slots {
+		return fmt.Errorf("%s timeline slots/events mismatch: slots=%d events=%d", spec.Scheme, timeline.Slots, len(timeline.Events))
+	}
+	if timeline.Formula == "" {
+		return fmt.Errorf("%s timeline formula missing", spec.Scheme)
+	}
+	for _, event := range timeline.Events {
+		if event.Transition == "" || event.StateBefore == nil || event.StateAfter == nil {
+			return fmt.Errorf("%s timeline event %d missing state transition evidence", spec.Scheme, event.Slot)
+		}
+	}
+	return nil
+}
+
+func RunTimelineSimulation(spec ProtocolSpec, totalGas float64) TimelineDerivation {
 	logicalRounds := spec.OnchainRounds
 	if logicalRounds <= 0 {
 		logicalRounds = int(math.Ceil(math.Log2(totalGas)))
 	}
 	events := []TimelineEvent{}
-	appendEvent := func(phase string, start, end int, detail string) {
+	appendEvent := func(phase string, start, end int, detail string, before, after map[string]int, transition string) {
 		events = append(events, TimelineEvent{
 			Slot:              len(events) + 1,
 			Phase:             phase,
 			LogicalRoundStart: start,
 			LogicalRoundEnd:   end,
 			Detail:            detail,
+			StateBefore:       before,
+			StateAfter:        after,
+			Transition:        transition,
 		})
 	}
 	model := spec.Timeline
 	formula := ""
 	switch model.Strategy {
 	case "one_slot_per_remaining_bisection_round", "solver_verifier_remaining_bisection_rounds", "tournament_then_remaining_bisection_rounds":
-		first := model.InitialOffchainRounds + 1
-		if first < 1 {
-			first = 1
-		}
-		for round := first; round <= logicalRounds; round++ {
-			appendEvent("interactive_bisection_deadline", round, round, fmt.Sprintf("deadline slot for logical bisection round %d", round))
+		completedOffchain := min(max(model.InitialOffchainRounds, 0), logicalRounds)
+		remaining := logicalRounds - completedOffchain
+		currentRound := completedOffchain + 1
+		for remaining > 0 {
+			before := map[string]int{
+				"completed_logical_rounds": currentRound - 1,
+				"remaining_onchain_rounds": remaining,
+			}
+			after := map[string]int{
+				"completed_logical_rounds": currentRound,
+				"remaining_onchain_rounds": remaining - 1,
+			}
+			appendEvent(
+				"interactive_bisection_deadline",
+				currentRound,
+				currentRound,
+				fmt.Sprintf("state-machine slot executes logical bisection round %d after %d off-chain/pre-deadline rounds", currentRound, completedOffchain),
+				before,
+				after,
+				"consume one on-chain deadline slot and advance one bisection round",
+			)
+			currentRound++
+			remaining--
 		}
 		formula = fmt.Sprintf("max(0, logical_rounds(%d)-initial_offchain_rounds(%d))", logicalRounds, model.InitialOffchainRounds)
 	case "bounded_liquidity_parallel_levels":
@@ -343,13 +490,53 @@ func DeriveTimeline(spec ProtocolSpec, totalGas float64) TimelineDerivation {
 		if perSlot <= 0 {
 			perSlot = 1
 		}
-		for start := 1; start <= logicalRounds; start += perSlot {
-			end := min(start+perSlot-1, logicalRounds)
-			appendEvent("parallel_level_bisection", start, end, fmt.Sprintf("BoLD level-parallel narrowing for rounds %d-%d", start, end))
+		remaining := logicalRounds
+		nextRound := 1
+		for remaining > 0 {
+			batch := min(perSlot, remaining)
+			start := nextRound
+			end := nextRound + batch - 1
+			before := map[string]int{
+				"remaining_logical_rounds": remaining,
+				"rounds_per_slot":          perSlot,
+			}
+			remaining -= batch
+			nextRound += batch
+			after := map[string]int{
+				"remaining_logical_rounds": remaining,
+				"rounds_per_slot":          perSlot,
+			}
+			appendEvent(
+				"parallel_level_bisection",
+				start,
+				end,
+				fmt.Sprintf("BoLD state machine narrows rounds %d-%d in one parallel edge deadline slot", start, end),
+				before,
+				after,
+				"consume one deadline slot and advance a parallel batch of dispute rounds",
+			)
 		}
+		boundaryRemaining := model.LevelBoundarySlots
 		for i := 0; i < model.LevelBoundarySlots; i++ {
 			level := (i % max(1, model.Levels)) + 1
-			appendEvent("level_boundary_confirmation", 0, 0, fmt.Sprintf("BoLD level %d assertion/confirmation boundary", level))
+			before := map[string]int{
+				"level":                    level,
+				"boundary_slots_remaining": boundaryRemaining,
+			}
+			boundaryRemaining--
+			after := map[string]int{
+				"level":                    level,
+				"boundary_slots_remaining": boundaryRemaining,
+			}
+			appendEvent(
+				"level_boundary_confirmation",
+				0,
+				0,
+				fmt.Sprintf("BoLD state machine confirms level %d boundary", level),
+				before,
+				after,
+				"consume one level-boundary confirmation slot",
+			)
 		}
 		formula = fmt.Sprintf("ceil(logical_rounds(%d)/rounds_per_slot(%d))+level_boundary_slots(%d)", logicalRounds, perSlot, model.LevelBoundarySlots)
 	case "concurrent_two_layer_slice_then_verseg":
@@ -360,19 +547,47 @@ func DeriveTimeline(spec ProtocolSpec, totalGas float64) TimelineDerivation {
 		}
 		for i := 0; i < count; i++ {
 			phase := phases[min(i, len(phases)-1)]
-			appendEvent(phase, i+1, i+1, fmt.Sprintf("CleVer concurrent verification phase %d", i+1))
+			before := map[string]int{
+				"completed_phases": i,
+				"remaining_phases": count - i,
+			}
+			after := map[string]int{
+				"completed_phases": i + 1,
+				"remaining_phases": count - i - 1,
+			}
+			appendEvent(
+				phase,
+				i+1,
+				i+1,
+				fmt.Sprintf("CleVer state machine executes concurrent verification phase %d", i+1),
+				before,
+				after,
+				"consume one concurrent localization/replay slot",
+			)
 		}
 		formula = fmt.Sprintf("concurrent protocol phases(%d)", count)
 	default:
 		panic(fmt.Sprintf("unknown timeline strategy %q for %s", model.Strategy, spec.Scheme))
 	}
 	return TimelineDerivation{
-		Strategy:      model.Strategy,
-		TotalGas:      totalGas,
-		LogicalRounds: logicalRounds,
-		Slots:         len(events),
-		Events:        events,
-		Formula:       formula,
+		Strategy:       model.Strategy,
+		TotalGas:       totalGas,
+		LogicalRounds:  logicalRounds,
+		Slots:          len(events),
+		Events:         events,
+		Formula:        formula,
+		SimulationKind: "local_dispute_timeline_state_machine",
+		Inputs: TimelineSimulationInput{
+			TotalGas:              totalGas,
+			LogicalRounds:         logicalRounds,
+			Strategy:              model.Strategy,
+			InitialOffchainRounds: model.InitialOffchainRounds,
+			RoundsPerSlot:         model.RoundsPerSlot,
+			Levels:                model.Levels,
+			LevelBoundarySlots:    model.LevelBoundarySlots,
+			ConcurrentSlots:       model.ConcurrentSlots,
+		},
+		Resolved: true,
 	}
 }
 

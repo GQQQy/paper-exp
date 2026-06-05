@@ -15,6 +15,15 @@ experiment/audit/protocol.go
 
 表 10、图 30 和图 31 的 Gas 数据由 Foundry gas report 生成，并在 raw log 的 `measurement_provenance.measurement_status=checked` 中记录函数级 Gas、PoD 月度派生公式、PoD watchtower trace 和 `podMineBounty` benchmark。根目录的 `scripts/check_experiment_coverage.py` 会检查这些结果是否由可运行实验产物支撑。
 
+第五章的关键数值由四类实验产物汇总形成：
+
+- RanCk/SenCk 行为结果来自 `audit.SimulateRanCk()`、`audit.SimulateSenCk()` 和 `protocol_test.go` 覆盖的协议 trace，汇总到 `ranck_traces`、`senck_traces` 和 `protocol_coverage`。
+- 图 24-28 的可行域、检测概率和 Monte Carlo 对照来自公式 trace、固定随机种子 Monte Carlo trace 与 Gamma 命中率 sweep，汇总到 `feasibility`、`detection` 和 `monte_carlo`。
+- 图 29 的旁路开销来自 instrumented EVM opcode hook、rw 编码、哈希、Gamma、快照加载和局部重放 trace，汇总到 `overhead_traces`。
+- 表 10、图 30-31 和 PoD baseline 来自 `ValidatorAudit.t.sol` 的 Foundry gas report、`podMineBounty` benchmark 与 deterministic watchtower epoch trace，汇总到 `gas_trace`。
+
+结构化 JSON 与输出图片均由上述 raw experiment log 校验后生成；表 9-11 的字段也保留在 `chapter5_experiment_data.json` 中，便于和论文正文逐项对照。
+
 ## 实验总览
 
 默认参数如下。
@@ -51,7 +60,7 @@ experiment/audit/protocol.go
 
 ## 对比复现边界
 
-第五章表 11 是场景能力对比，不读取外部整理表。TrueBit 和 Arbitrum 行由本仓库的本地场景模型给出在线审计、语义勤勉、不可预测审计和外部网络依赖四类结果；PoD 行额外跑 deterministic watchtower epoch trace，并用 `ValidatorAudit.podMineBounty` 的 Foundry Gas 生成图 30/31 中的月度基线；RanCk+SenCk 行来自本章 Go 协议 trace 和 Solidity benchmark。
+第五章表 11 是由本地场景模型、PoD watchtower trace 和 RanCk/SenCk 协议 trace 共同生成的能力对比。TrueBit 和 Arbitrum 行由本仓库的本地场景模型给出在线审计、语义勤勉、不可预测审计和外部网络依赖四类结果；PoD 行额外跑 deterministic watchtower epoch trace，并用 `ValidatorAudit.podMineBounty` 的 Foundry Gas 生成图 30/31 中的月度基线；RanCk+SenCk 行来自本章 Go 协议 trace 和 Solidity benchmark。
 
 | 方案 | 本地复现实验 | 验收查看字段 |
 | --- | --- | --- |
@@ -156,7 +165,7 @@ experiment/audit/protocol.go
 - `experiment/src/ValidatorAudit.sol`：链上审计 benchmark 合约。
 - `experiment/test/ValidatorAudit.t.sol`：Foundry Gas 测试。
 - `experiment/logs/raw_experiment_log.json`：实验原始日志。
-- `visualization/chapter5_all_figures.py`：从 raw log 生成结构化数据和图 24-31。
+- `visualization/chapter5_all_figures.py`：校验 raw log 并生成结构化数据和图 24-31。
 - `visualization/chapter5_experiment_data.json`：结构化实验数据。
 - `visualization/正确图片输出/`：图 24-31 的 PNG 输出。
 
@@ -205,7 +214,17 @@ python3 visualization/chapter5_all_figures.py
 - `forge test --gas-report`：测量链上审计合约的函数级 Gas。
 - `go run ./cmd/audit-exp ...`：生成 RanCk/SenCk trace、Monte Carlo、可行域、旁路开销、Gas trace 和表 11 对比数据。
 - `go run ./cmd/comparison-exp ...`：从 raw log 中的 Foundry gas 单独导出表 11 能力对比和 PoD MineBounty 报告，便于演示。
-- `chapter5_all_figures.py`：读取 raw log，校验协议 trace、检测参数、Monte Carlo/Gamma sweep 和 Gas 数据，生成结构化 JSON 与图 24-31。
+- `chapter5_all_figures.py`：校验协议 trace、检测参数、Monte Carlo/Gamma sweep 和 Gas 数据，生成结构化 JSON 与图 24-31。
+
+命令与产物对应关系：
+
+| 命令 | 实验内容 | 生成或刷新产物 | 支撑论文结果 |
+| --- | --- | --- | --- |
+| `go test ./...` | RanCk/SenCk 协议行为、PoD trace、能力对比和 PoD baseline 单元/集成测试 | 测试输出 | 表 9-11、图 24-31 的协议实现可信度 |
+| `forge test --gas-report` | TrackInit、HBRespond、ContAudit、SentReport、Dispute、SentProve、PoD MineBounty 函数级 Gas | Foundry gas report，被 `audit-exp` 汇总为 `gas_trace.foundry_parsed` | 表 10、图 30、图 31 |
+| `go run ./cmd/audit-exp --out logs/raw_experiment_log.json` | RanCk/SenCk trace、Monte Carlo、可行域、旁路开销、Gas trace、表 11 场景对比 | `logs/raw_experiment_log.json` | 表 9-11、图 24-31 |
+| `go run ./cmd/comparison-exp --raw logs/raw_experiment_log.json --out logs/comparison_experiments.json` | TrueBit、Arbitrum、PoD、RanCk+SenCk 能力对比和 PoD MineBounty baseline standalone 报告 | `logs/comparison_experiments.json` | 表 11、图 30/31 PoD 对照 |
+| `python3 visualization/chapter5_all_figures.py` | raw log 校验、结构化实验产物生成、图片渲染 | `visualization/chapter5_experiment_data.json`、`visualization/正确图片输出/*.png` | 图 24-31、表 9-11 |
 
 ## 只重新生成可视化
 
@@ -231,6 +250,19 @@ python3 visualization/chapter5_all_figures.py
   - `visualization/正确图片输出/fig29_overhead.png`
   - `visualization/正确图片输出/fig30_gas_comparison.png`
   - `visualization/正确图片输出/fig31_tradeoff.png`
+
+## 图表产物映射
+
+| 结构化字段 | 实验依据 | 输出图片/结果 |
+| --- | --- | --- |
+| `table9_parameters`、`metadata.params` | `audit.DefaultParams()`、`audit.Table9Parameters()` | 表 9 参数配置 |
+| `feasibility` | C1/C2 罚没边界和联合可行域公式 trace | 图 24、图 25 |
+| `detection` | RanCk 心跳/连续性检测公式、SenCk lazy pass 公式 | 图 26、图 27 |
+| `monte_carlo`、`senck_traces[0].trigger_stats` | 固定随机种子 Monte Carlo trace 与 Gamma hit sweep | 图 28 |
+| `overhead` | instrumented EVM opcode hook、rw 编码、哈希、Gamma、快照加载、局部重放 trace | 图 29 |
+| `gas.operations`、`gas.pod_baseline`、`gas.monthly_by_scheme` | Foundry gas report、PoD watchtower trace、月度 Gas 公式 | 表 10、图 30 |
+| `gas.pi_h_sweep` | 心跳概率 sweep 与 `ell=300` 检测概率 | 图 31 |
+| `comparison_experiments`、`comparison_table_11` | 本地场景模型、PoD epoch trace、RanCk/SenCk 协议 trace | 表 11 |
 
 ## 快速检查数据
 

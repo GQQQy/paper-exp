@@ -25,6 +25,7 @@ ROOT = Path(__file__).resolve().parents[1]
 VIS_DIR = Path(__file__).resolve().parent
 EXP_DIR = ROOT / "experiment"
 RAW_LOG = EXP_DIR / "logs" / "raw_experiment_log.json"
+TIMELINE_LOG = EXP_DIR / "logs" / "timeline_simulation.json"
 OUT_JSON = VIS_DIR / "chapter3_experiment_data.json"
 
 
@@ -75,22 +76,51 @@ def ensure_raw_log() -> dict:
     with RAW_LOG.open("r", encoding="utf-8") as f:
         raw = json.load(f)
     comparisons = raw.get("comparison_protocols", [])
+    timeline = raw.get("paper_evidence", {}).get("timeline", {})
     if not comparisons or any(
         "dispute_benchmark" not in item
         or not item.get("validation_claim")
         or not item.get("reference_sources")
+        or item.get("timeline_derivation", {}).get("simulation_kind") != "local_dispute_timeline_state_machine"
         or "official source binding" in item.get("notes", "")
         or "official protocol flow" in item.get("measurement_method", "")
         for item in comparisons
-    ):
+    ) or not TIMELINE_LOG.exists() or not timeline.get("simulation_log"):
         regenerate()
         with RAW_LOG.open("r", encoding="utf-8") as f:
             raw = json.load(f)
-    validate_raw_log(raw)
+    timeline_report = load_timeline_report()
+    validate_raw_log(raw, timeline_report)
     return raw
 
 
-def validate_raw_log(raw: dict) -> None:
+def load_timeline_report() -> dict:
+    if not TIMELINE_LOG.exists():
+        raise AssertionError(f"missing timeline simulation log: {TIMELINE_LOG}")
+    with TIMELINE_LOG.open("r", encoding="utf-8") as f:
+        report = json.load(f)
+    assert report.get("source"), "timeline simulation source missing"
+    assert report.get("reproduce"), "timeline simulation reproduce command missing"
+    assert len(report.get("protocols", [])) == len(SCHEMES), "timeline simulation protocol count mismatch"
+    return report
+
+
+def validate_timeline_derivation(scheme: str, derivation: dict, simulation: dict) -> None:
+    assert derivation.get("simulation_kind") == "local_dispute_timeline_state_machine", f"{scheme} timeline is not state-machine simulated"
+    assert derivation.get("resolved") is True, f"{scheme} timeline simulation is unresolved"
+    assert derivation.get("strategy") == simulation.get("strategy"), f"{scheme} timeline strategy mismatch"
+    assert derivation.get("slots") == simulation.get("slots"), f"{scheme} timeline slots not loaded from simulation log"
+    assert derivation.get("slot_formula") == simulation.get("slot_formula"), f"{scheme} timeline formula mismatch"
+    assert derivation.get("simulation_inputs") == simulation.get("simulation_inputs"), f"{scheme} timeline inputs mismatch"
+    events = derivation.get("events", [])
+    assert events == simulation.get("events", []), f"{scheme} timeline event trace mismatch"
+    assert len(events) == derivation.get("slots"), f"{scheme} timeline event count mismatch"
+    for event in events:
+        assert event.get("transition"), f"{scheme} timeline event missing transition"
+        assert event.get("state_before") is not None and event.get("state_after") is not None, f"{scheme} timeline event missing states"
+
+
+def validate_raw_log(raw: dict, timeline_report: dict) -> None:
     samples = raw.get("samples", [])
     by_task = {sample.get("task"): sample for sample in samples}
     for task in TASKS:
@@ -104,16 +134,26 @@ def validate_raw_log(raw: dict) -> None:
         assert task.name in evm_samples, f"missing geth evm sample for {task.name}"
         assert evm_samples[task.name]["gas_used"] > 0, f"geth evm gas missing for {task.name}"
     comparisons = {item.get("scheme"): item for item in raw.get("comparison_protocols", [])}
+    timeline_by_scheme = {item["scheme"]: item["timeline_derivation"] for item in timeline_report["protocols"]}
     for scheme in SCHEMES:
         assert scheme.name in comparisons, f"missing comparison run for {scheme.name}"
         assert comparisons[scheme.name]["dispute_gas_k"] > 0, f"comparison gas missing for {scheme.name}"
         assert comparisons[scheme.name].get("dispute_benchmark", {}).get("function"), f"missing benchmark function for {scheme.name}"
         assert comparisons[scheme.name].get("timeline_derivation", {}).get("events"), f"missing timeline derivation for {scheme.name}"
         assert comparisons[scheme.name]["timeline_slots"] == comparisons[scheme.name]["timeline_derivation"]["slots"], f"timeline slot derivation mismatch for {scheme.name}"
+        validate_timeline_derivation(scheme.name, comparisons[scheme.name]["timeline_derivation"], timeline_by_scheme[scheme.name])
         assert comparisons[scheme.name].get("reproduce"), f"missing reproduction command for {scheme.name}"
         assert comparisons[scheme.name].get("validation_claim"), f"missing validation claim for {scheme.name}"
         assert comparisons[scheme.name].get("reference_sources"), f"missing comparison boundary references for {scheme.name}"
         assert "official source binding" not in comparisons[scheme.name].get("notes", ""), f"outdated source-binding wording for {scheme.name}"
+    paper_timeline = raw.get("paper_evidence", {}).get("timeline", {})
+    assert Path(paper_timeline.get("simulation_log", "")).name == TIMELINE_LOG.name, "paper timeline is not linked to timeline_simulation.json"
+    assert paper_timeline.get("simulation_source") == timeline_report["source"], "paper timeline source mismatch"
+    assert paper_timeline.get("simulation_reproduce") == timeline_report["reproduce"], "paper timeline reproduce command mismatch"
+    for item in paper_timeline.get("schemes", []):
+        scheme_name = "CleVer\n(ours)" if item["name"] == "CleVer\n（并发）" else item["name"]
+        validate_timeline_derivation(scheme_name, item["timeline_derivation"], timeline_by_scheme[scheme_name])
+        assert item["dispute_slots"] == timeline_by_scheme[scheme_name]["slots"], f"{item['name']} slot count not simulation-derived"
 
 
 def poly(coefficients: tuple[float, ...], x: float) -> float:
@@ -180,6 +220,7 @@ def comparison_from_raw(raw: dict) -> dict:
 
 def build_data(raw: dict | None = None) -> dict:
     raw = raw or ensure_raw_log()
+    timeline_report = load_timeline_report()
     evidence = raw.get("paper_evidence")
     if not evidence:
         raise ValueError("raw experiment log is missing paper_evidence; rerun go run ./cmd/clever-exp")
@@ -193,6 +234,7 @@ def build_data(raw: dict | None = None) -> dict:
             "chapter": "第三章 基于有状态任务切片的链下计算验证",
             "source": evidence["source"],
             "raw_log": str(RAW_LOG),
+            "timeline_log": str(TIMELINE_LOG),
             "raw_sample_count": len(raw["samples"]),
             "geth_evm_sample_count": len(raw.get("geth_evm_samples", [])),
             "comparison_protocol_count": len(raw.get("comparison_protocols", [])),
@@ -204,6 +246,7 @@ def build_data(raw: dict | None = None) -> dict:
         "parameter_sensitivity": evidence["parameter_sensitivity"],
         "gas_comparison": gas_comparison,
         "staking_analysis": evidence["staking_analysis"],
+        "timeline_simulation": timeline_report,
         "timeline": evidence["timeline"],
     }
     validate_data(data)
@@ -222,8 +265,15 @@ def validate_data(data: dict) -> None:
     dispute = data["gas_comparison"]["dispute_gas_k"]
     assert len(dispute) == len(SCHEMES) and all(v > 0 for v in dispute), "unexpected dispute gas comparison data"
     assert len(data["timeline"]["schemes"]) == len(SCHEMES), "unexpected timeline comparison data"
+    timeline_by_scheme = {item["scheme"]: item["timeline_derivation"] for item in data["timeline_simulation"]["protocols"]}
     assert all(item["total_time"] > 0 for item in data["timeline"]["schemes"]), "timeline values must be positive"
     assert all(item.get("formula") for item in data["timeline"]["schemes"]), "timeline formulas missing"
+    assert data["timeline"]["simulation_source"] == data["timeline_simulation"]["source"], "timeline source mismatch"
+    assert data["timeline"]["simulation_reproduce"] == data["timeline_simulation"]["reproduce"], "timeline reproduce mismatch"
+    for item in data["timeline"]["schemes"]:
+        scheme_name = "CleVer\n(ours)" if item["name"] == "CleVer\n（并发）" else item["name"]
+        assert item["dispute_slots"] == timeline_by_scheme[scheme_name]["slots"], f"{item['name']} slots not simulation-derived"
+        assert item["timeline_derivation"]["events"] == timeline_by_scheme[scheme_name]["events"], f"{item['name']} event trace not simulation-derived"
     for protocol in data["gas_comparison"]["protocols"]:
         assert protocol["dispute_benchmark"]["gas_k"] == protocol["dispute_gas_k"], f"{protocol['scheme']} dispute gas is not benchmark-derived"
 
